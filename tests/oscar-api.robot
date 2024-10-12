@@ -2,7 +2,6 @@
 Tests for the OSCAR Manager's API of a deployed OSCAR cluster 
 
 *** Settings ***
-Resource   ../resources/endpoints-prod.robot
 Library    RequestsLibrary
 
 *** Variables *** 
