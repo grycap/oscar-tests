@@ -17,12 +17,18 @@ To install the required dependencies:
 pip install -r requirements.txt
 ```
 
-### 🧑‍💻 Setting Up Environment Variables
+### 🧑‍💻 Setting Up the Configuration File
 
-The test suite uses environment variables to store sensitive information such as API credentials and endpoints.
+The test suite uses environment variables to store sensitive information such as  endpoints and credentials.
 
 Create a `.env.yaml` file according to the template shown in `env-template.yaml`
 
+The following information is required (M = Mandatory; O = Optional):
+
+  - `oscar_endpoint` (M): The endpoint of the OSCAR cluster (e.g. https://mycluster.oscar.grycap.net) 
+  - `oidc_agent_account` (M): The short account name of your profile in the [oidc-agent](https://github.com/indigo-dc/oidc-agent) command-line tool from which OIDC-based access tokens will be obtained to authenticate against the OSCAR API.
+  
+  
 ### 🧪 Running Tests
 
 To execute the test cases, simply run the following command:
