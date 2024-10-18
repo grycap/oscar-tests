@@ -1,0 +1,40 @@
+{
+    "name": "robot-test-cowsay",
+    "cluster_id": "oscar-ai4eosc-oidc",
+    "memory": "1Gi",
+    "cpu": "1",
+    "total_memory": "",
+    "total_cpu": "",
+    "synchronous": {
+        "min_scale": 0,
+        "max_scale": 0
+    },
+    "delegation": "",
+    "rescheduler_threshold": 0,
+    "log_level": "CRITICAL",
+    "image": "ghcr.io/grycap/cowsay",
+    "alpine": false,
+    "input": [],
+    "output": [],
+    "script": "#!/bin/sh\n\nif [ \"$INPUT_TYPE\" = \"json\" ]\nthen\n    jq '.message' \"$INPUT_FILE_PATH\" -r | /usr/games/cowsay\nelse\n    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\nfi\n",
+    "environment": {
+        "Variables": {
+            "INPUT_TYPE": "json"
+        }
+    },    
+    "vo": "vo.ai4eosc.eu",
+    "labels": {
+        "applicationId": "robot-test-cowsay",
+        "oscar_service": "robot-test-cowsay",
+        "queue": "root.oscar-queue.robot-test-cowsay",
+        "vo": "vo.ai4eosc.eu"
+    },
+    "clusters": {
+        "oscar-ai4eosc-oidc": {
+            "endpoint": "https://inference.cloud.ai4eosc.eu",
+            "auth_user": "",
+            "auth_password": "",
+            "ssl_verify": true
+        }
+    }
+}
