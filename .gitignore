@@ -1,6 +1,8 @@
 .env-*
 .results
+.DS_Store
 *.txt
 *.xml
 *.html
 browser
+True
