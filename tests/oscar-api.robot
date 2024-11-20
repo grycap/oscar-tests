@@ -32,7 +32,7 @@ ${ACCESS_TOKEN}=      %{access_token}
 Get Access Token
     [Documentation]    Retrieve OIDC token using oidc-agent and set as environment variable
     Skip    This test is disabled
-    ${result}=    Run Process    oidc-token    ${OIDC_AGENT_ACCOUNT}    stdout=True    stderr=True
+    ${result}=    Run Process    oidc-token    ${OIDC_AGENT_ACCOUNT} 
     ${oidc_token}=    Set Variable    ${result.stdout}     
     Log    OIDC Token: ${oidc_token}
     Set Environment Variable    ACCESS_TOKEN    ${oidc_token}
@@ -73,3 +73,5 @@ OSCAR Delete Service
     #Skip    This test is disabled
     [Documentation]  OSCAR delete the created service
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay   headers=${headers}
+
+

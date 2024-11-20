@@ -8,7 +8,7 @@ Library    OperatingSystem
 *** Variables *** 
 
 ${OSCAR_ENDPOINT}=        %{oscar_endpoint}
-${OIDC_AGENT_ACCOUNT}=    %{oidc_agent_account} 
+${OIDC_AGENT_ACCOUNT}=    %{oidc_agent_account}
 ${headers}
 
 #${ACCESS_TOKEN}=      %{access_token}
@@ -19,7 +19,7 @@ ${headers}
 Get Access Token
     [Documentation]    Retrieve OIDC token using oidc-agent and set as environment variable
     #Skip    This test is disabled
-    ${result}=    Run Process    oidc-token    ${OIDC_AGENT_ACCOUNT}    stdout=True    stderr=True
+    ${result}=    Run Process    oidc-token    ${OIDC_AGENT_ACCOUNT}  
     ${oidc_token}=    Set Variable    ${result.stdout}     
     Log    OIDC Token: ${oidc_token}
     Set Environment Variable    ACCESS_TOKEN    ${oidc_token}
@@ -27,6 +27,19 @@ Get Access Token
     
 OSCAR CLI installed
     [Documentation]    Check that OSCAR CLI is installed
-    ${result}=    Run Process    oscar-cli        stdout=True    stderr=True
+    ${result}=    Run Process    oscar-cli   
     Log    ${result}
     Should Contain    ${result.stdout}    apply
+
+
+OSCAR CLI add cluster
+    [Documentation]    Check that OSCAR CLI add cluster works
+    ${result}=    Run Process    oscar-cli    add    robot-oscar-cluster ${OSCAR_ENDPOINT} --oidc-account-name  ${OIDC_AGENT_ACCOUNT} --config /Users/gmolto/Documents/GitHub/grycap/oscar-tests/robot-oscar-cluster-config.yaml 
+    Log    ${result}
+
+OSCAR CLI list services 
+    [Documentation]    Check that OSCAR CLI returns a list of services
+    ${result}=    Run Process    oscar-cli   
+
+
+
