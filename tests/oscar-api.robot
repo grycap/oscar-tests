@@ -1,75 +1,120 @@
 *** Comments *** 
 
 Tests for the OSCAR Manager's API of a deployed OSCAR cluster 
-This test uses an OIDC token specified in the .env-* yaml file.
-It can also obtain the OIDC token via oidc-agent, but it is disabled.
+
 
 *** Settings ***
 
 Library    BuiltIn
 Library    RequestsLibrary
-Library    Process
 Library    OperatingSystem
 Library    Collections
 Library    DateTime
-Resource   jwt.robot
+Resource    ../resources/resources.robot
 
-*** Variables *** 
 
-${OSCAR_ENDPOINT}=        %{oscar_endpoint}
-${OIDC_AGENT_ACCOUNT}=    %{oidc_agent_account} 
+*** Keywords ***
 
-# If you want to get the token from oidc-agent, 
-# uncomment the line below and comment out the two lines after that
-#${headers}
+Get Key From Dictionary
+    [Documentation]  Get the key from a dictionary
+    [Arguments]    ${dict}
+    ${keys}=    Get Dictionary Keys    ${dict}
+    Set Suite Variable    ${job_name}    ${keys}[0]
+    RETURN    ${job_name}
 
-${ACCESS_TOKEN}=      %{access_token}
-&{headers}=     Authorization=Bearer ${ACCESS_TOKEN}   Content-Type=text/json    Accept=application/json
 
 *** Test Cases ***
-
-
-Get Access Token
-    [Documentation]    Retrieve OIDC token using oidc-agent and set as environment variable
-    Skip    This test is disabled
-    ${result}=    Run Process    oidc-token    ${OIDC_AGENT_ACCOUNT}    stdout=True    stderr=True
-    ${oidc_token}=    Set Variable    ${result.stdout}     
-    Log    OIDC Token: ${oidc_token}
-    Set Environment Variable    ACCESS_TOKEN    ${oidc_token}
-    Set Suite Variable    &{headers}    Authorization=Bearer ${oidc_token}   Content-Type=text/json    Accept=application/json
     
-Check Valid Access Token
-    Check JWT Expiration
-
-
+Check Valid OIDC Token
+    ${token}=    Get Access Token
+    Check JWT Expiration    ${token}
 
 OSCAR API health
-    [Documentation]    OSCAR API health check should return status code 200 and body "Ok"
+    [Documentation]    Check API health
     ${response}=    GET  ${OSCAR_ENDPOINT}/health  expected_status=200
+    Log    ${response.content}
     Should Be Equal As Strings    ${response.content}    Ok
 
+OSCAR system config
+    [Documentation]  Get system config
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/config   expected_status=200    headers=${headers}
+    Log    ${response.content}
+    Should Contain    ${response.content}    "name":"oscar"
 
-OSCAR List services 
-   [Documentation]  OSCAR should retrieve a list of services 
-   ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services    headers=${headers}
+OSCAR system info
+    [Documentation]  Get system info
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/info   expected_status=200    headers=${headers}
+    Log    ${response.content}
+    Should Contain    ${response.content}    "version":
 
+OSCAR create service
+    [Documentation]  Create a new service
+    ${body}=        Get File    ./data/00-cowsay.json
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}    headers=${headers}
+    Sleep    20s
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    201
 
-OSCAR Create service
-    [Documentation]  OSCAR create a new service
-    ${body}=    Get File    ./resources/00-cowsay.json
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${headers}
-    Sleep    10s
+OSCAR list services 
+    [Documentation]  Retrieve a list of services 
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services    expected_status=200    headers=${headers}
+    Log    ${response.content}
+    Should Contain    ${response.content}    "oscar_service":"robot-test-cowsay"
 
+OSCAR read service
+    [Documentation]  Read a service
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay    expected_status=200    headers=${headers}
+    Log    ${response.content}
+    Should Contain    ${response.content}    "name":"robot-test-cowsay"
 
-OSCAR Invoke service
-    [Documentation]  OSCAR invoke the service
-    ${body}=    Get File    ./resources/00-cowsay-invoke-body.json
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/robot-test-cowsay    data=${body}    headers=${headers}
+OSCAR invoke synchronous service
+    [Documentation]  Invoke the synchronous service
+    ${body}=        Get File    ./data/00-cowsay-invoke-body.json
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/robot-test-cowsay    expected_status=200    data=${body}    headers=${headers}
     Log    ${response.content}
     Should Contain    ${response.content}    Hello
 
+OSCAR update service
+    [Documentation]  Update a service
+    ${body}=        Get File    ./data/00-cowsay.json
+    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    expected_status=204    data=${body}    headers=${headers}
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    204
 
-OSCAR Delete Service
-    #Skip    This test is disabled
-    [Documentation]  OSCAR delete the created service
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay   headers=${headers}
+OSCAR invoke asynchronous service
+    [Documentation]  Invoke the asynchronous service
+    ${body}=        Get File    ./data/00-cowsay-invoke-body.json
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/job/robot-test-cowsay    expected_status=201    data=${body}    headers=${headers}
+    Should Be Equal As Strings    ${response.status_code}    201
+
+OSCAR list jobs
+    [Documentation]  List all jobs from a service with their status
+    ${list_jobs}=        GET    url=${OSCAR_ENDPOINT}/system/logs/robot-test-cowsay    expected_status=200        headers=${headers}
+    Sleep    15s
+    ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
+    ${job_name}=    Get Key From Dictionary    ${jobs_dict}
+    Should Contain    ${job_name}    robot-test-cowsay-
+
+OSCAR get logs
+    [Documentation]  Get the logs from a job
+    ${get_logs}=        GET    url=${OSCAR_ENDPOINT}/system/logs/robot-test-cowsay/${job_name}   expected_status=200    headers=${headers}
+    Log    ${get_logs.content}
+    Should Contain    ${get_logs.content}    Hello
+
+OSCAR delete job
+    [Documentation]  Delete a job from a service
+    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/logs/robot-test-cowsay/${job_name}    expected_status=204    headers=${headers}
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    204
+
+OSCAR delete jobs
+    [Documentation]  Delete jobs from a service
+    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/logs/robot-test-cowsay    expected_status=204    headers=${headers}
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    204
+
+OSCAR delete service
+    [Documentation]  Delete the created service
+    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay   expected_status=204    headers=${headers}
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    204
