@@ -1,21 +1,14 @@
 *** Comments *** 
 
-Tests for the OSCAR CLI against a deployed OSCAR cluster
+Tests for the OSCAR CLI against a deployed OSCAR cluster.
 
 
 *** Settings ***
 
-Library    Process
-Library    OperatingSystem
 Resource    ../resources/resources.robot
 
 
 *** Keywords ***
-
-Remove files from tests and verify
-    [Arguments]    ${file}
-    Remove File    ${file}
-    File Should Not Exist    ${file}
 
 Get job name from logs
     ${job_name}=    Run Process    oscar-cli    service    logs    list    robot-test-cowsay    |    awk    'NR    \=\=    2    {print    $1}'    shell=True    stdout=True    stderr=True

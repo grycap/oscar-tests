@@ -1,14 +1,21 @@
+*** Comments *** 
+
+General template for common variables and keywords used through the testing suite.
+
+
 *** Settings ***
 
 Library    Collections
 Library    DateTime
 Library    Process
+Library    OperatingSystem
 
 
 *** Variables *** 
 
 ${OSCAR_ENDPOINT}=        %{oscar_endpoint}
 ${OIDC_AGENT_ACCOUNT}=    %{oidc_agent_account} 
+${OSCAR_METRICS}=        %{oscar_metrics}
 
 ${headers}
 
@@ -39,3 +46,8 @@ Check JWT Expiration
     ${current_time}=    Get Current Date    result_format=epoch
     Log    Current Time: ${current_time}
     Should Be True    ${expiry_time} > ${current_time}    Token is expired
+
+Remove files from tests and verify
+    [Arguments]    ${file}
+    Remove File    ${file}
+    File Should Not Exist    ${file}

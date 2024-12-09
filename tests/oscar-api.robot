@@ -1,15 +1,11 @@
 *** Comments *** 
 
-Tests for the OSCAR Manager's API of a deployed OSCAR cluster 
+Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
 
 
 *** Settings ***
 
-Library    BuiltIn
 Library    RequestsLibrary
-Library    OperatingSystem
-Library    Collections
-Library    DateTime
 Resource    ../resources/resources.robot
 
 
@@ -51,7 +47,7 @@ OSCAR create service
     [Documentation]  Create a new service
     ${body}=        Get File    ./data/00-cowsay.json
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}    headers=${headers}
-    Sleep    20s
+    Sleep    30s    # Maybe needs more time to create the service
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -118,3 +114,7 @@ OSCAR delete service
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay   expected_status=204    headers=${headers}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
+
+Remove files from tests
+    [Documentation]    Remove junk files created during the tests
+    Remove files from tests and verify    True
