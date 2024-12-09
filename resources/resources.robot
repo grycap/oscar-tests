@@ -9,7 +9,6 @@ Library    Process
 
 ${OSCAR_ENDPOINT}=        %{oscar_endpoint}
 ${OIDC_AGENT_ACCOUNT}=    %{oidc_agent_account} 
-${OSCAR_METRICS}=        %{oscar_metrics}
 
 ${headers}
 
