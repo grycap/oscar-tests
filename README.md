@@ -28,8 +28,9 @@ The following information is required (M = Mandatory; O = Optional):
 
   - `OSCAR_ENDPOINT` (M): The endpoint of the OSCAR cluster (e.g. https://mycluster.oscar.grycap.net) 
   - `OIDC_AGENT_ACCOUNT` (M): The short account name of your profile in the [oidc-agent](https://github.com/indigo-dc/oidc-agent) command-line tool from which OIDC-based access tokens will be obtained to authenticate against the OSCAR API.
-  - `OSCAR_METRICS` (M): The endpoint of the OSCAR metrics endpoint.
+  - `OSCAR_METRICS` (M): The endpoint of the OSCAR metrics.
   - `REFRESH_TOKEN` (O): The OIDC token used to automate the execution of the test suite. In order to get a Refresh Token, you can head to the [Check-in Token Portal](https://aai.egi.eu/token/), click **Authorise** and then **Create Refresh Token** button to generate a new token.
+  - `OSCAR_DASHBOARD` (O): The endpoint of the OSCAR UI (dashboard).
 
 
 ### 🧪 Running Tests
