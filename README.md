@@ -10,6 +10,7 @@ Before running the tests, ensure you have the following tools installed:
 
 - Python 3.8+
 - Robot Framework
+- oidc-agent
 
 To install the required dependencies:
 
@@ -33,8 +34,14 @@ The following information is required (M = Mandatory; O = Optional):
 
 ### 🧪 Running Tests
 
-To execute the test cases, simply run the following command:
+To execute the test cases, simply run the following commands:
 
+Set the OIDC token to be used by the Robot Framework tests.
+```
+eval `oidc-agent-service use`
+```
+
+Run the tests:
 ```
 robot -V variables/.env-template.yaml -d output tests
 ```

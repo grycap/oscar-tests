@@ -1,4 +1,4 @@
-.env-*
+variables/.env-*
 .results
 .DS_Store
 *.txt
