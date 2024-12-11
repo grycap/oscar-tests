@@ -37,7 +37,7 @@ The following information is required (M = Mandatory; O = Optional):
 
 To execute the test cases, simply run the following commands:
 
-Set the OIDC token to be used by the Robot Framework tests.
+Set the OIDC Agent account to be used by the Robot Framework tests.
 ```
 eval `oidc-agent-service use`
 ```
