@@ -1,0 +1,2 @@
+robotframework>=7.1.1
+oidc-agent>=5.2.3
