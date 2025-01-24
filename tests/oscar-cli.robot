@@ -8,8 +8,8 @@ Suite Teardown    Remove Files From Tests And Verify    True    00-cowsay-invoke
 
 
 *** Variables ***
-${OIDC_SETUP}    eval `oidc-agent-service use` && OIDC_ENCRYPTION_PW\=${OIDC_AGENT_PASSWORD} oidc-add ${OIDC_AGENT_ACCOUNT} --pw-env
-${OIDC_SERVICE_USE}    eval `oidc-agent-service use` > /dev/null &&
+${OIDC_SETUP}    oidc-agent --json && eval `oidc-agent-service use` && OIDC_ENCRYPTION_PW\=${OIDC_AGENT_PASSWORD} oidc-add ${OIDC_AGENT_ACCOUNT} --pw-env
+${ENVIRONMENT_VARIABLES}    export OIDC_SOCK\=/tmp/oidc-agent-service-0/oidc-agent.sock && export OIDCD_PID_FILE\=/tmp/oidc-agent-service-0/oidc-agent.pid &&
 
 
 *** Test Cases ***
@@ -136,12 +136,11 @@ OSCAR CLI Cluster Remove
 
 *** Keywords ***
 Set OIDC Agent
-    ${result}=    Run Process    ${OIDC_SETUP}   shell=True    stdout=True    stderr=True
-    RETURN    ${result}
+    ${result}=    Run Process    ${OIDC_SETUP}    shell=True    stdout=True    stderr=True
     
 Run OIDC And Command
     [Arguments]    ${command}
-    ${result}=    Run Process    ${OIDC_SERVICE_USE} ${command}    shell=True    stdout=True    stderr=True 
+    ${result}=    Run Process    ${ENVIRONMENT_VARIABLES} ${command}    shell=True    stdout=True    stderr=True 
     RETURN    ${result}
 
 Get Job Name From Logs
