@@ -10,8 +10,8 @@ Library    JSONLibrary
 
 *** Variables ***
 ${OSCAR_ENDPOINT}=    %{OSCAR_ENDPOINT}
-${TOKEN_URL}=         %{TOKEN_URL}
 ${REFRESH_TOKEN}=     %{REFRESH_TOKEN}
+${TOKEN_URL}=         https://aai.egi.eu/auth/realms/egi/protocol/openid-connect/token
 ${CLIENT_ID}=         token-portal
 ${SCOPE}=             openid%20email%20profile%20voperson_id%20eduperson_entitlement
 
