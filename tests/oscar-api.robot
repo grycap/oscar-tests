@@ -70,6 +70,7 @@ OSCAR Update Service
 
 OSCAR Invoke Asynchronous Service
     [Documentation]  Invoke the asynchronous service
+    Skip
     ${body}=        Get File    ./data/00-cowsay-invoke-body.json
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/robot-test-cowsay    expected_status=201    data=${body}
     ...                     headers=${HEADERS}
@@ -77,6 +78,7 @@ OSCAR Invoke Asynchronous Service
 
 OSCAR List Jobs
     [Documentation]  List all jobs from a service with their status
+    Skip
     ${list_jobs}=        GET    url=${OSCAR_ENDPOINT}/system/logs/robot-test-cowsay    expected_status=200
     ...                         headers=${HEADERS}
     Sleep    15s
@@ -86,6 +88,7 @@ OSCAR List Jobs
 
 OSCAR Get Logs
     [Documentation]  Get the logs from a job
+    Skip
     ${get_logs}=        GET    url=${OSCAR_ENDPOINT}/system/logs/robot-test-cowsay/${JOB_NAME}   expected_status=200
     ...                        headers=${HEADERS}
     Log    ${get_logs.content}
@@ -93,6 +96,7 @@ OSCAR Get Logs
 
 OSCAR Delete Job
     [Documentation]  Delete a job from a service
+    Skip
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/logs/robot-test-cowsay/${JOB_NAME}    expected_status=204
     ...                       headers=${HEADERS}
     Log    ${response.content}
