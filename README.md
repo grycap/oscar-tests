@@ -24,38 +24,35 @@ The test suite uses environment variables to store sensitive information such as
 
 Create a `.env.yaml` file according to the template shown in `env-template.yaml`
 
-The following information is required (M = Mandatory; O = Optional):
+The following information is required:
 
-  - `OSCAR_ENDPOINT` (M): The endpoint of the OSCAR cluster (e.g. https://mycluster.oscar.grycap.net) 
-  - `OIDC_AGENT_ACCOUNT` (M): The short account name of your profile in the [oidc-agent](https://github.com/indigo-dc/oidc-agent) command-line tool from which OIDC-based access tokens will be obtained to authenticate against the OSCAR API.
-  - `OSCAR_METRICS` (M): The endpoint of the OSCAR metrics.
-  - `REFRESH_TOKEN` (O): The OIDC token used to automate the execution of the test suite. In order to get a Refresh Token, you can head to the [Check-in Token Portal](https://aai.egi.eu/token/), click **Authorise** and then **Create Refresh Token** button to generate a new token.
-  - `OSCAR_DASHBOARD` (O): The endpoint of the OSCAR UI (dashboard).
+  - `OSCAR_ENDPOINT`: The endpoint of the OSCAR cluster (e.g. https://mycluster.oscar.grycap.net) 
+  - `OSCAR_METRICS`: The endpoint of the OSCAR metrics.
+  - `OSCAR_DASHBOARD`: The endpoint of the OSCAR UI (dashboard).
+  - `REFRESH_TOKEN`: The OIDC token used to automate the execution of the test suite. In order to get a Refresh Token, you can head to the [Check-in Token Portal](https://aai.egi.eu/token/), click **Authorise** and then **Create Refresh Token** button to generate a new token.
+  - `OIDC_AGENT_ACCOUNT`: The short account name of your profile in the [oidc-agent](https://github.com/indigo-dc/oidc-agent) command-line tool from which OIDC-based access tokens will be obtained to authenticate against the OSCAR endpoints.
+  - `OIDC_AGENT_PASSWORD`: The password of your [oidc-agent](https://github.com/indigo-dc/oidc-agent) account.
+
 
 
 ### 🧪 Running Tests
 
-To execute the test cases, simply run the following commands:
-
-Set the OIDC Agent account to be used by the Robot Framework tests.
-```
-eval `oidc-agent-service use`
-```
+To execute the test cases, simply run the following command:
 
 Run the tests:
 ```
-robot -V variables/.env-template.yaml -d output tests
+robot -V variables/.env-template.yaml -d robot_results/ tests/
 ```
 
-- `.env.yaml`: Your YAML file containing the necessary environment variables.
--  `output`: The directory where the output results of the tests will be stored.
+- `.env-template.yaml`: Your YAML file containing the necessary environment variables.
+-  `robot_results`: The directory where the output results of the tests will be stored.
 -  `tests`: The directory containing the test cases.
 
 
 This executes all the defined tests. You can also execute a single test suite with:
 
 ```
-robot -V variables/.env-ai4eosc.yaml -d output tests/oscar-api.robot
+robot -V variables/.env-template.yaml -d robot_results/ tests/oscar-api.robot
 ```
 
 ## 📊 Test Reports and Logs
