@@ -10,7 +10,6 @@ Before running the tests, ensure you have the following tools installed:
 
 - Python 3.8+
 - Robot Framework
-- oidc-agent
 
 To install the required dependencies:
 
@@ -30,8 +29,6 @@ The following information is required:
   - `OSCAR_METRICS`: The endpoint of the OSCAR metrics.
   - `OSCAR_DASHBOARD`: The endpoint of the OSCAR UI (dashboard).
   - `REFRESH_TOKEN`: The OIDC token used to automate the execution of the test suite. In order to get a Refresh Token, you can head to the [Check-in Token Portal](https://aai.egi.eu/token/), click **Authorise** and then **Create Refresh Token** button to generate a new token.
-  - `OIDC_AGENT_ACCOUNT`: The short account name of your profile in the [oidc-agent](https://github.com/indigo-dc/oidc-agent) command-line tool from which OIDC-based access tokens will be obtained to authenticate against the OSCAR endpoints.
-  - `OIDC_AGENT_PASSWORD`: The password of your [oidc-agent](https://github.com/indigo-dc/oidc-agent) account.
 
 
 
@@ -41,10 +38,10 @@ To execute the test cases, simply run the following command:
 
 Run the tests:
 ```
-robot -V variables/.env-template.yaml -d robot_results/ tests/
+robot -V variables/.env.yaml -d robot_results/ tests/
 ```
 
-- `.env-template.yaml`: Your YAML file containing the necessary environment variables.
+- `.env.yaml`: Your YAML file containing the necessary environment variables.
 -  `robot_results`: The directory where the output results of the tests will be stored.
 -  `tests`: The directory containing the test cases.
 
@@ -52,7 +49,7 @@ robot -V variables/.env-template.yaml -d robot_results/ tests/
 This executes all the defined tests. You can also execute a single test suite with:
 
 ```
-robot -V variables/.env-template.yaml -d robot_results/ tests/oscar-api.robot
+robot -V variables/.env.yaml -d robot_results/ tests/oscar-api.robot
 ```
 
 ## 📊 Test Reports and Logs
