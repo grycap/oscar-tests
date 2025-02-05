@@ -21,7 +21,7 @@ Get Access Token
     [Documentation]    Retrieve OIDC token using a refresh token
     ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}'    -d
     ...    'grant_type\=refresh_token&refresh_token\=${REFRESH_TOKEN}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
-    ...    |    python    -m    json.tool;    shell=True    stdout=True    stderr=True
+    ...    shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
     ${access_token}=    Get Value From Json    ${json_output}    $.access_token
     VAR    ${access_token}    ${access_token}[0]
