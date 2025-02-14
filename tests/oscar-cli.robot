@@ -23,7 +23,7 @@ OSCAR CLI Installed
 OSCAR CLI Cluster Add
     [Documentation]    Check that OSCAR CLI adds a cluster
     ${result}=    Run Process    oscar-cli    cluster    add    robot-oscar-cluster    ${OSCAR_ENDPOINT}
-    ...    --oidc-token  ${TOKEN}    stdout=True    stderr=True
+    ...    --oidc-refresh-token  ${REFRESH_TOKEN}    --oidc-request-url    ${TOKEN_URL}    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
     Should Contain    ${result.stdout}    successfully
