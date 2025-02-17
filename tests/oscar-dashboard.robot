@@ -51,7 +51,7 @@ Log Out
 *** Keywords ***
 Prepare Environment
     [Documentation]    Opens the browser and navigates to the dashboard
-    New Browser    ${BROWSER}    headless=False
+    New Browser    ${BROWSER}    headless=True
     New Page    url= ${OSCAR_DASHBOARD}
 
 Navigate To Services Page
