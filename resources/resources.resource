@@ -12,7 +12,8 @@ Library          yaml
 *** Variables ***
 ${OSCAR_ENDPOINT}=    ${OSCAR_ENDPOINT}
 ${REFRESH_TOKEN}=     ${REFRESH_TOKEN}
-${TOKEN_URL}=         https://aai.egi.eu/auth/realms/egi/protocol/openid-connect/token
+${TOKEN_URL}=         ${EGI_AAI_URL}
+${TOKEN_ENDPOINT}=    /auth/realms/egi/protocol/openid-connect/token
 ${CLIENT_ID}=         token-portal
 ${SCOPE}=             openid%20email%20profile%20voperson_id%20eduperson_entitlement
 ${VO}=                ${EGI_VO}
@@ -24,7 +25,7 @@ ${INVOKE_FILE}=       00-cowsay-invoke-body.json
 *** Keywords ***
 Get Access Token
     [Documentation]    Retrieve OIDC token using a refresh token
-    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}'    -d
+    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}${TOKEN_ENDPOINT}'    -d
     ...    'grant_type\=refresh_token&refresh_token\=${REFRESH_TOKEN}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
     ...    shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
