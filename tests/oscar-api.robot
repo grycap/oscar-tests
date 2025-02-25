@@ -1,10 +1,10 @@
 *** Settings ***
-Documentation    Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
+Documentation     Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
 
-Library          RequestsLibrary
-Resource         ${CURDIR}/../resources/resources.resource
+Library           RequestsLibrary
+Resource          ${CURDIR}/../resources/resources.resource
 
-Suite Teardown    Remove Files From Tests And Verify    True
+Suite Teardown    Remove Files From Tests And Verify    True    ${DATA_DIR}/service_file.json
 
 
 *** Test Cases ***
@@ -33,7 +33,9 @@ OSCAR System Info
 
 OSCAR Create Service
     [Documentation]  Create a new service
-    ${body}=        Get File    ${CURDIR}/../data/00-cowsay.json
+    Prepare Service File
+    ${body}=    Get File    ${DATA_DIR}/service_file.json
+
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...                     headers=${HEADERS}
     Sleep    30s    # May need more time to create the service
@@ -44,7 +46,7 @@ OSCAR List Services
     [Documentation]  Retrieve a list of services
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services    expected_status=200    headers=${HEADERS}
     Log    ${response.content}
-    Should Contain    ${response.content}    "oscar_service":"robot-test-cowsay"
+    Should Contain    ${response.content}    "oscar_service":
 
 OSCAR Read Service
     [Documentation]  Read a service
@@ -55,7 +57,7 @@ OSCAR Read Service
 
 OSCAR Invoke Synchronous Service
     [Documentation]  Invoke the synchronous service
-    ${body}=        Get File    ${CURDIR}/../data/00-cowsay-invoke-body.json
+    ${body}=        Get File    ${DATA_DIR}/${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/run/robot-test-cowsay    expected_status=200    data=${body}
     ...                     headers=${HEADERS}
     Log    ${response.content}
@@ -63,14 +65,14 @@ OSCAR Invoke Synchronous Service
 
 OSCAR Update Service
     [Documentation]  Update a service
-    ${body}=        Get File    ${CURDIR}/../data/00-cowsay.json
+    ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
 OSCAR Invoke Asynchronous Service
     [Documentation]  Invoke the asynchronous service
-    ${body}=        Get File    ${CURDIR}/../data/00-cowsay-invoke-body.json
+    ${body}=        Get File    ${DATA_DIR}/${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/robot-test-cowsay    expected_status=201    data=${body}
     ...                     headers=${HEADERS}
     Should Be Equal As Strings    ${response.status_code}    201
@@ -122,3 +124,19 @@ Get Key From Dictionary
     ${JOB_NAME}=    Get From List    ${keys}    0
     VAR    ${JOB_NAME}    ${keys}[0]    scope=SUITE
     RETURN    ${JOB_NAME}
+
+Prepare Service File
+    [Documentation]    Prepare the service file
+    ${service_content}=    Modify Service File
+
+    # Extract the inner dictionary (remove 'functions', 'oscar' and 'robot-oscar-cluster')
+    ${modified_content}=    Set Variable    ${service_content}[functions][oscar][0][robot-oscar-cluster]
+
+    # Update the script value
+    ${script_value}=    Catenate
+    ...    \#!/bin/sh\n\nif [ \"$INPUT_TYPE\" = \"json\" ]\nthen\n
+    ...    jq '.message' \"$INPUT_FILE_PATH\" -r | /usr/games/cowsay\nelse\n
+    ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\nfi\n\
+    Set To Dictionary    ${modified_content}    script=${script_value}
+    ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
+    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}

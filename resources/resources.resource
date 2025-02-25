@@ -1,19 +1,24 @@
 *** Settings ***
 Documentation    General template for common variables and keywords used through the testing suite.
 
-Library    Collections
-Library    DateTime
-Library    OperatingSystem
-Library    Process
-Library    JSONLibrary
+Library          Collections
+Library          DateTime
+Library          OperatingSystem
+Library          Process
+Library          JSONLibrary
+Library          yaml
 
 
 *** Variables ***
-${OSCAR_ENDPOINT}=    %{OSCAR_ENDPOINT}
-${REFRESH_TOKEN}=     %{REFRESH_TOKEN}
+${OSCAR_ENDPOINT}=    ${OSCAR_ENDPOINT}
+${REFRESH_TOKEN}=     ${REFRESH_TOKEN}
 ${TOKEN_URL}=         https://aai.egi.eu/auth/realms/egi/protocol/openid-connect/token
 ${CLIENT_ID}=         token-portal
 ${SCOPE}=             openid%20email%20profile%20voperson_id%20eduperson_entitlement
+${VO}=                ${EGI_VO}
+${DATA_DIR}=          ${CURDIR}/../data
+${SERVICE_FILE}=      ${DATA_DIR}/00-cowsay.yaml
+${INVOKE_FILE}=       00-cowsay-invoke-body.json
 
 
 *** Keywords ***
@@ -47,6 +52,13 @@ Check JWT Expiration
     ${current_time}=    Get Current Date    result_format=epoch
     Log    Current Time: ${current_time}
     Should Be True    ${expiry_time} > ${current_time}    Token is expired
+
+Modify Service File
+    [Documentation]    Modify the service file with the VO
+    ${yaml_content}=    Get File    ${SERVICE_FILE}
+    ${loaded_content}=  yaml.Safe Load  ${yaml_content}
+    Set To Dictionary    ${loaded_content}[functions][oscar][0][robot-oscar-cluster]    vo=${VO}
+    RETURN    ${loaded_content}
 
 Remove Files From Tests And Verify
     [Documentation]    Removes junk files generared in the tests
