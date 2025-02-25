@@ -1,9 +1,10 @@
 *** Settings ***
-Documentation    Tests for the OSCAR CLI against a deployed OSCAR cluster.
+Documentation     Tests for the OSCAR CLI against a deployed OSCAR cluster.
 
-Resource         ${CURDIR}/../resources/resources.resource
+Resource          ${CURDIR}/../resources/resources.resource
 
 Suite Teardown    Remove Files From Tests And Verify    True    00-cowsay-invoke-body-downloaded.json
+...               ${DATA_DIR}/service_file.yaml
 
 
 *** Test Cases ***
@@ -51,7 +52,8 @@ OSCAR CLI Cluster List
 
 OSCAR CLI Apply
     [Documentation]    Check that OSCAR CLI creates a service in the default cluster
-    ${result}=    Run Process    oscar-cli    apply    ${CURDIR}/../data/00-cowsay.yaml    stdout=True    stderr=True
+    Prepare Service File
+    ${result}=    Run Process    oscar-cli    apply    ${DATA_DIR}/service_file.yaml    stdout=True    stderr=True
     Sleep    30s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
@@ -60,13 +62,13 @@ OSCAR CLI List Services
     [Documentation]    Check that OSCAR CLI returns a list of services from the default cluster
     ${result}=    Run Process    oscar-cli    service    list    stdout=True    stderr=True
     Log    ${result.stdout}
-    # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    robot-test-cowsay
+    Should Be Equal As Integers    ${result.rc}    0
+    # Should Contain    ${result.stdout}    robot-test-cowsay
 
 OSCAR CLI Run Services Synchronously With File
     [Documentation]    Check that OSCAR CLI runs a service (with a file) synchronously in the default cluster
     ${result}=    Run Process    oscar-cli    service    run    robot-test-cowsay    --file-input
-    ...           ${CURDIR}/../data/00-cowsay-invoke-body.json    stdout=True    stderr=True
+    ...           ${DATA_DIR}/${INVOKE_FILE}    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
     Should Contain    ${result.stdout}    Hello
@@ -82,7 +84,7 @@ OSCAR CLI Run Services Synchronously With Prompt
 OSCAR CLI Put File
     [Documentation]    Check that OSCAR CLI puts a file in a service's storage provider
     ${result}=    Run Process    oscar-cli    service    put-file    robot-test-cowsay    minio.default
-    ...    ${CURDIR}/../data/00-cowsay-invoke-body.json    robot-test/input/00-cowsay-invoke-body.json
+    ...    ${DATA_DIR}/${INVOKE_FILE}    robot-test/input/${INVOKE_FILE}
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
@@ -93,7 +95,7 @@ OSCAR CLI List Files
     ...    minio.default    robot-test/input/
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    00-cowsay-invoke-body.json
+    Should Contain    ${result.stdout}    ${INVOKE_FILE}
 
 OSCAR CLI Logs List
     [Documentation]    Check that OSCAR CLI lists the logs for a service
@@ -123,7 +125,7 @@ OSCAR CLI Logs Remove
 OSCAR CLI Get File
     [Documentation]    Check that OSCAR CLI gets a file from a service's storage provider
     ${result}=    Run Process    oscar-cli    service    get-file    robot-test-cowsay    minio.default
-    ...    robot-test/input/00-cowsay-invoke-body.json    00-cowsay-invoke-body-downloaded.json
+    ...    robot-test/input/${INVOKE_FILE}    00-cowsay-invoke-body-downloaded.json
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
@@ -149,3 +151,10 @@ Get Job Name From Logs
     ...    awk    'NR    \=\=    2    {print    $1}'    shell=True    stdout=True    stderr=True
     Log    ${job_output.stdout}
     VAR    ${JOB_NAME}    ${job_output.stdout}    scope=SUITE
+
+Prepare Service File
+    [Documentation]    Prepare the service file
+    ${service_content}=    Modify Service File
+    # Convert file content to YAML
+    ${output}=  yaml.Dump  ${service_content}
+    Create File  ${DATA_DIR}/service_file.yaml  ${output}

@@ -2,15 +2,10 @@ functions:
   oscar:
   - robot-oscar-cluster:
       name: robot-test-cowsay
-      vo: vo.ai4eosc.eu
-      cpu: '1.0'
+      vo: <VO>
       memory: 1Gi
       image: ghcr.io/grycap/cowsay
       script: data/00-cowsay-script.sh
-      log_level: CRITICAL   # To avoid supervisor logs in response
-      environment:
-        Variables:
-          INPUT_TYPE: json  # Comment to set input string encoded in base64
       input:
       - storage_provider: minio
         path: robot-test/input

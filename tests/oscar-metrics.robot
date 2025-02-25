@@ -6,7 +6,7 @@ Library          RequestsLibrary
 
 
 *** Variables ***
-${OSCAR_METRICS}=         %{OSCAR_METRICS}
+${OSCAR_METRICS}=         ${OSCAR_METRICS}
 
 
 *** Test Cases ***
