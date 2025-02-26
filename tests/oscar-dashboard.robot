@@ -51,7 +51,7 @@ Log Out
 *** Keywords ***
 Prepare Environment
     [Documentation]    Opens the browser and navigates to the dashboard
-    New Browser    ${BROWSER}    headless=True
+    New Browser    ${BROWSER}    headless=True        timeout=120s
     New Page    url= ${OSCAR_DASHBOARD}
 
 Navigate To Services Page
