@@ -38,7 +38,7 @@ OSCAR Create Service
 
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...                     headers=${HEADERS}
-    Sleep    30s    # May need more time to create the service
+    Sleep    60s    # May need more time to create the service
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 

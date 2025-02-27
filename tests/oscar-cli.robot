@@ -54,7 +54,7 @@ OSCAR CLI Apply
     [Documentation]    Check that OSCAR CLI creates a service in the default cluster
     Prepare Service File
     ${result}=    Run Process    oscar-cli    apply    ${DATA_DIR}/service_file.yaml    stdout=True    stderr=True
-    Sleep    30s
+    Sleep    60s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
