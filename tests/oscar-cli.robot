@@ -133,7 +133,7 @@ OSCAR CLI Get File
 
 OSCAR CLI Services Remove
     [Documentation]    Check that OSCAR CLI removes a service
-    ${result}=    Run Process    oscar-cli    service    remove    robot-test-cowsay    stdout=True    stderr=True
+    ${result}=    Run Process    oscar-cli    service    delete    robot-test-cowsay    stdout=True    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
