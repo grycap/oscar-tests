@@ -6,6 +6,7 @@ functions:
       memory: 1Gi
       image: ghcr.io/grycap/cowsay
       script: data/00-cowsay-script.sh
+      image_prefetch: true
       input:
       - storage_provider: minio
         path: robot-test/input
