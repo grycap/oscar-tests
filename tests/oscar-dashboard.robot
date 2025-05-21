@@ -44,29 +44,124 @@ Create Service With FDL
     Navigate To Services Page
     Click    xpath=//button[normalize-space()='Create service']
     Click    text="FDL"
-    Upload File By Selector    //input[@type='file']    ./invoke_file.yaml
+    Upload File By Selector    //input[@type='file']    ./custom_service_file.yaml
     Click    xpath=//button[@role='tab' and text()='Script']
     Upload File By Selector    //input[@type='file']    ${DATA_DIR}/00-cowsay-script.sh
     Click    text="Create Service"
-    Wait For Elements State    xpath=//li[contains(., 'Service robot-test-cowsay created successfully')]
-    ...    visible    timeout=90s
+    Wait For Elements State
+    ...    xpath=//li[@data-type='success']//div[text()='Service robot-test-cowsay created successfully']
+    ...    visible    timeout=120s
 
-Invoke Service
-    [Documentation]    Invoke the service from inside the created service page
+Invoke Synchronous Service
+    [Documentation]    Invoke the service synchronolously from inside the created service page
     Navigate To Services Page
     Filter Service By Name    robot-test-cowsay
+    Sleep    1s
     Click    xpath=//tbody/tr[td[text()='robot-test-cowsay']]
     Click    text="Invoke"
     Upload File By Selector    //div[@class='space-y-4 w-[800px]']//input[@type='file']    ${DATA_DIR}/${INVOKE_FILE}
     Click    text="Invoke Service"
     Wait For Elements State
-    ...    xpath=//div[contains(@style, 'white-space: pre-wrap') and contains(., 'Hello there from ROBOT')]
+    ...    xpath=//div[contains(text(), 'Hello there from ROBOT')]    visible    timeout=120s
+
+Invoke Asynchronous Service
+    [Documentation]    Invoke the service asynchronously from the bucket page
+    Navigate To Buckets Page
+    Click    xpath=//tbody/tr/td/a[text()='robot-test']
+    Click    xpath=//tbody/tr/td/a[text()='input']
+    # Click    xpath=//tbody/tr/td/a[contains(., 'input')]
+    Click    text="Upload File"
+    Upload File By Selector    //input[@type='file']    ./custom_service_file.yaml
+    Click    text="Upload"
+    Wait For Elements State
+    ...    xpath=//li[@data-type='success']//div[text()='File uploaded successfully']
+
+Create Service With Form
+    [Documentation]    Create a service using the Form option
+    Navigate To Services Page
+    Click    text="Create service"
+    Click    text="Form"
+    Fill Text    id=service-name-input    robot-test-cowsay-form
+    Fill Text    id=docker-image-input    ghcr.io/grycap/cowsay
+    Click    id=vo-select-trigger
+    Wait For Elements State    xpath=//div[@role='option']//span[text()='vo.ai4eosc.eu']
+    ...    visible    timeout=10s
+    Click    xpath=//div[@role='option']//span[text()='vo.ai4eosc.eu']
+    Click    id=log-level-select-trigger
+    Wait For Elements State    xpath=//div[@role='option']//span[text()='CRITICAL']    visible    timeout=10s
+    Click    xpath=//div[@role='option']//span[text()='CRITICAL']
+    Click    id=script-file-input
+    Upload File By Selector    //input[@type='file']    ${DATA_DIR}/00-cowsay-script.sh
+    Click    text="Create"
+    Wait For Elements State
+    ...    xpath=//li[@data-type='success']//div[text()='Service created successfully']
     ...    visible    timeout=60s
+
+# Check Logs
+#     [Documentation]    Checks the logs of a service
+#     Navigate To Services Page
+#     Filter Service By Name    robot-test-cowsay
+#     Click    xpath=//tr[td[normalize-space(text())='robot-test-cowsay']]
+#     Click    text="Logs"
+#     ${current_url}=    Get URL
+#     Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/services/robot-test-cowsay/logs
+#     Click    xpath=//tr[td[starts-with(text(), 'robot-test-')]]//svg[contains(@class, 'lucide-eye')]/ancestor::button
+#     Wait For Elements State    xpath=//div[@role='presentation']/div/span/span[text()='Hello there from ROBOT']
+#     ...    visible    timeout=60s
+
+# Delete Log
+#     [Documentation]    Deletes the logs of a service
+#     Navigate To Services Page
+#     Filter Service By Name    robot-test-cowsay
+#     Click    xpath=//tr[td[normalize-space(text())='robot-test-cowsay']]
+#     Click    text="Logs"
+#     Click    xpath=//tr[td[starts-with(text(), 'robot-test-')]]//svg[contains(@class, 'lucide-eye')]/ancestor::button
+#     Click    xpath=//button[contains(text(), 'Delete selected logs')]
+
+# Create Bucket
+#     [Documentation]    Creates a bucket robot-test-cowsay
+#     Navigate To Buckets Page
+#     Click    text="Create bucket"
+#     Fill Text    id=bucketName    robot-test-cowsay
+#     Click    text="Create"
+
+# Deploy Notebook
+#     [Documentation]    Deploys the notebook in the robot-test bucket
+#     Navigate To Notebooks Page
+#     Click    id=bucket
+#     Click    xpath=//span[text()='juno-test']
+#     # xpath=//span[text()='robot-test-minio']
+#     Click    id=vo
+#     # Click    xpath=//button[@role='combobox'][@id='vo']
+#     # Click    xpath=//div[@data-radix-select-viewport]/div[@role='option' and span[@id='radix-:r1m:'][text()='vo.ai4eosc.eu']]
+#     Wait For Elements State    xpath=//div[contains(@class, 'radix')]//div[contains(., 'vo.ai4eosc.eu')]
+#     ...    visible    timeout=10s
+#     Click    xpath=//div[contains(@class, 'radix')]//div[contains(., 'vo.ai4eosc.eu')]
+#     Click    text="Deploy"
+#     Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Jupyter Notebook instance deployed']
+#     ...    visible    timeout=60s
+
+# Delete Notebook
+#     [Documentation]    Deletes the notebook in the robot-test bucket
+#     Navigate To Notebooks Page
+#     Click    text="Delete"
+#     Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Jupyter Notebook instance deleted']
 
 Delete Service
     [Documentation]    Deletes the service created
     Navigate To Services Page
     Delete Selected Service    robot-test-cowsay
+
+Delete Form Service
+    [Documentation]    Deletes the service created
+    Navigate To Services Page
+    Delete Selected Service    robot-test-cowsay-form
+
+# Delete Bucket
+#     [Documentation]    Deletes the bucket created
+#     Navigate To Buckets Page
+#     Click    xpath=//tr[td//a[text()="robot-test-cowsay"]]/td//button[svg]
+#     Click    text="Delete"
 
 Check Info
     [Documentation]    Checks the info page
@@ -83,7 +178,7 @@ Log Out
 *** Keywords ***
 Prepare Environment
     [Documentation]    Opens the browser and navigates to the dashboard
-    New Browser    ${BROWSER}    headless=True
+    New Browser    ${BROWSER}    headless=False
     New Page    url= ${OSCAR_DASHBOARD}
 
 Navigate To Services Page
@@ -91,6 +186,18 @@ Navigate To Services Page
     Click    div.w-full.text-sm >> "Services"
     ${current_url}=    Get URL
     Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/services
+
+Navigate To Buckets Page
+    [Documentation]    Checks the bucket page URL
+    Click    div.w-full.text-sm >> "Buckets"
+    ${current_url}=    Get URL
+    Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/minio
+
+Navigate To Notebooks Page
+    [Documentation]    Checks the notebook page URL
+    Click    div.w-full.text-sm >> "Notebooks"
+    ${current_url}=    Get URL
+    Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/notebooks
 
 Navigate To Info Page
     [Documentation]    Checks the info page URL
@@ -108,7 +215,7 @@ Replace VO In Template
     [Arguments]    ${TEMPLATE}
     ${invoke_file}=    Get File    ${TEMPLATE}
     ${invoke_file}=    Replace String    ${invoke_file}    <VO>    ${EGI_VO}
-    Create File    ./invoke_file.yaml    ${invoke_file}
+    Create File    ./custom_service_file.yaml    ${invoke_file}
 
 Delete Selected Service
     [Documentation]    Deletes the selected service
@@ -118,9 +225,10 @@ Delete Selected Service
     Click    xpath=//tr[td[contains(text(), '${service_name}')]]//button[@role='checkbox']
     Click    text="Delete services"
     Click    text="Delete"
-    Wait For Elements State    xpath=//li[contains(., 'Services deleted successfully')]    visible    timeout=30s
+    Wait For Elements State
+    ...    xpath=//li[@data-type='success']//div[text()='Services deleted successfully']    visible    timeout=30s
 
 Run Suite Teardown Tasks
     [Documentation]    Closes the browser and removes the files
     Close Browser
-    Remove Files From Tests And Verify    True    ./invoke_file.yaml
+    Remove Files From Tests And Verify    True    ./custom_service_file.yaml
