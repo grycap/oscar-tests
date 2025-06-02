@@ -7,19 +7,20 @@ Library          OperatingSystem
 Library          Process
 Library          JSONLibrary
 Library          yaml
+Library          RequestsLibrary
 
 
 *** Variables ***
-${OSCAR_ENDPOINT}=    ${OSCAR_ENDPOINT}
-${REFRESH_TOKEN}=     ${REFRESH_TOKEN}
-${TOKEN_URL}=         ${EGI_AAI_URL}
-${TOKEN_ENDPOINT}=    /auth/realms/egi/protocol/openid-connect/token
-${CLIENT_ID}=         token-portal
-${SCOPE}=             openid%20email%20profile%20voperson_id%20eduperson_entitlement
-${VO}=                ${EGI_VO}
-${DATA_DIR}=          ${CURDIR}/../data
-${SERVICE_FILE}=      ${DATA_DIR}/00-cowsay.yaml
-${INVOKE_FILE}=       00-cowsay-invoke-body.json
+${OSCAR_ENDPOINT}    ${OSCAR_ENDPOINT}
+${REFRESH_TOKEN}     ${REFRESH_TOKEN}
+${TOKEN_URL}         ${EGI_AAI_URL}
+${TOKEN_ENDPOINT}    /auth/realms/egi/protocol/openid-connect/token
+${CLIENT_ID}         token-portal
+${SCOPE}             openid%20email%20profile%20voperson_id%20eduperson_entitlement
+${VO}                ${EGI_VO}
+${DATA_DIR}          ${EXECDIR}/data
+${INVOKE_FILE}       ${DATA_DIR}/00-cowsay-invoke-body.json
+${SCRIPT_FILE}       ${DATA_DIR}/00-cowsay-script.sh
 
 
 *** Keywords ***
@@ -54,9 +55,10 @@ Check JWT Expiration
     Log    Current Time: ${current_time}
     Should Be True    ${expiry_time} > ${current_time}    Token is expired
 
-Modify Service File
+Modify VO Service File
     [Documentation]    Modify the service file with the VO
-    ${yaml_content}=    Get File    ${SERVICE_FILE}
+    [Arguments]    ${service_file}
+    ${yaml_content}=    Get File    ${service_file}
     ${loaded_content}=  yaml.Safe Load  ${yaml_content}
     Set To Dictionary    ${loaded_content}[functions][oscar][0][robot-oscar-cluster]    vo=${VO}
     RETURN    ${loaded_content}
@@ -68,3 +70,12 @@ Remove Files From Tests And Verify
         Remove File    ${file}
         File Should Not Exist    ${file}
     END
+
+Get Key From Dictionary
+    [Documentation]  Get the key from a dictionary
+    [Arguments]    ${dict}
+    ${keys}=    Get Dictionary Keys    ${dict}
+    IF    not ${keys}    Fail    The dictionary is empty. Cannot extract job.
+    ${JOB_NAME}=    Get From List    ${keys}    0
+    VAR    ${JOB_NAME}    ${keys}[0]    scope=SUITE
+    RETURN    ${JOB_NAME}

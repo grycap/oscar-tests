@@ -1,6 +1,7 @@
 *** Settings ***
 Documentation    Tests for the OSCAR's UI dashboard.
 
+Library          String
 Library          Browser
 
 Resource         ${CURDIR}/../resources/resources.resource
@@ -11,8 +12,9 @@ Suite Teardown   Run Suite Teardown Tasks
 
 
 *** Variables ***
-${OSCAR_DASHBOARD}=        %{OSCAR_DASHBOARD}
-${BROWSER}=                chromium
+${OSCAR_DASHBOARD}        %{OSCAR_DASHBOARD}
+${EGI_VO}                 %{EGI_VO}
+${BROWSER}                chromium
 
 
 *** Test Cases ***
@@ -51,7 +53,7 @@ Log Out
 *** Keywords ***
 Prepare Environment
     [Documentation]    Opens the browser and navigates to the dashboard
-    New Browser    ${BROWSER}    headless=True        timeout=120s
+    New Browser    ${BROWSER}    headless=True
     New Page    url= ${OSCAR_DASHBOARD}
 
 Navigate To Services Page
@@ -60,13 +62,41 @@ Navigate To Services Page
     ${current_url}=    Get URL
     Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/services
 
+Navigate To Buckets Page
+    [Documentation]    Checks the bucket page URL
+    Click    div.w-full.text-sm >> "Buckets"
+    ${current_url}=    Get URL
+    Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/minio
+
+Navigate To Notebooks Page
+    [Documentation]    Checks the notebook page URL
+    Click    div.w-full.text-sm >> "Notebooks"
+    ${current_url}=    Get URL
+    Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/notebooks
+
 Navigate To Info Page
     [Documentation]    Checks the info page URL
     Click    div.w-full.text-sm >> "Info"
     ${current_url}=    Get URL
     Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/info
 
+Filter Service By Name
+    [Documentation]    Filters the services by name
+    [Arguments]    ${service_name}
+    Fill Text    css=input[placeholder="Filter by name"]    ${service_name}
+
+Delete Selected Service
+    [Documentation]    Deletes the selected service
+    [Arguments]    ${service_name}
+    Filter Service By Name    ${service_name}
+    Sleep    1s
+    Click    xpath=//tr[td[contains(text(), '${service_name}')]]//button[@role='checkbox']
+    Click    text="Delete services"
+    Click    text="Delete"
+    Wait For Elements State
+    ...    xpath=//li[@data-type='success']//div[text()='Services deleted successfully']    visible    timeout=30s
+
 Run Suite Teardown Tasks
     [Documentation]    Closes the browser and removes the files
     Close Browser
-    Remove Files From Tests And Verify    True
+    Remove Files From Tests And Verify    True    ./custom_service_file.yaml
