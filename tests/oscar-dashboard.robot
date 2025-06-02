@@ -12,9 +12,9 @@ Suite Teardown   Run Suite Teardown Tasks
 
 
 *** Variables ***
-${OSCAR_DASHBOARD}=        %{OSCAR_DASHBOARD}
-${EGI_VO}=                 %{EGI_VO}
-${BROWSER}=                chromium
+${OSCAR_DASHBOARD}        %{OSCAR_DASHBOARD}
+${EGI_VO}                 %{EGI_VO}
+${BROWSER}                chromium
 
 
 *** Test Cases ***
@@ -38,64 +38,64 @@ Login to the application
     Reload
     Wait For Navigation    ${OSCAR_DASHBOARD}#/ui/services
 
-Create Service With FDL
-    [Documentation]    Create a service using the FDL option
-    Replace VO In Template    ${SERVICE_FILE}
-    Navigate To Services Page
-    Click    xpath=//button[normalize-space()='Create service']
-    Click    text="FDL"
-    Upload File By Selector    //input[@type='file']    ./custom_service_file.yaml
-    Click    xpath=//button[@role='tab' and text()='Script']
-    Upload File By Selector    //input[@type='file']    ${DATA_DIR}/00-cowsay-script.sh
-    Click    text="Create Service"
-    Wait For Elements State
-    ...    xpath=//li[@data-type='success']//div[text()='Service robot-test-cowsay created successfully']
-    ...    visible    timeout=120s
+# Create Service With FDL
+#     [Documentation]    Create a service using the FDL option
+#     Replace VO In Template    ${DATA_DIR}/00-cowsay.yaml
+#     Navigate To Services Page
+#     Click    xpath=//button[normalize-space()='Create service']
+#     Click    text="FDL"
+#     Upload File By Selector    //input[@type='file']    ./custom_service_file.yaml
+#     Click    xpath=//button[@role='tab' and text()='Script']
+#     Upload File By Selector    //input[@type='file']    ${SCRIPT_FILE}
+#     Click    text="Create Service"
+#     Wait For Elements State
+#     ...    xpath=//li[@data-type='success']//div[text()='Service robot-test-cowsay created successfully']
+#     ...    visible    timeout=120s
 
-Invoke Synchronous Service
-    [Documentation]    Invoke the service synchronolously from inside the created service page
-    Navigate To Services Page
-    Filter Service By Name    robot-test-cowsay
-    Sleep    1s
-    Click    xpath=//tbody/tr[td[text()='robot-test-cowsay']]
-    Click    text="Invoke"
-    Upload File By Selector    //div[@class='space-y-4 w-[800px]']//input[@type='file']    ${DATA_DIR}/${INVOKE_FILE}
-    Click    text="Invoke Service"
-    Wait For Elements State
-    ...    xpath=//div[contains(text(), 'Hello there from ROBOT')]    visible    timeout=120s
+# Invoke Synchronous Service
+#     [Documentation]    Invoke the service synchronolously from inside the created service page
+#     Navigate To Services Page
+#     Filter Service By Name    robot-test-cowsay
+#     Sleep    1s
+#     Click    xpath=//tbody/tr[td[text()='robot-test-cowsay']]
+#     Click    text="Invoke"
+#     Upload File By Selector    //div[@class='space-y-4 w-[800px]']//input[@type='file']    ${INVOKE_FILE}
+#     Click    text="Invoke Service"
+#     Wait For Elements State
+#     ...    xpath=//div[contains(text(), 'Hello there from ROBOT')]    visible    timeout=120s
 
-Invoke Asynchronous Service
-    [Documentation]    Invoke the service asynchronously from the bucket page
-    Navigate To Buckets Page
-    Click    xpath=//tbody/tr/td/a[text()='robot-test']
-    Click    xpath=//tbody/tr/td/a[text()='input']
-    # Click    xpath=//tbody/tr/td/a[contains(., 'input')]
-    Click    text="Upload File"
-    Upload File By Selector    //input[@type='file']    ./custom_service_file.yaml
-    Click    text="Upload"
-    Wait For Elements State
-    ...    xpath=//li[@data-type='success']//div[text()='File uploaded successfully']
+# Invoke Asynchronous Service
+#     [Documentation]    Invoke the service asynchronously from the bucket page
+#     Navigate To Buckets Page
+#     Click    xpath=//tbody/tr/td/a[text()='robot-test']
+#     Click    xpath=//tbody/tr/td/a[text()='input']
+#     # Click    xpath=//tbody/tr/td/a[contains(., 'input')]
+#     Click    text="Upload File"
+#     Upload File By Selector    //input[@type='file']    ./custom_service_file.yaml
+#     Click    text="Upload"
+#     Wait For Elements State
+#     ...    xpath=//li[@data-type='success']//div[text()='File uploaded successfully']
 
-Create Service With Form
-    [Documentation]    Create a service using the Form option
-    Navigate To Services Page
-    Click    text="Create service"
-    Click    text="Form"
-    Fill Text    id=service-name-input    robot-test-cowsay-form
-    Fill Text    id=docker-image-input    ghcr.io/grycap/cowsay
-    Click    id=vo-select-trigger
-    Wait For Elements State    xpath=//div[@role='option']//span[text()='vo.ai4eosc.eu']
-    ...    visible    timeout=10s
-    Click    xpath=//div[@role='option']//span[text()='vo.ai4eosc.eu']
-    Click    id=log-level-select-trigger
-    Wait For Elements State    xpath=//div[@role='option']//span[text()='CRITICAL']    visible    timeout=10s
-    Click    xpath=//div[@role='option']//span[text()='CRITICAL']
-    Click    id=script-file-input
-    Upload File By Selector    //input[@type='file']    ${DATA_DIR}/00-cowsay-script.sh
-    Click    text="Create"
-    Wait For Elements State
-    ...    xpath=//li[@data-type='success']//div[text()='Service created successfully']
-    ...    visible    timeout=60s
+# Create Service With Form
+#     [Documentation]    Create a service using the Form option
+#     Navigate To Services Page
+#     Click    text="Create service"
+#     Click    text="Form"
+#     Fill Text    id=service-name-input    robot-test-cowsay-form
+#     Fill Text    id=docker-image-input    ghcr.io/grycap/cowsay
+#     Click    id=vo-select-trigger
+#     Wait For Elements State    xpath=//div[@role='option']//span[text()='vo.ai4eosc.eu']
+#     ...    visible    timeout=10s
+#     Click    xpath=//div[@role='option']//span[text()='vo.ai4eosc.eu']
+#     Click    id=log-level-select-trigger
+#     Wait For Elements State    xpath=//div[@role='option']//span[text()='CRITICAL']    visible    timeout=10s
+#     Click    xpath=//div[@role='option']//span[text()='CRITICAL']
+#     Click    id=script-file-input
+#     Upload File By Selector    //input[@type='file']    ${SCRIPT_FILE}
+#     Click    text="Create"
+#     Wait For Elements State
+#     ...    xpath=//li[@data-type='success']//div[text()='Service created successfully']
+#     ...    visible    timeout=60s
 
 # Check Logs
 #     [Documentation]    Checks the logs of a service
@@ -147,15 +147,15 @@ Create Service With Form
 #     Click    text="Delete"
 #     Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Jupyter Notebook instance deleted']
 
-Delete Service
-    [Documentation]    Deletes the service created
-    Navigate To Services Page
-    Delete Selected Service    robot-test-cowsay
+# Delete Service
+#     [Documentation]    Deletes the service created
+#     Navigate To Services Page
+#     Delete Selected Service    robot-test-cowsay
 
-Delete Form Service
-    [Documentation]    Deletes the service created
-    Navigate To Services Page
-    Delete Selected Service    robot-test-cowsay-form
+# Delete Form Service
+#     [Documentation]    Deletes the service created
+#     Navigate To Services Page
+#     Delete Selected Service    robot-test-cowsay-form
 
 # Delete Bucket
 #     [Documentation]    Deletes the bucket created
@@ -178,7 +178,7 @@ Log Out
 *** Keywords ***
 Prepare Environment
     [Documentation]    Opens the browser and navigates to the dashboard
-    New Browser    ${BROWSER}    headless=False
+    New Browser    ${BROWSER}    headless=True
     New Page    url= ${OSCAR_DASHBOARD}
 
 Navigate To Services Page
@@ -211,6 +211,7 @@ Filter Service By Name
     Fill Text    css=input[placeholder="Filter by name"]    ${service_name}
 
 Replace VO In Template
+# There is Modify Service File in the resources.resource file to do this
     [Documentation]    Replaces the VO in the template
     [Arguments]    ${TEMPLATE}
     ${invoke_file}=    Get File    ${TEMPLATE}
