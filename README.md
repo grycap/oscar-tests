@@ -75,12 +75,21 @@ After running the tests, you’ll get detailed logs and reports in the:
 You can run the test suite inside a Docker container for better portability and reproducibility.
 
 ### 🛠️ Build the Docker Image
-First, build the Docker image:
+
+You can either build your own image or use the prebuilt image from GitHub Container Registry (GHCR).
+
+**Option 1: Build the Docker image locally**
 
 ```
 docker build -t oscar-tests:latest .
 ```
-This will create an image containing all the necessary dependencies to run the tests (except `oscar-cli`, see note below).
+
+**Option 2: Use the prebuilt image from GHCR**
+
+Use the [oscar-tests](https://github.com/orgs/grycap/packages/container/package/oscar-tests) image from GHCR.
+
+
+These images contain all the necessary dependencies to run the tests (except `oscar-cli`, see note below).
 
 ### ▶️ Run All Tests
 To run all the test suites:
@@ -90,8 +99,9 @@ docker run \
   -e ROBOT_OPTIONS="--variablefile variables/.env.yaml --pythonpath ." \
   -v "$PWD":/opt/robotframework/tests:Z \
   --workdir /opt/robotframework/tests \
-  oscar-tests:latest
+  ghcr.io/grycap/oscar-tests:latest
 ```
+> 💡 If you built the image locally, replace the image name with `oscar-tests:latest`.
 
 ### 🧪 Run a Single Test Suite
 To run a specific test suite:
@@ -101,7 +111,7 @@ docker run \
   -e ROBOT_OPTIONS="--variablefile variables/.env.yaml --pythonpath ." \
   -v "$PWD":/opt/robotframework/tests:Z \
   --workdir /opt/robotframework/tests \
-  oscar-tests:latest \
+  ghcr.io/grycap/oscar-tests:latest \
   robot tests/<path-to-suite>
 ```
 Replace `<path-to-suite>` with the desired test file.
