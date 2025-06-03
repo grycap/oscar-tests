@@ -80,13 +80,13 @@ OSCAR Invoke Asynchronous Service
     ${body}=        Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
     ...                     headers=${HEADERS}
+    Sleep    60s
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR List Jobs
     [Documentation]  List all jobs from a service with their status
     ${list_jobs}=        GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=200
     ...                         headers=${HEADERS}
-    Sleep    15s
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
     Get Key From Dictionary    ${jobs_dict}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-

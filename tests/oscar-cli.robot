@@ -87,6 +87,7 @@ OSCAR CLI Put File
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
     ...    ${INVOKE_FILE}    robot-test/input/${INVOKE_FILE}
     ...    stdout=True    stderr=True
+    Sleep    60s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
@@ -101,7 +102,6 @@ OSCAR CLI List Files
 OSCAR CLI Logs List
     [Documentation]    Check that OSCAR CLI lists the logs for a service
     ${result}=    Run Process    oscar-cli    service    logs    list    ${SERVICE_NAME}    stdout=True    stderr=True
-    Sleep    15s
     Log    ${result.stdout}
     Get Job Name From Logs
     Should Be Equal As Integers    ${result.rc}    0
