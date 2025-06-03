@@ -47,7 +47,7 @@ Create New Service
     [Documentation]    Create a new service with a given FDL file
     Prepare Service File
     ${response}=    Create Service    ${DATA_DIR}/service_file.yaml
-    # Sleep    60s
+    Sleep    60s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -74,6 +74,7 @@ Update Existing Service
 Run Service Asynchronously
     [Documentation]    Run a service asynchronously with input data
     ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
+    Sleep    30s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -84,6 +85,13 @@ List Jobs
     ${jobs_dict}=    Evaluate    dict(${response.content})
     Get Key From Dictionary    ${jobs_dict}
     Should Be Equal As Integers    ${response.status_code}    200
+
+Get Job Logs
+    [Documentation]    Check the logs of a job
+    ${response}=    Get Job Logs    ${SERVICE_NAME}    ${JOB_NAME}
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    Hello
 
 Remove Job
     [Documentation]    Remove a job created by the service
