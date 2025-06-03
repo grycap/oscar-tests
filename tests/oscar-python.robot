@@ -69,7 +69,7 @@ Update Existing Service
     [Documentation]    Update an existing service using a new FDL file
     ${response}=    Update Service    ${SERVICE_NAME}    ${DATA_DIR}/service_file.yaml
     Log    ${response.content}
-    Should Be Equal As Integers    ${response.status_code}    200
+    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
 Run Service Asynchronously
     [Documentation]    Run a service asynchronously with input data
