@@ -87,7 +87,7 @@ OSCAR CLI Put File
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
     ...    ${INVOKE_FILE}    robot-test/input/${INVOKE_FILE}
     ...    stdout=True    stderr=True
-    Sleep    60s
+    Sleep    90s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
