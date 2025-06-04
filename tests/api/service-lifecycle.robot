@@ -80,7 +80,7 @@ OSCAR Invoke Asynchronous Service
     ${body}=        Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
     ...                     headers=${HEADERS}
-    Sleep    60s
+    Sleep    90s
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR List Jobs
@@ -127,7 +127,7 @@ Prepare Service File
     ${service_content}=    Modify VO Service File    ${DATA_DIR}/00-cowsay.yaml
 
     # Extract the inner dictionary (remove 'functions', 'oscar' and 'robot-oscar-cluster')
-    ${modified_content}=    Set Variable    ${service_content}[functions][oscar][0][robot-oscar-cluster]
+    VAR    ${modified_content}    ${service_content}[functions][oscar][0][robot-oscar-cluster]
 
     # Update the script value
     ${script_value}=    Catenate

@@ -74,7 +74,7 @@ Update Existing Service
 Run Service Asynchronously
     [Documentation]    Run a service asynchronously with input data
     ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
-    Sleep    60s
+    Sleep    90s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
