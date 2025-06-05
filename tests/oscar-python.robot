@@ -47,7 +47,7 @@ Create New Service
     [Documentation]    Create a new service with a given FDL file
     Prepare Service File
     ${response}=    Create Service    ${DATA_DIR}/service_file.yaml
-    Sleep    60s
+    Sleep    120s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -74,7 +74,7 @@ Update Existing Service
 Run Service Asynchronously
     [Documentation]    Run a service asynchronously with input data
     ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
-    Sleep    90s
+    Sleep    120s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -107,6 +107,7 @@ Remove All Job
 
 Remove Service
     [Documentation]    Remove a service by name
+    [Tags]    delete
     ${response}=    Remove Service    ${SERVICE_NAME}
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    204

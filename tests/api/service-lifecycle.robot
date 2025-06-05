@@ -43,7 +43,7 @@ OSCAR Create Service
 
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...                     headers=${HEADERS}
-    Sleep    90s    # May need more time to create the service
+    Sleep    120s
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -80,7 +80,7 @@ OSCAR Invoke Asynchronous Service
     ${body}=        Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
     ...                     headers=${HEADERS}
-    Sleep    90s
+    Sleep    120s
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR List Jobs
