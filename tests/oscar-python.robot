@@ -1,19 +1,18 @@
 *** Settings ***
-Documentation     Tests for the OSCAR Python library
+Documentation       Tests for the OSCAR Python library
 
-Library           robot_libs.oscar_lib.OscarLibrary
+Library             robot_libs.oscar_lib.OscarLibrary
+Resource            ${CURDIR}/../resources/resources.resource
 
-Resource          ${CURDIR}/../resources/resources.resource
-
-Test Setup        Connect To Oscar Cluster
-
-Suite Teardown    Remove Files From Tests And Verify    True    ${DATA_DIR}/service_file.yaml
+Suite Teardown      Remove Files From Tests And Verify    True    ${DATA_DIR}/service_file.yaml
+...                     ${EXECDIR}/00-cowsay-invoke-body.json
+Test Setup          Connect To Oscar Cluster
 
 
 *** Variables ***
-${CLUSTER_ID}      robot-oscar-cluster
-${SSL}             True
-${SERVICE_NAME}    robot-test-cowsay
+${CLUSTER_ID}       robot-oscar-cluster
+${SSL}              True
+${SERVICE_NAME}     robot-test-cowsay
 
 
 *** Test Cases ***
@@ -47,7 +46,7 @@ Create New Service
     [Documentation]    Create a new service with a given FDL file
     Prepare Service File
     ${response}=    Create Service    ${DATA_DIR}/service_file.yaml
-    Sleep    120s
+    # Sleep    120s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -105,6 +104,35 @@ Remove All Job
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    204
 
+Upload File
+    [Documentation]    Upload a file to the service's storage provider
+    Create Storage Object
+    ${response}=    Upload File To Storage    minio.default
+    ...    ${DATA_DIR}/00-cowsay-invoke-body.json    robot-test/input/robot-upload
+    Log    ${response}
+
+List Files From Path
+    [Documentation]    List files from a specific path in the service's storage provider
+    Create Storage Object
+    ${response}=    List Files From Path    minio.default    robot-test/input/
+    Log    ${response}
+
+    FOR    ${item}    IN    @{response['Contents']}
+        ${key}=    Get From Dictionary    ${item}    Key
+        IF    '${key}' == 'input/robot-upload/00-cowsay-invoke-body.json'
+            BREAK
+        END
+    END
+    Should Be True    '${key}' == 'input/robot-upload/00-cowsay-invoke-body.json'
+
+Download File
+    [Documentation]    Download a file from the service's storage provider
+    Create Storage Object
+    ${response}=    Download File From Storage    minio.default
+    ...    ${EXECDIR}    robot-test/input/robot-upload/00-cowsay-invoke-body.json
+    Log    ${response}
+    File Should Exist    ${EXECDIR}/00-cowsay-invoke-body.json
+
 Remove Service
     [Documentation]    Remove a service by name
     [Tags]    delete
@@ -123,8 +151,8 @@ Prepare Service File
     [Documentation]    Prepare the service file
     ${service_content}=    Modify VO Service File    ${DATA_DIR}/00-cowsay.yaml
     # Convert file content to YAML
-    ${output}=  yaml.Dump  ${service_content}
-    Create File  ${DATA_DIR}/service_file.yaml  ${output}
+    ${output}=    yaml.Dump    ${service_content}
+    Create File    ${DATA_DIR}/service_file.yaml    ${output}
 
 Create Storage Object
     [Documentation]    Create a storage object in the service's storage provider
