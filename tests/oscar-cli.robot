@@ -1,20 +1,20 @@
 *** Settings ***
-Documentation     Tests for the OSCAR CLI against a deployed OSCAR cluster.
+Documentation       Tests for the OSCAR CLI against a deployed OSCAR cluster.
 
-Resource          ${CURDIR}/../resources/resources.resource
+Resource            ${CURDIR}/../resources/resources.resource
 
-Suite Teardown    Remove Files From Tests And Verify    True    00-cowsay-invoke-body-downloaded.json
-...               ${DATA_DIR}/service_file.yaml
+Suite Teardown      Remove Files From Tests And Verify    True    00-cowsay-invoke-body-downloaded.json
+...                     ${DATA_DIR}/service_file.yaml
 
 
 *** Variables ***
-${SERVICE_NAME}    robot-test-cowsay
+${SERVICE_NAME}     robot-test-cowsay
 
 
 *** Test Cases ***
 OSCAR CLI Installed
     [Documentation]    Check that OSCAR CLI is installed
-    ${result}=    Run Process    oscar-cli        stdout=True    stderr=True
+    ${result}=    Run Process    oscar-cli    stdout=True    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
     # Should Contain    ${result.stdout}    apply
@@ -23,7 +23,7 @@ OSCAR CLI Cluster Add
     [Documentation]    Check that OSCAR CLI adds a cluster
     [Tags]    create    delete
     ${result}=    Run Process    oscar-cli    cluster    add    robot-oscar-cluster    ${OSCAR_ENDPOINT}
-    ...    --oidc-refresh-token  ${REFRESH_TOKEN}    stdout=True    stderr=True
+    ...    --oidc-refresh-token    ${REFRESH_TOKEN}    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
     Should Contain    ${result.stdout}    successfully
@@ -69,7 +69,7 @@ OSCAR CLI List Services
 OSCAR CLI Run Services Synchronously With File
     [Documentation]    Check that OSCAR CLI runs a service (with a file) synchronously in the default cluster
     ${result}=    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --file-input
-    ...           ${INVOKE_FILE}    stdout=True    stderr=True
+    ...    ${INVOKE_FILE}    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
     Should Contain    ${result.stdout}    Hello
@@ -153,11 +153,11 @@ Get Job Name From Logs
     ${job_output}=    Run Process    oscar-cli    service    logs    list    ${SERVICE_NAME}    |
     ...    awk    'NR    \=\=    2    {print    $1}'    shell=True    stdout=True    stderr=True
     Log    ${job_output.stdout}
-    VAR    ${JOB_NAME}    ${job_output.stdout}    scope=SUITE
+    VAR    ${JOB_NAME}=    ${job_output.stdout}    scope=SUITE
 
 Prepare Service File
     [Documentation]    Prepare the service file
     ${service_content}=    Modify VO Service File    ${DATA_DIR}/00-cowsay.yaml
     # Convert file content to YAML
-    ${output}=  yaml.Dump  ${service_content}
-    Create File  ${DATA_DIR}/service_file.yaml  ${output}
+    ${output}=    yaml.Dump    ${service_content}
+    Create File    ${DATA_DIR}/service_file.yaml    ${output}
