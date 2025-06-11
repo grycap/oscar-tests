@@ -1,21 +1,22 @@
 from oscar_python.client import Client
 from robot.api.deco import keyword
 
+
 class OscarLibrary:
     def __init__(self):
         self.client = None
 
-    @keyword('Connect With Basic Auth')
-    def connect_with_basic_auth(self, cluster_id, endpoint, access_token, ssl='True'):
+    @keyword("Connect With Basic Auth")
+    def connect_with_basic_auth(self, cluster_id, endpoint, access_token, ssl="True"):
         options = {
-            'cluster_id': cluster_id,
-            'endpoint': endpoint,
-            'oidc_token': access_token,
-            'ssl': ssl
+            "cluster_id": cluster_id,
+            "endpoint": endpoint,
+            "oidc_token": access_token,
+            "ssl": ssl,
         }
         self.client = Client(options=options)
 
-# Cluster methods
+    # Cluster methods
 
     @keyword("Get Cluster Info")
     def get_cluster_info(self):
@@ -27,7 +28,7 @@ class OscarLibrary:
     def get_cluster_config(self):
         return self.client.get_cluster_config()
 
-# Service methods
+    # Service methods
 
     @keyword("List Services")
     def list_services(self):
@@ -47,7 +48,9 @@ class OscarLibrary:
     @keyword("Run Service Synchronously")
     def run_service_sync(self, service_name, input_data="", output="", timeout=None):
         # Returns an HTTP response
-        return self.client.run_service(service_name, input=input_data, output=output, timeout=timeout)
+        return self.client.run_service(
+            service_name, input=input_data, output=output, timeout=timeout
+        )
 
     @keyword("Update Service")
     def update_service(self, service_name, path_to_fdl):
@@ -64,7 +67,7 @@ class OscarLibrary:
         # Returns an HTTP response
         return self.client.remove_service(service_name)
 
-# Log methods
+    # Log methods
 
     @keyword("Get Job Logs")
     def get_job_logs(self, service_name, job_id):
@@ -86,7 +89,7 @@ class OscarLibrary:
         # Returns an HTTP response
         return self.client.remove_all_jobs(service_name)
 
-# Storage methods
+    # Storage methods
 
     @keyword("Create Storage Client")
     def create_storage_client(self, service_name):
@@ -100,8 +103,12 @@ class OscarLibrary:
 
     @keyword("Upload File To Storage")
     def upload_file_to_storage(self, storage_provider, local_path, remote_path):
-        return self.storage_service.upload_file(storage_provider, local_path, remote_path)
+        return self.storage_service.upload_file(
+            storage_provider, local_path, remote_path
+        )
 
     @keyword("Download File From Storage")
     def download_file_from_storage(self, storage_provider, local_path, remote_path):
-        return self.storage_service.download_file(storage_provider, local_path, remote_path)
+        return self.storage_service.download_file(
+            storage_provider, local_path, remote_path
+        )

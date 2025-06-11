@@ -60,7 +60,7 @@ robot -V variables/.env.yaml -d robot_results/ tests/
 This executes all the defined tests. You can also execute a single test suite with:
 
 ```
-robot -V variables/.env.yaml -d robot_results/ tests/oscar-api.robot
+robot -V variables/.env.yaml -d robot_results/ tests/api/service-lifecycle.robot
 ```
 
 ## 📊 Test Reports and Logs
