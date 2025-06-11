@@ -1,20 +1,19 @@
 *** Settings ***
-Documentation    Tests for the OSCAR's UI dashboard.
+Documentation       Tests for the OSCAR's UI dashboard.
 
-Library          String
-Library          Browser
+Library             String
+Library             Browser
+Resource            ${CURDIR}/../resources/resources.resource
 
-Resource         ${CURDIR}/../resources/resources.resource
-
-Suite Setup      Prepare Environment
-Test Setup       Reload
-Suite Teardown   Run Suite Teardown Tasks
+Suite Setup         Prepare Environment
+Suite Teardown      Run Suite Teardown Tasks
+Test Setup          Reload
 
 
 *** Variables ***
-${OSCAR_DASHBOARD}        %{OSCAR_DASHBOARD}
-${EGI_VO}                 %{EGI_VO}
-${BROWSER}                chromium
+${OSCAR_DASHBOARD}      %{OSCAR_DASHBOARD}
+${EGI_VO}               %{EGI_VO}
+${BROWSER}              chromium
 
 
 *** Test Cases ***
@@ -22,7 +21,7 @@ Check Valid OIDC Token
     [Documentation]    Get the access token
     ${TOKEN}=    Get Access Token
     Check JWT Expiration    ${TOKEN}
-    VAR    ${TOKEN}    ${TOKEN}    scope=SUITE
+    VAR    ${TOKEN}=    ${TOKEN}    scope=SUITE
 
 Open OSCAR Dashboard Page
     [Documentation]    Checks the title of the page
@@ -32,7 +31,7 @@ Open OSCAR Dashboard Page
 Login to the application
     [Documentation]    Log in using the OIDC authentication
     Fill Text    xpath=//input[@name='endpoint']    ${OSCAR_ENDPOINT}
-    VAR    ${auth_data}    {"authenticated": "true", "token": "${TOKEN}", "endpoint": "${OSCAR_ENDPOINT}"}
+    VAR    ${auth_data}=    {"authenticated": "true", "token": "${TOKEN}", "endpoint": "${OSCAR_ENDPOINT}"}
     ${auth_data_json}=    Evaluate    json.dumps(${auth_data})    json
     LocalStorage Set Item    authData    ${auth_data_json}
     Reload
