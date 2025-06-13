@@ -1,0 +1,168 @@
+def runOscarTest(String testId, String testPath, boolean installCli = false, boolean installPython = false) {
+    node('docker') {
+        docker.image('ghcr.io/grycap/oscar-tests:latest').inside('--shm-size=1g -u root') {
+            env.BROWSER = 'chromium'
+            env.ROBOT_TESTS_DIR = "${WORKSPACE}/${testPath}"
+            env.ROBOT_REPORTS_DIR = "${WORKSPACE}/results_"
+            env.ROBOT_TEST_RUN_ID = "${testId}"
+
+            unstash 'oscar-tests'
+
+            if (installCli) {
+                retry(2) {
+                    sh 'go install github.com/grycap/oscar-cli@latest'
+                }
+                sh 'mv /root/go/bin/oscar-cli /bin'
+            }
+
+            if (installPython) {
+                retry(2) {
+                    sh 'pip install oscar-python'
+                }
+            }
+
+            withCredentials([file(credentialsId: '<cluster-name>-secret-file', variable: '<CLUSTER_NAME>_FILE')]) {
+                env.ROBOT_OPTIONS = "--pythonpath . --variablefile $<CLUSTER_NAME>_FILE"
+                retry(2) {
+                    sh '/opt/robotframework/bin/run-tests-in-virtual-screen.sh'
+                }
+            }
+        }
+    }
+}
+
+
+pipeline {
+    agent { label 'docker' }
+
+    stages {
+        stage('Pre-clean') {
+            steps {
+                sh '''
+                    sudo chown -R jenkins:jenkins .
+                    chmod -R u+w .
+                '''
+                cleanWs()
+            }
+        }
+
+        stage('Clone Repository') {
+            steps {
+                retry(2) {
+                    git url: 'https://github.com/grycap/oscar-tests.git', branch: 'devel'
+                }
+                stash name: 'oscar-tests', includes: 'data/**, resources/**, robot_libs/**, tests/**, variables/**'
+            }
+        }
+        
+        stage('Run OSCAR service lifecycle tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('lifecycle', 'tests/api/service-lifecycle.robot')
+                    }
+                }
+            }
+        }
+        
+        stage('Run OSCAR cli tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('cli', 'tests/oscar-cli.robot', true, false)
+                    }
+                }
+            }
+        }
+        
+        stage('Run OSCAR-Python tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('python', 'tests/oscar-python.robot', false, true)
+                    }
+                }
+            }
+        }
+
+        stage('Run OSCAR Dashboard tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('dashboard', 'tests/oscar-dashboard.robot')
+                    }
+                }
+            }
+        }
+        
+        stage('Run OSCAR metrics tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('metrics', 'tests/oscar-metrics.robot')
+                    }
+                }
+            }
+        }
+
+        stage('Merge Robot Reports') {
+            agent {
+                docker {
+                    image 'ghcr.io/grycap/oscar-tests:latest'
+                    args '--shm-size=1g -u root'
+                }
+            }
+            steps {
+                sh '''
+                    rm -rf results_merged  # delete previous merged folder if it exists
+                    mkdir -p results_merged
+        
+                    # Only include *test* output files (not already merged reports)
+                    find . -type f -path './results_*/output.xml' ! -path './results_merged/*' > output_files.txt
+        
+                    rebot --name "OSCAR Tests" --output results_merged/output.xml \\
+                          --log results_merged/log.html \\
+                          --report results_merged/report.html \\
+                          $(cat output_files.txt) || true
+                '''
+
+                robot(
+                    outputPath: "results_merged",
+                    outputFileName: "output.xml",
+                    logFileName: "log.html",
+                    reportFileName: "report.html",
+                    passThreshold: 90.0,
+                    unstableThreshold: 70.0,
+                    countSkippedTests: true,
+                    disableArchiveOutput: false
+                )
+            }
+        }
+
+    }
+
+    post {
+        unsuccessful {
+            emailext(
+                subject: "OSCAR ${JOB_NAME} pipeline is unstable",
+                body: """
+                    <p>Pipeline <b>${JOB_NAME} #${BUILD_NUMBER}</b> is unstable.</p>
+                    <p>Check the console output for more details: 
+                    <a href="${BUILD_URL}console">${BUILD_URL}console</a></p>
+                """,
+                to: '<mail1>,<mail2>',
+                mimeType: 'text/html',
+                attachLog: true
+            )
+        }
+        always {
+            archiveArtifacts artifacts: 'results_*/**', allowEmptyArchive: true
+        }
+        cleanup {
+            node('docker') {
+                sh 'sudo chown -R jenkins:jenkins .'
+                cleanWs()
+            }
+        }
+    }
+}
