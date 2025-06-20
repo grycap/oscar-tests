@@ -55,8 +55,8 @@ Check JWT Expiration
     Log    Current Time: ${current_time}
     Should Be True    ${expiry_time} > ${current_time}    Token is expired
 
-Modify VO Service File
-    [Documentation]    Modify the service file with the VO
+Modify VO In Service File
+    [Documentation]    Modify the VO in the service file
     [Arguments]    ${service_file}
     ${yaml_content}=    Get File    ${service_file}
     ${loaded_content}=    yaml.Safe Load    ${yaml_content}
@@ -76,6 +76,5 @@ Get Key From Dictionary
     [Arguments]    ${dict}
     ${keys}=    Get Dictionary Keys    ${dict}
     IF    not ${keys}    Fail    The dictionary is empty. Cannot extract job.
-    ${JOB_NAME}=    Get From List    ${keys}    0
     VAR    ${JOB_NAME}=    ${keys}[0]    scope=SUITE
     RETURN    ${JOB_NAME}

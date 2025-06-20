@@ -149,7 +149,7 @@ Connect To Oscar Cluster
 
 Prepare Service File
     [Documentation]    Prepare the service file
-    ${service_content}=    Modify VO Service File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Modify VO In Service File    ${DATA_DIR}/00-cowsay.yaml
     # Convert file content to YAML
     ${output}=    yaml.Dump    ${service_content}
     Create File    ${DATA_DIR}/service_file.yaml    ${output}

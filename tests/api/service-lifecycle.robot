@@ -124,7 +124,7 @@ OSCAR Delete Service
 *** Keywords ***
 Prepare Service File
     [Documentation]    Prepare the service file
-    ${service_content}=    Modify VO Service File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Modify VO In Service File    ${DATA_DIR}/00-cowsay.yaml
 
     # Extract the inner dictionary (remove 'functions', 'oscar' and 'robot-oscar-cluster')
     VAR    ${modified_content}=    ${service_content}[functions][oscar][0][robot-oscar-cluster]
