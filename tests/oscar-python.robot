@@ -4,7 +4,7 @@ Documentation       Tests for the OSCAR Python library
 Library             robot_libs.oscar_lib.OscarLibrary
 Resource            ${CURDIR}/../resources/resources.resource
 
-Suite Teardown      Remove Files From Tests And Verify    True    ${DATA_DIR}/service_file.yaml
+Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.yaml
 ...                     ${EXECDIR}/00-cowsay-invoke-body.json
 Test Setup          Connect To Oscar Cluster
 

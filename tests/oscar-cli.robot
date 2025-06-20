@@ -3,7 +3,7 @@ Documentation       Tests for the OSCAR CLI against a deployed OSCAR cluster.
 
 Resource            ${CURDIR}/../resources/resources.resource
 
-Suite Teardown      Remove Files From Tests And Verify    True    00-cowsay-invoke-body-downloaded.json
+Suite Teardown      Clean Test Artifacts    True    00-cowsay-invoke-body-downloaded.json
 ...                     ${DATA_DIR}/service_file.yaml
 
 

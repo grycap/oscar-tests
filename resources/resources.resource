@@ -63,7 +63,7 @@ Modify VO In Service File
     Set To Dictionary    ${loaded_content}[functions][oscar][0][robot-oscar-cluster]    vo=${VO}
     RETURN    ${loaded_content}
 
-Remove Files From Tests And Verify
+Clean Test Artifacts
     [Documentation]    Removes junk files generared in the tests
     [Arguments]    @{files}
     FOR    ${file}    IN    @{files}

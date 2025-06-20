@@ -3,7 +3,7 @@ Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluste
 
 Resource            ${CURDIR}/../../resources/resources.resource
 
-Suite Teardown      Remove Files From Tests And Verify    True    ${DATA_DIR}/service_file.json
+Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
 *** Variables ***
