@@ -3,6 +3,7 @@ Documentation       Tests for the OSCAR Python library
 
 Library             robot_libs.oscar_lib.OscarLibrary
 Resource            ${CURDIR}/../resources/resources.resource
+Resource            ${CURDIR}/../resources/token.resource
 
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.yaml
 ...                     ${EXECDIR}/00-cowsay-invoke-body.json
@@ -18,6 +19,7 @@ ${SERVICE_NAME}     robot-test-cowsay
 *** Test Cases ***
 Check Valid OIDC Token
     [Documentation]    Get the access token
+    [Tags]    create    delete
     ${token}=    Get Access Token
     Check JWT Expiration    ${token}
 
@@ -44,6 +46,7 @@ Get Cluster Config
 
 Create New Service
     [Documentation]    Create a new service with a given FDL file
+    [Tags]    create
     Prepare Service File
     ${response}=    Create Service    ${DATA_DIR}/service_file.yaml
     Sleep    120s
@@ -148,11 +151,10 @@ Connect To Oscar Cluster
     Connect With Basic Auth    ${CLUSTER_ID}    ${OSCAR_ENDPOINT}    ${token}    ${SSL}
 
 Prepare Service File
-    [Documentation]    Prepare the service file
-    ${service_content}=    Modify VO In Service File    ${DATA_DIR}/00-cowsay.yaml
-    # Convert file content to YAML
-    ${output}=    yaml.Dump    ${service_content}
-    Create File    ${DATA_DIR}/service_file.yaml    ${output}
+    [Documentation]    Prepare the service file for service creation
+    ${service_content}=    Load Original Service File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Set VO    ${service_content}
+    Save YAML File    ${service_content}    ${DATA_DIR}/service_file.yaml
 
 Create Storage Object
     [Documentation]    Create a storage object in the service's storage provider

@@ -2,6 +2,7 @@
 Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Basic endpoint coverage
 
 Resource            ${CURDIR}/../../resources/resources.resource
+Resource            ${CURDIR}/../../resources/token.resource
 
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
@@ -123,17 +124,8 @@ OSCAR Delete Service
 
 *** Keywords ***
 Prepare Service File
-    [Documentation]    Prepare the service file
-    ${service_content}=    Modify VO In Service File    ${DATA_DIR}/00-cowsay.yaml
-
-    # Extract the inner dictionary (remove 'functions', 'oscar' and 'robot-oscar-cluster')
-    VAR    ${modified_content}=    ${service_content}[functions][oscar][0][robot-oscar-cluster]
-
-    # Update the script value
-    ${script_value}=    Catenate
-    ...    \#!/bin/sh\n\nif [ \"$INPUT_TYPE\" = \"json\" ]\nthen\n
-    ...    jq '.message' \"$INPUT_FILE_PATH\" -r | /usr/games/cowsay\nelse\n
-    ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\nfi\n\
-    Set To Dictionary    ${modified_content}    script=${script_value}
-    ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    [Documentation]    Prepare the service file for service creation
+    ${service_content}=    Load Original Service File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Set VO    ${service_content}
+    ${service_content}=    Set Service Script    ${service_content}
+    Dump Service To JSON File    ${service_content}    ${DATA_DIR}/service_file.json

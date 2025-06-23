@@ -4,6 +4,7 @@ Documentation       Tests for the OSCAR's UI dashboard.
 Library             String
 Library             Browser
 Resource            ${CURDIR}/../resources/resources.resource
+Resource            ${CURDIR}/../resources/token.resource
 
 Suite Setup         Prepare Environment
 Suite Teardown      Run Suite Teardown Tasks
@@ -12,7 +13,6 @@ Test Setup          Reload
 
 *** Variables ***
 ${OSCAR_DASHBOARD}      %{OSCAR_DASHBOARD}
-${EGI_VO}               %{EGI_VO}
 ${BROWSER}              chromium
 
 
@@ -98,4 +98,4 @@ Delete Selected Service
 Run Suite Teardown Tasks
     [Documentation]    Closes the browser and removes the files
     Close Browser
-    Remove Files From Tests And Verify    True    ./custom_service_file.yaml
+    Clean Test Artifacts    True    ./custom_service_file.yaml
