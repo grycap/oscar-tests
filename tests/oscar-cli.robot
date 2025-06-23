@@ -2,6 +2,7 @@
 Documentation       Tests for the OSCAR CLI against a deployed OSCAR cluster.
 
 Resource            ${CURDIR}/../resources/resources.resource
+Resource            ${CURDIR}/../resources/token.resource
 
 Suite Teardown      Clean Test Artifacts    True    00-cowsay-invoke-body-downloaded.json
 ...                     ${DATA_DIR}/service_file.yaml
@@ -156,8 +157,7 @@ Get Job Name From Logs
     VAR    ${JOB_NAME}=    ${job_output.stdout}    scope=SUITE
 
 Prepare Service File
-    [Documentation]    Prepare the service file
-    ${service_content}=    Modify VO In Service File    ${DATA_DIR}/00-cowsay.yaml
-    # Convert file content to YAML
-    ${output}=    yaml.Dump    ${service_content}
-    Create File    ${DATA_DIR}/service_file.yaml    ${output}
+    [Documentation]    Prepare the service file for service creation
+    ${service_content}=    Load Original Service File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Set VO    ${service_content}
+    Save YAML File    ${service_content}    ${DATA_DIR}/service_file.yaml
