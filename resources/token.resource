@@ -15,8 +15,18 @@ ${TOKEN_ENDPOINT}       /auth/realms/egi/protocol/openid-connect/token
 ${CLIENT_ID}            token-portal
 ${SCOPE}                openid%20email%20profile%20voperson_id%20eduperson_entitlement
 
+${BUCKET_NAME}          robot-test
+${MAX_RETRIES}          30
+${RETRY_INTERVAL}       5s
+
 
 *** Keywords ***
+Check Valid OIDC Token
+    [Documentation]    Get the access token
+    [Tags]    create    delete
+    ${token}=    Get Access Token
+    Check JWT Expiration    ${token}
+
 Get Access Token
     [Documentation]    Retrieve OIDC token using a refresh token
     ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}${TOKEN_ENDPOINT}'    -d
