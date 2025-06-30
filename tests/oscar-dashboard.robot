@@ -111,6 +111,25 @@ Delete Log
 #     Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Bucket created successfully']
 #     ...    visible    timeout=10s
 
+# Deploy Notebook
+#     [Documentation]    Deploy the notebook in the ${BUCKET_NAME} bucket
+#     Navigate To Notebooks Page
+#     Click    id=bucket
+#     Click    xpath=//span[text()='${BUCKET_NAME}']
+#     Click    id=vo
+#     Wait For Elements State    xpath=//div[contains(@class, 'radix')]//div[contains(., 'vo.ai4eosc.eu')]
+#     ...    visible    timeout=60s
+#     Click    xpath=//div[contains(@class, 'radix')]//div[contains(., 'vo.ai4eosc.eu')]
+#     Click    text="Deploy"
+#     Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Jupyter Notebook instance deployed']
+#     ...    visible    timeout=60s
+
+# Delete Notebook
+#     [Documentation]    Delete the notebook in the ${BUCKET_NAME} bucket
+#     Navigate To Notebooks Page
+#     Click    text="Delete"
+#     Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Jupyter Notebook instance deleted']
+
 Delete Services
    [Documentation]    Delete the services created previously
    Navigate To Services Page
@@ -152,6 +171,12 @@ Navigate To Buckets Page
     Click    div.w-full.text-sm >> "Buckets"
     ${current_url}=    Get URL
     Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/minio
+
+# Navigate To Notebooks Page
+#     [Documentation]    Check the notebook page URL
+#     Click    div.w-full.text-sm >> "Notebooks"
+#     ${current_url}=    Get URL
+#     Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/notebooks
 
 Navigate To Info Page
     [Documentation]    Check the info page URL
