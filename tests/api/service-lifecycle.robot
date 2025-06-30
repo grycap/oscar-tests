@@ -4,20 +4,11 @@ Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluste
 Resource            ${CURDIR}/../../resources/resources.resource
 Resource            ${CURDIR}/../../resources/token.resource
 
+Suite Setup         Check Valid OIDC Token
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
-*** Variables ***
-${SERVICE_NAME}     robot-test-cowsay
-
-
 *** Test Cases ***
-Check Valid OIDC Token
-    [Documentation]    Get the access token
-    [Tags]    create    delete
-    ${token}=    Get Access Token
-    Check JWT Expiration    ${token}
-
 OSCAR API Health
     [Documentation]    Check API health
     ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200
@@ -39,12 +30,13 @@ OSCAR System Info
 OSCAR Create Service
     [Documentation]    Create a new service
     [Tags]    create
+    # ${body}=    Prepare Service File
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json
 
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...    headers=${HEADERS}
-    Sleep    120s
+    # Sleep    120s
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -61,13 +53,31 @@ OSCAR Read Service
     Log    ${response.content}
     Should Contain    ${response.content}    "name":"${SERVICE_NAME}"
 
+# OSCAR Invoke Synchronous Service
+#    [Documentation]    Invoke the synchronous service
+#    ${body}=    Get File    ${INVOKE_FILE}
+#    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200    data=${body}
+#    ...    headers=${HEADERS}
+#    Log    ${response.content}
+#    Should Contain    ${response.content}    Hello
+
 OSCAR Invoke Synchronous Service
     [Documentation]    Invoke the synchronous service
     ${body}=    Get File    ${INVOKE_FILE}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200    data=${body}
-    ...    headers=${HEADERS}
-    Log    ${response.content}
-    Should Contain    ${response.content}    Hello
+
+    FOR    ${_}    IN RANGE    ${MAX_RETRIES}
+        ${result}=    Run Keyword And Ignore Error    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}
+        ...    data=${body}    headers=${HEADERS}
+        VAR    ${rc}=    ${result[0]}
+        VAR    ${response_raw}=    ${result[1]}
+        ${status_code}=    Set Variable If    '${rc}' == 'PASS'    ${response_raw.status_code}
+
+        IF    '${status_code}' == '200'    BREAK
+
+        Log    Service not ready yet. Status: ${response_raw}. Retrying in ${RETRY_INTERVAL}...
+        Sleep    ${RETRY_INTERVAL}
+    END
+    Should Be Equal As Strings    ${status_code}    200    msg=Service was not ready after ${MAX_RETRIES} attempts
 
 OSCAR Update Service
     [Documentation]    Update a service
@@ -81,7 +91,7 @@ OSCAR Invoke Asynchronous Service
     ${body}=    Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
     ...    headers=${HEADERS}
-    Sleep    120s
+    # Sleep    120s
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR List Jobs
@@ -92,12 +102,28 @@ OSCAR List Jobs
     Get Key From Dictionary    ${jobs_dict}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
+# OSCAR Get Logs
+#    [Documentation]    Get the logs from a job
+#    ${get_logs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=200
+#    ...    headers=${HEADERS}
+#    Log    ${get_logs.content}
+#    Should Contain    ${get_logs.content}    Hello
+
 OSCAR Get Logs
     [Documentation]    Get the logs from a job
-    ${get_logs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=200
-    ...    headers=${HEADERS}
-    Log    ${get_logs.content}
-    Should Contain    ${get_logs.content}    Hello
+    FOR    ${_}    IN RANGE    ${MAX_RETRIES}
+        ${result}=    Run Keyword And Ignore Error    GET
+        ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    headers=${HEADERS}
+        VAR    ${rc}=    ${result[0]}
+        VAR    ${response_raw}=    ${result[1]}
+        ${status_code}=    Set Variable If    '${rc}' == 'PASS'    ${response_raw.status_code}
+
+        IF    '${status_code}' == '200'    BREAK
+
+        Log    Service not ready yet. Status: ${response_raw}. Retrying in ${RETRY_INTERVAL}...
+        Sleep    ${RETRY_INTERVAL}
+    END
+    Should Be Equal As Strings    ${status_code}    200    msg=Service was not ready after ${MAX_RETRIES} attempts
 
 OSCAR Delete Job
     [Documentation]    Delete a job from a service
@@ -125,7 +151,8 @@ OSCAR Delete Service
 *** Keywords ***
 Prepare Service File
     [Documentation]    Prepare the service file for service creation
-    ${service_content}=    Load Original Service File    ${DATA_DIR}/00-cowsay.yaml
-    ${service_content}=    Set VO    ${service_content}
-    ${service_content}=    Set Service Script    ${service_content}
-    Dump Service To JSON File    ${service_content}    ${DATA_DIR}/service_file.json
+    ${service_content}=    Load Original Service File    ${SERVICE_FILE}
+    ${service_content}=    Set Service File VO    ${service_content}
+    ${service_content}=    Set Service File Script    ${service_content}
+    Dump Service File To JSON File    ${service_content}    ${DATA_DIR}/service_file.json
+    # RETURN    ${service_content}

@@ -8,10 +8,6 @@ Suite Teardown      Clean Test Artifacts    True    00-cowsay-invoke-body-downlo
 ...                     ${DATA_DIR}/service_file.yaml
 
 
-*** Variables ***
-${SERVICE_NAME}     robot-test-cowsay
-
-
 *** Test Cases ***
 OSCAR CLI Installed
     [Documentation]    Check that OSCAR CLI is installed
@@ -56,7 +52,7 @@ OSCAR CLI Apply
     [Tags]    create
     Prepare Service File
     ${result}=    Run Process    oscar-cli    apply    ${DATA_DIR}/service_file.yaml    stdout=True    stderr=True
-    Sleep    120s
+    # Sleep    120s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
@@ -67,13 +63,37 @@ OSCAR CLI List Services
     Should Be Equal As Integers    ${result.rc}    0
     # Should Contain    ${result.stdout}    ${SERVICE_NAME}
 
+# OSCAR CLI Run Services Synchronously With File
+#     [Documentation]    Check that OSCAR CLI runs a service (with a file) synchronously in the default cluster
+#     ${result}=    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --file-input
+#     ...    ${INVOKE_FILE}    stdout=True    stderr=True
+#     Log    ${result.stdout}
+#     # Should Be Equal As Integers    ${result.rc}    0
+#     Should Contain    ${result.stdout}    Hello
+
 OSCAR CLI Run Services Synchronously With File
-    [Documentation]    Check that OSCAR CLI runs a service (with a file) synchronously in the default cluster
-    ${result}=    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --file-input
-    ...    ${INVOKE_FILE}    stdout=True    stderr=True
-    Log    ${result.stdout}
-    # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    Hello
+    [Documentation]    Check that OSCAR CLI runs a service (with a file) synchronously in the default cluster with retries
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+        ${result}=    Run Keyword And Ignore Error
+        ...    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --file-input    ${INVOKE_FILE}
+        ...    stdout=True    stderr=True    shell=True
+
+        ${status}=    Set Variable    ${result[0]}
+        ${proc}=      Set Variable    ${result[1]}
+        Log    STDOUT:\n${proc.stdout}
+
+        ${rc}=    Set Variable If    '${status}' == 'PASS'    ${proc.rc}    -1
+        ${stdout}=    Set Variable If    '${status}' == 'PASS'    ${proc.stdout}    ${proc.stderr}
+
+        ${success}=    Evaluate    ${rc} == 0 and "Hello" in '''${stdout}'''
+        Exit For Loop If    ${success}
+
+        Log    CLI service not ready yet. Retrying in ${RETRY_INTERVAL} seconds...
+        Sleep    ${RETRY_INTERVAL}
+    END
+
+    Should Be Equal As Integers    ${rc}    0    msg=Service did not return a success code after ${MAX_RETRIES} attempts
+    Should Contain    ${stdout}    Hello    msg=Expected 'Hello' not found in stdout after ${MAX_RETRIES} attempts
 
 OSCAR CLI Run Services Synchronously With Prompt
     [Documentation]    Check that OSCAR CLI runs a service (with prompt) synchronously in the default cluster
@@ -86,16 +106,16 @@ OSCAR CLI Run Services Synchronously With Prompt
 OSCAR CLI Put File
     [Documentation]    Check that OSCAR CLI puts a file in a service's storage provider
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
-    ...    ${INVOKE_FILE}    robot-test/input/${INVOKE_FILE}
+    ...    ${INVOKE_FILE}    ${BUCKET_NAME}/input/${INVOKE_FILE}
     ...    stdout=True    stderr=True
-    Sleep    120s
+    # Sleep    120s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
 OSCAR CLI List Files
     [Documentation]    Check that OSCAR CLI lists files from a service's storage provider path
     ${result}=    Run Process    oscar-cli    service    list-files    ${SERVICE_NAME}
-    ...    minio.default    robot-test/input/
+    ...    minio.default    ${BUCKET_NAME}/input/
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
     Should Contain    ${result.stdout}    00-cowsay-invoke-body.json
@@ -108,13 +128,37 @@ OSCAR CLI Logs List
     Should Be Equal As Integers    ${result.rc}    0
     # Should Contain    ${result.stdout}    ${SERVICE_NAME}-
 
+# OSCAR CLI Logs Get
+#     [Documentation]    Check that OSCAR CLI gets the logs from a service's job
+#     ${result}=    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
+#     ...    ${JOB_NAME}    stdout=True    stderr=True
+#     Log    ${result.stdout}
+#     # Should Be Equal As Integers    ${result.rc}    0
+#     Should Contain    ${result.stdout}    Hello
+
 OSCAR CLI Logs Get
     [Documentation]    Check that OSCAR CLI gets the logs from a service's job
-    ${result}=    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
-    ...    ${JOB_NAME}    stdout=True    stderr=True
-    Log    ${result.stdout}
-    # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    Hello
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+        ${result}=    Run Keyword And Ignore Error
+        ...    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}    ${JOB_NAME}
+        ...    stdout=True    stderr=True    shell=True
+
+        ${status}=    Set Variable    ${result[0]}
+        ${proc}=      Set Variable    ${result[1]}
+        Log    ${proc.stdout}
+
+        ${rc}=        Set Variable If    '${status}' == 'PASS'    ${proc.rc}    -1
+        ${stdout}=    Set Variable If    '${status}' == 'PASS'    ${proc.stdout}    ${proc.stderr}
+
+        ${success}=    Evaluate    ${rc} == 0 and "Hello" in '''${stdout}'''
+        Exit For Loop If    ${success}
+
+        Log    Logs not available yet. Retrying in ${RETRY_INTERVAL} seconds...
+        Sleep    ${RETRY_INTERVAL}
+    END
+
+    Should Be Equal As Integers    ${rc}    0    msg=Failed to get logs successfully after ${MAX_RETRIES} attempts
+    Should Contain    ${stdout}    Hello    msg=Expected 'Hello' not found in logs after ${MAX_RETRIES} attempts
 
 OSCAR CLI Logs Remove
     [Documentation]    Check that OSCAR CLI removes the logs from a service's job
@@ -127,7 +171,7 @@ OSCAR CLI Logs Remove
 OSCAR CLI Get File
     [Documentation]    Check that OSCAR CLI gets a file from a service's storage provider
     ${result}=    Run Process    oscar-cli    service    get-file    ${SERVICE_NAME}    minio.default
-    ...    robot-test/input/${INVOKE_FILE}    00-cowsay-invoke-body-downloaded.json
+    ...    ${BUCKET_NAME}/input/${INVOKE_FILE}    00-cowsay-invoke-body-downloaded.json
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
@@ -158,6 +202,6 @@ Get Job Name From Logs
 
 Prepare Service File
     [Documentation]    Prepare the service file for service creation
-    ${service_content}=    Load Original Service File    ${DATA_DIR}/00-cowsay.yaml
-    ${service_content}=    Set VO    ${service_content}
+    ${service_content}=    Load Original Service File    ${SERVICE_FILE}
+    ${service_content}=    Set Service File VO    ${service_content}
     Save YAML File    ${service_content}    ${DATA_DIR}/service_file.yaml
