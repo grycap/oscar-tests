@@ -1,12 +1,11 @@
 *** Settings ***
-Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Different access control scenarios.
+Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Different service.
 
-Resource            ${CURDIR}/../../resources/resources.resource
+Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/token.resource
 
 Suite Setup         Check Valid OIDC Token
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/custom_service_file.json
-...                     ${DATA_DIR}/custom_bucket.json
 
 
 *** Test Cases ***
@@ -26,8 +25,8 @@ Service Is Restricted
     [Documentation]    Check that the created service is restricted
     Check Service Visibility    RESTRICTED
 
-Update To Private Service
-    [Documentation]    Update the created service
+Update Restricted To Private Service
+    [Documentation]    Update the restricted service to private
     Prepare Service File    PRIVATE
     ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
     # ${body}=    Prepare Service File    PRIVATE
@@ -35,75 +34,87 @@ Update To Private Service
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
+Invoke Asynchronous Private Service
+    [Documentation]    Invoke the asynchronous private service
+    ${body}=    Get File    ${INVOKE_FILE}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
+    ...    headers=${HEADERS}
+    Should Be Equal As Strings    ${response.status_code}    201
+
+OSCAR List Jobs
+    [Documentation]    List all jobs from a service with their status
+    ${list_jobs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=200
+    ...    headers=${HEADERS}
+    ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
+    Get Key From Dictionary    ${jobs_dict}
+    Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
+
+OSCAR Get Logs
+    [Documentation]    Get the logs from a job
+    FOR    ${_}    IN RANGE    ${MAX_RETRIES}
+        ${result}=    Run Keyword And Ignore Error    GET
+        ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    headers=${HEADERS}
+        VAR    ${rc}=    ${result[0]}
+        VAR    ${response_raw}=    ${result[1]}
+        ${status_code}=    Set Variable If    '${rc}' == 'PASS'    ${response_raw.status_code}
+
+        IF    '${status_code}' == '200'    BREAK
+
+        Log    Service not ready yet. Status: ${response_raw}. Retrying in ${RETRY_INTERVAL}...
+        Sleep    ${RETRY_INTERVAL}
+    END
+    Should Be Equal As Strings    ${status_code}    200    msg=Service was not ready after ${MAX_RETRIES} attempts
+
 Service Is Private
     [Documentation]    Check that the created service is private
     Check Service Visibility    PRIVATE
 
-OSCAR Delete Service
-    [Documentation]    Delete the created service
+OSCAR Delete Private Service
+    [Documentation]    Delete the private service
     [Tags]    delete
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
     ...    headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
-Create Bucket
-    [Documentation]    Create a new bucket
-    [Tags]    create    bucket
-    ${body}=    Get File    ${DATA_DIR}/bucket.json
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
+OSCAR Create Private Service
+    [Documentation]    Create a new private service
+    [Tags]    create
+    Prepare Service File    PRIVATE
+    ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
+    # ${body}=    Prepare Service File    PRIVATE
+
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     ...    headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
-List Buckets
-    [Documentation]    List all buckets
-    [Tags]    bucket
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    headers=${HEADERS}
-    Log    ${response.content}
-    Should Be Equal As Strings    ${response.status_code}    200
+Service Is Private
+    [Documentation]    Check that the created service is private
+    Check Service Visibility    PRIVATE
 
-Bucket Is Public
-    [Documentation]    Check that the created bucket is public
-    [Tags]    bucket
-    Check Bucket Visibility    public
-
-Update To Restricted Bucket
-    [Documentation]    Update the created bucket
-    [Tags]    bucket
-    Prepare Bucket File    restricted
-    ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
-    # ${body}=    Prepare Bucket File    restricted
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    data=${body}    headers=${HEADERS}
+Update Private To Restricted Service
+    [Documentation]    Update the restricted service to private
+    Prepare Service File    RESTRICTED
+    ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
+    # ${body}=    Prepare Service File    RESTRICTED
+    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
-Bucket Is Restricted
-    [Documentation]    Check that the created bucket is restricted
-    [Tags]    bucket
-    Check Bucket Visibility    restricted
+Service Is Restricted
+    [Documentation]    Check that the created service is restricted
+    Check Service Visibility    RESTRICTED
 
-Update To Private Bucket
-    [Documentation]    Update the created bucket
-    [Tags]    bucket
-    Prepare Bucket File    private
-    ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    data=${body}    headers=${HEADERS}
-    Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
-
-Bucket Is Private
-    [Documentation]    Check that the created bucket is restricted
-    [Tags]    bucket
-    Check Bucket Visibility    private
-
-Delete Bucket
-    [Documentation]    Delete the created bucket
-    [Tags]    delete    bucket
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_NAME}    expected_status=204
+OSCAR Delete Restricted Service
+    [Documentation]    Delete the restricted service
+    [Tags]    delete
+    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
     ...    headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
+
+
 
 
 *** Keywords ***
@@ -133,30 +144,3 @@ Check Service Visibility
 
     # Should Not Be None    ${robot_test_app}    App with name 'robot-test-cowsay' not found
     Should Be Equal    ${robot_test_service['isolation_level']}    ${expected_visibility}
-
-Prepare Bucket File
-    [Documentation]    Prepare the bucket file for bucket creation
-    [Arguments]    ${expected_visibility}
-    ${body_string}=    Get File    ${DATA_DIR}/bucket.json
-    ${body}=    Convert String To JSON    ${body_string}
-
-    ${body}=    Set Bucket File Visibility    ${body}    ${expected_visibility}    ${EGI_UID_1}
-
-    ${json_output}=    Convert JSON To String    ${body}
-    Create File    ${DATA_DIR}/custom_bucket.json    ${json_output}
-    # RETURN    ${json_output}
-
-Check Bucket Visibility
-    [Documentation]    Check the visibility of a bucket
-    [Arguments]    ${expected_visibility}
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    headers=${HEADERS}
-    Log    ${response.content}
-
-    # Parse JSON content to a list of dictionaries
-    ${buckets}=    Convert String To Json    ${response.content}
-
-    # Find the bucket dictionary with bucket_path == '${BUCKET_NAME}'
-    ${robot_test_bucket}=    Evaluate    next((b for b in ${buckets} if b['bucket_path'] == '${BUCKET_NAME}'), None)
-
-    # Check visibility
-    Should Be Equal    ${robot_test_bucket['visibility']}    ${expected_visibility}
