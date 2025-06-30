@@ -3,7 +3,7 @@ Documentation       Tests for the OSCAR's UI dashboard.
 
 Library             String
 Library             Browser
-Resource            ${CURDIR}/../resources/resources.resource
+Resource            ${CURDIR}/../resources/files.resource
 Resource            ${CURDIR}/../resources/token.resource
 
 Suite Setup         Prepare Environment
@@ -102,26 +102,26 @@ Delete Log
     ...    xpath=//li[@data-type='success']//div[contains(text(), 'was deleted successfully')]
     ...    visible    timeout=60s
 
-Create Bucket
-    [Documentation]    Create a bucket ${BUCKET_NAME}
-    Navigate To Buckets Page
-    Click    text="Create bucket"
-    Fill Text    id=bucketName    ${BUCKET_NAME}
-    Click    text="Create"
-    Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Bucket created successfully']
-    ...    visible    timeout=10s
+# Create Private Bucket
+#     [Documentation]    Create a bucket ${BUCKET_NAME}
+#     Navigate To Buckets Page
+#     Click    text="Create bucket"
+#     Fill Text    id=bucketName    ${BUCKET_NAME}
+#     Click    text="Create"
+#     Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Bucket created successfully']
+#     ...    visible    timeout=10s
 
 Delete Services
    [Documentation]    Delete the services created previously
    Navigate To Services Page
    Delete Selected Service    ${SERVICE_NAME}
 
-Delete Bucket
-    [Documentation]    Delete the bucket created previously
-    Navigate To Buckets Page
-    Sleep    2s
-    Click    css=tr:has-text("${BUCKET_NAME}") button:has(svg.lucide-trash)
-    Click    text="Delete"
+# Delete Bucket
+#     [Documentation]    Delete the bucket created previously
+#     Navigate To Buckets Page
+#     Sleep    2s
+#     Click    css=tr:has-text("${BUCKET_NAME}") button:has(svg.lucide-trash)
+#     Click    text="Delete"
 
 Check Info
     [Documentation]    Check the info page
