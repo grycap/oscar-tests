@@ -40,6 +40,7 @@ The following information is required:
       - For the demo server, use `https://aai-demo.egi.eu`.
   - `REFRESH_TOKEN`: The OIDC token used to automate the execution of the test suite. In order to get a Refresh Token, head to the [Check-in Token Portal](https://aai.egi.eu/token/) or [Demo Check-in Token Portal](https://aai-demo.egi.eu/token/), click **Authorise** and then **Create Refresh Token** button to generate a new token.
   - `EGI_VO`: The virtual organization used to test the OSCAR cluster.
+  - `EGI_UID`: The unique user ID (available in the [EGI Check-in profile management](https://aai.egi.eu/auth/realms/id/account/#/)).
 
 
 
