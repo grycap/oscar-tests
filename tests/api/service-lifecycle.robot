@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Basic endpoint coverage
 
-Resource            ${CURDIR}/../../resources/resources.resource
+Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/token.resource
 
 Suite Setup         Check Valid OIDC Token
@@ -27,7 +27,7 @@ OSCAR System Info
     Log    ${response.content}
     Should Contain    ${response.content}    "version":
 
-OSCAR Create Service
+OSCAR Create Public Service
     [Documentation]    Create a new service
     [Tags]    create
     # ${body}=    Prepare Service File
@@ -139,7 +139,7 @@ OSCAR Delete All Jobs
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
-OSCAR Delete Service
+OSCAR Delete Public Service
     [Documentation]    Delete the created service
     [Tags]    delete
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204

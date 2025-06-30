@@ -2,7 +2,7 @@
 Documentation       Tests for the OSCAR Python library
 
 Library             robot_libs.oscar_lib.OscarLibrary
-Resource            ${CURDIR}/../resources/resources.resource
+Resource            ${CURDIR}/../resources/files.resource
 Resource            ${CURDIR}/../resources/token.resource
 
 Suite Setup         Check Valid OIDC Token
@@ -23,13 +23,6 @@ Get Cluster Info
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    200
     Should Contain    ${response.content}    "version":
-
-List Services
-    [Documentation]    List all services in the OSCAR cluster
-    ${response}=    List Services
-    Log    ${response.content}
-    Should Be Equal As Integers    ${response.status_code}    200
-    Should Contain    ${response.content}    "name":
 
 Get Cluster Config
     [Documentation]    Retrieve the configuration of the OSCAR cluster
@@ -53,6 +46,13 @@ Get Service Details
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    200
     Should Contain    ${response.content}    "${SERVICE_NAME}"
+
+List Services
+    [Documentation]    List all services in the OSCAR cluster
+    ${response}=    List Services
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    "name":
 
 # Run Service Synchronously
 #     [Documentation]    Run a service synchronously with input data

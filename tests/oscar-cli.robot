@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation       Tests for the OSCAR CLI against a deployed OSCAR cluster.
 
-Resource            ${CURDIR}/../resources/resources.resource
+Resource            ${CURDIR}/../resources/files.resource
 Resource            ${CURDIR}/../resources/token.resource
 
 Suite Teardown      Clean Test Artifacts    True    00-cowsay-invoke-body-downloaded.json
