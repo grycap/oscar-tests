@@ -46,7 +46,7 @@ Log Out
     Navigate To Services Page
     Click    xpath=//div[span[text()='Log out']]
     ${current_url}=    Get URL
-    Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/login
+    Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}
 
 
 *** Keywords ***
