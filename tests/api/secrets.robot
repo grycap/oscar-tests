@@ -43,23 +43,11 @@ OSCAR List Jobs
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
 OSCAR Get Logs
-    [Documentation]    Get the logs from a job
-    FOR    ${_}    IN RANGE    ${MAX_RETRIES}
-        ${result}=    Run Keyword And Ignore Error    GET
-        ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    headers=${HEADERS}
-        VAR    ${rc}=    ${result[0]}
-        VAR    ${response_raw}=    ${result[1]}
-        ${status_code}=    Set Variable If    '${rc}' == 'PASS'    ${response_raw.status_code}
-
-        IF    '${status_code}' == '200'    BREAK
-
-        Log    Service not ready yet. Status: ${response_raw}. Retrying in ${RETRY_INTERVAL}...
-        Sleep    ${RETRY_INTERVAL}
-    END
-    Should Be Equal As Strings    ${status_code}    200    msg=Service was not ready after ${MAX_RETRIES} attempts
-
-    Sleep    5s
-    ${response_text}=    Set Variable    ${response_raw.text}
+    [Documentation]    Get the logs from a job and check for 'robot-secret'
+    ${response_text}=    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Get Logs Text
     Should Contain    ${response_text}    robot-secret
 
 OSCAR Delete Job
@@ -75,7 +63,7 @@ OSCAR Update Service
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Should Contain    [ '200', '204' ]    '${response.status_code}'
 
 OSCAR Invoke Asynchronous Service Updated
     [Documentation]    Invoke the asynchronous service
@@ -93,23 +81,11 @@ OSCAR List Jobs Updated
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
 OSCAR Get Logs Updated
-    [Documentation]    Get the logs from a job
-    FOR    ${_}    IN RANGE    ${MAX_RETRIES}
-        ${result}=    Run Keyword And Ignore Error    GET
-        ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    headers=${HEADERS}
-        VAR    ${rc}=    ${result[0]}
-        VAR    ${response_raw}=    ${result[1]}
-        ${status_code}=    Set Variable If    '${rc}' == 'PASS'    ${response_raw.status_code}
-
-        IF    '${status_code}' == '200'    BREAK
-
-        Log    Service not ready yet. Status: ${response_raw}. Retrying in ${RETRY_INTERVAL}...
-        Sleep    ${RETRY_INTERVAL}
-    END
-    Should Be Equal As Strings    ${status_code}    200    msg=Service was not ready after ${MAX_RETRIES} attempts
-
-    Sleep    5s
-    ${response_text}=    Set Variable    ${response_raw.text}
+    [Documentation]    Get the logs from a job and check for 'another-robot-secret'
+    ${response_text}=    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Get Logs Text
     Should Contain    ${response_text}    another-robot-secret
 
 OSCAR Delete Job Updated
@@ -125,7 +101,7 @@ OSCAR Update Service Again
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Should Contain    [ '200', '204' ]    '${response.status_code}'
 
 OSCAR Invoke Asynchronous Service Again
     [Documentation]    Invoke the asynchronous service
@@ -143,23 +119,11 @@ OSCAR List Jobs Again
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
 OSCAR Get Logs Again
-    [Documentation]    Get the logs from a job
-    FOR    ${_}    IN RANGE    ${MAX_RETRIES}
-        ${result}=    Run Keyword And Ignore Error    GET
-        ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    headers=${HEADERS}
-        VAR    ${rc}=    ${result[0]}
-        VAR    ${response_raw}=    ${result[1]}
-        ${status_code}=    Set Variable If    '${rc}' == 'PASS'    ${response_raw.status_code}
-
-        IF    '${status_code}' == '200'    BREAK
-
-        Log    Service not ready yet. Status: ${response_raw}. Retrying in ${RETRY_INTERVAL}...
-        Sleep    ${RETRY_INTERVAL}
-    END
-    Should Be Equal As Strings    ${status_code}    200    msg=Service was not ready after ${MAX_RETRIES} attempts
-
-    Sleep    5s
-    ${response_text}=    Set Variable    ${response_raw.text}
+    [Documentation]    Get the logs from a job and check for 'another-robot-secret'
+    ${response_text}=    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Get Logs Text
     Should Contain    ${response_text}    another-robot-secret
 
 OSCAR Delete Service
@@ -173,13 +137,28 @@ OSCAR Delete Service
 
 *** Keywords ***
 Prepare Service File
-    [Arguments]    ${secret_key}=None
+    [Documentation]    Prepare the service file for service creation
+    [Arguments]    ${secret_key}=${EMPTY}
     ${service_content}=    Load Original Service File    ${SERVICE_FILE}
     ${service_content}=    Set Service File VO    ${service_content}
     # If the secret key is not provided, use the default script file
     # Otherwise, add the secret echo to the script file
-    ${script_to_use}=    Run Keyword If    '${secret_key}'    Add Secret Echo To Script File    ELSE    Get File    ${SCRIPT_FILE}
+    IF    '${secret_key}'
+        ${script_to_use}=    Add Secret Echo To Script File
+    ELSE
+        ${script_to_use}=    Get File    ${SCRIPT_FILE}
+    END
     ${service_content}=    Set Service File Script    ${service_content}    ${script_to_use}
     ${service_content}=    Set Service File Secret    ${service_content}    ${secret_key}
 
     Dump Service File To JSON File    ${service_content}    ${DATA_DIR}/service_file.json
+
+Get Logs Text
+    [Documentation]    Fetch logs and return the text
+    ${response}=    GET
+    ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
+    ...    headers=${HEADERS}
+    Log    Logs response: ${response}
+    Should Be Equal As Integers    ${response.status_code}    200
+    VAR    ${response_text}=    ${response.text}
+    RETURN    ${response_text}

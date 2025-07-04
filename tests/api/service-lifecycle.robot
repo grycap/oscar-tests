@@ -27,7 +27,7 @@ OSCAR System Info
     Log    ${response.content}
     Should Contain    ${response.content}    "version":
 
-OSCAR Create Public Service
+OSCAR Create Service
     [Documentation]    Create a new service
     [Tags]    create
     # ${body}=    Prepare Service File
@@ -36,7 +36,6 @@ OSCAR Create Public Service
 
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...    headers=${HEADERS}
-    # Sleep    120s
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -53,45 +52,26 @@ OSCAR Read Service
     Log    ${response.content}
     Should Contain    ${response.content}    "name":"${SERVICE_NAME}"
 
-# OSCAR Invoke Synchronous Service
-#    [Documentation]    Invoke the synchronous service
-#    ${body}=    Get File    ${INVOKE_FILE}
-#    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200    data=${body}
-#    ...    headers=${HEADERS}
-#    Log    ${response.content}
-#    Should Contain    ${response.content}    Hello
-
 OSCAR Invoke Synchronous Service
-    [Documentation]    Invoke the synchronous service
+    [Documentation]    Invoke the synchronous service and wait until it returns HTTP 200
     ${body}=    Get File    ${INVOKE_FILE}
-
-    FOR    ${_}    IN RANGE    ${MAX_RETRIES}
-        ${result}=    Run Keyword And Ignore Error    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}
-        ...    data=${body}    headers=${HEADERS}
-        VAR    ${rc}=    ${result[0]}
-        VAR    ${response_raw}=    ${result[1]}
-        ${status_code}=    Set Variable If    '${rc}' == 'PASS'    ${response_raw.status_code}
-
-        IF    '${status_code}' == '200'    BREAK
-
-        Log    Service not ready yet. Status: ${response_raw}. Retrying in ${RETRY_INTERVAL}...
-        Sleep    ${RETRY_INTERVAL}
-    END
-    Should Be Equal As Strings    ${status_code}    200    msg=Service was not ready after ${MAX_RETRIES} attempts
+    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Should Successfully Invoke Service    ${body}
 
 OSCAR Update Service
     [Documentation]    Update a service
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Should Contain    [ '200', '204' ]    '${response.status_code}'
 
 OSCAR Invoke Asynchronous Service
     [Documentation]    Invoke the asynchronous service
     ${body}=    Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
     ...    headers=${HEADERS}
-    # Sleep    120s
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR List Jobs
@@ -102,28 +82,12 @@ OSCAR List Jobs
     Get Key From Dictionary    ${jobs_dict}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
-# OSCAR Get Logs
-#    [Documentation]    Get the logs from a job
-#    ${get_logs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=200
-#    ...    headers=${HEADERS}
-#    Log    ${get_logs.content}
-#    Should Contain    ${get_logs.content}    Hello
-
 OSCAR Get Logs
-    [Documentation]    Get the logs from a job
-    FOR    ${_}    IN RANGE    ${MAX_RETRIES}
-        ${result}=    Run Keyword And Ignore Error    GET
-        ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    headers=${HEADERS}
-        VAR    ${rc}=    ${result[0]}
-        VAR    ${response_raw}=    ${result[1]}
-        ${status_code}=    Set Variable If    '${rc}' == 'PASS'    ${response_raw.status_code}
-
-        IF    '${status_code}' == '200'    BREAK
-
-        Log    Service not ready yet. Status: ${response_raw}. Retrying in ${RETRY_INTERVAL}...
-        Sleep    ${RETRY_INTERVAL}
-    END
-    Should Be Equal As Strings    ${status_code}    200    msg=Service was not ready after ${MAX_RETRIES} attempts
+    [Documentation]    Get the logs from a job and wait until they are available
+    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Should Successfully Get Logs
 
 OSCAR Delete Job
     [Documentation]    Delete a job from a service
@@ -139,7 +103,7 @@ OSCAR Delete All Jobs
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
-OSCAR Delete Public Service
+OSCAR Delete Service
     [Documentation]    Delete the created service
     [Tags]    delete
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
@@ -156,3 +120,21 @@ Prepare Service File
     ${service_content}=    Set Service File Script    ${service_content}
     Dump Service File To JSON File    ${service_content}    ${DATA_DIR}/service_file.json
     # RETURN    ${service_content}
+
+Should Successfully Invoke Service
+    [Documentation]    Invoke the synchronous service
+    [Arguments]    ${body}
+    ${response}=    POST
+    ...    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}
+    ...    data=${body}
+    ...    headers=${HEADERS}
+    Log    Response: ${response}
+    Should Be Equal As Integers    ${response.status_code}    200
+
+Should Successfully Get Logs
+    [Documentation]    Get the logs from a job
+    ${response}=    GET
+    ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
+    ...    headers=${HEADERS}
+    Log    Logs response: ${response}
+    Should Be Equal As Integers    ${response.status_code}    200

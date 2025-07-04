@@ -52,7 +52,6 @@ OSCAR CLI Apply
     [Tags]    create
     Prepare Service File
     ${result}=    Run Process    oscar-cli    apply    ${DATA_DIR}/service_file.yaml    stdout=True    stderr=True
-    # Sleep    120s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
@@ -63,37 +62,12 @@ OSCAR CLI List Services
     Should Be Equal As Integers    ${result.rc}    0
     # Should Contain    ${result.stdout}    ${SERVICE_NAME}
 
-# OSCAR CLI Run Services Synchronously With File
-#     [Documentation]    Check that OSCAR CLI runs a service (with a file) synchronously in the default cluster
-#     ${result}=    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --file-input
-#     ...    ${INVOKE_FILE}    stdout=True    stderr=True
-#     Log    ${result.stdout}
-#     # Should Be Equal As Integers    ${result.rc}    0
-#     Should Contain    ${result.stdout}    Hello
-
 OSCAR CLI Run Services Synchronously With File
-    [Documentation]    Check that OSCAR CLI runs a service (with a file) synchronously in the default cluster with retries
-    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
-        ${result}=    Run Keyword And Ignore Error
-        ...    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --file-input    ${INVOKE_FILE}
-        ...    stdout=True    stderr=True    shell=True
-
-        ${status}=    Set Variable    ${result[0]}
-        ${proc}=      Set Variable    ${result[1]}
-        Log    STDOUT:\n${proc.stdout}
-
-        ${rc}=    Set Variable If    '${status}' == 'PASS'    ${proc.rc}    -1
-        ${stdout}=    Set Variable If    '${status}' == 'PASS'    ${proc.stdout}    ${proc.stderr}
-
-        ${success}=    Evaluate    ${rc} == 0 and "Hello" in '''${stdout}'''
-        Exit For Loop If    ${success}
-
-        Log    CLI service not ready yet. Retrying in ${RETRY_INTERVAL} seconds...
-        Sleep    ${RETRY_INTERVAL}
-    END
-
-    Should Be Equal As Integers    ${rc}    0    msg=Service did not return a success code after ${MAX_RETRIES} attempts
-    Should Contain    ${stdout}    Hello    msg=Expected 'Hello' not found in stdout after ${MAX_RETRIES} attempts
+    [Documentation]    Wait until the service returns "ROBOT" in its response
+    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Service Should Return ROBOT    ${SERVICE_NAME}    ${INVOKE_FILE}
 
 OSCAR CLI Run Services Synchronously With Prompt
     [Documentation]    Check that OSCAR CLI runs a service (with prompt) synchronously in the default cluster
@@ -108,7 +82,6 @@ OSCAR CLI Put File
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
     ...    ${INVOKE_FILE}    ${BUCKET_NAME}/input/${INVOKE_FILE}
     ...    stdout=True    stderr=True
-    # Sleep    120s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
@@ -128,37 +101,12 @@ OSCAR CLI Logs List
     Should Be Equal As Integers    ${result.rc}    0
     # Should Contain    ${result.stdout}    ${SERVICE_NAME}-
 
-# OSCAR CLI Logs Get
-#     [Documentation]    Check that OSCAR CLI gets the logs from a service's job
-#     ${result}=    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
-#     ...    ${JOB_NAME}    stdout=True    stderr=True
-#     Log    ${result.stdout}
-#     # Should Be Equal As Integers    ${result.rc}    0
-#     Should Contain    ${result.stdout}    Hello
-
 OSCAR CLI Logs Get
-    [Documentation]    Check that OSCAR CLI gets the logs from a service's job
-    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
-        ${result}=    Run Keyword And Ignore Error
-        ...    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}    ${JOB_NAME}
-        ...    stdout=True    stderr=True    shell=True
-
-        ${status}=    Set Variable    ${result[0]}
-        ${proc}=      Set Variable    ${result[1]}
-        Log    ${proc.stdout}
-
-        ${rc}=        Set Variable If    '${status}' == 'PASS'    ${proc.rc}    -1
-        ${stdout}=    Set Variable If    '${status}' == 'PASS'    ${proc.stdout}    ${proc.stderr}
-
-        ${success}=    Evaluate    ${rc} == 0 and "Hello" in '''${stdout}'''
-        Exit For Loop If    ${success}
-
-        Log    Logs not available yet. Retrying in ${RETRY_INTERVAL} seconds...
-        Sleep    ${RETRY_INTERVAL}
-    END
-
-    Should Be Equal As Integers    ${rc}    0    msg=Failed to get logs successfully after ${MAX_RETRIES} attempts
-    Should Contain    ${stdout}    Hello    msg=Expected 'Hello' not found in logs after ${MAX_RETRIES} attempts
+    [Documentation]    Check that OSCAR CLI gets the logs from a service's job and wait until job logs contain "ROBOT"
+    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Logs Should Contain ROBOT    ${SERVICE_NAME}    ${JOB_NAME}
 
 OSCAR CLI Logs Remove
     [Documentation]    Check that OSCAR CLI removes the logs from a service's job
@@ -175,7 +123,7 @@ OSCAR CLI Get File
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
-    File Should Exist    00-cowsay-invoke-body-downloaded.json
+    Should Exist    00-cowsay-invoke-body-downloaded.json
 
 OSCAR CLI Services Remove
     [Documentation]    Check that OSCAR CLI deletes a service
@@ -205,3 +153,23 @@ Prepare Service File
     ${service_content}=    Load Original Service File    ${SERVICE_FILE}
     ${service_content}=    Set Service File VO    ${service_content}
     Save YAML File    ${service_content}    ${DATA_DIR}/service_file.yaml
+
+Service Should Return ROBOT
+    [Documentation]    Check that OSCAR CLI runs a service synchronously (with file)
+    [Arguments]    ${service_name}    ${invoke_file}
+    ${proc}=    Run Process
+    ...    oscar-cli    service    run    ${service_name}    --file-input    ${invoke_file}
+    ...    stdout=True    stderr=True    shell=True
+    Log    STDOUT:\n${proc.stdout}
+    Should Be Equal As Integers    ${proc.rc}    0
+    Should Contain    ${proc.stdout}    ROBOT
+
+Logs Should Contain ROBOT
+    [Documentation]    Check that OSCAR CLI gets the logs from a service's job
+    [Arguments]    ${service_name}    ${job_name}
+    ${proc}=    Run Process
+    ...    oscar-cli    service    logs    get    ${service_name}    ${job_name}
+    ...    stdout=True    stderr=True    shell=True
+    Log    ${proc.stdout}
+    Should Be Equal As Integers    ${proc.rc}    0
+    Should Contain    ${proc.stdout}    ROBOT

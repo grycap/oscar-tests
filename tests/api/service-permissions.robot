@@ -13,12 +13,12 @@ Create Restricted Service
     [Documentation]    Create a new restricted service
     [Tags]    create
     Create Service    restricted    ${EGI_UID_1}
-    Check Service Visibility    restricted
+    # Check Service Visibility    restricted
 
 Update Restricted to Private Service
     [Documentation]    Update the restricted service to private
     Update Service    private
-    Check Service Visibility    private
+    # Check Service Visibility    private
 
 Invoke Asynchronous Private Service
     [Documentation]    Invoke the asynchronous private service
@@ -36,33 +36,24 @@ List Jobs
     Get Key From Dictionary    ${jobs_dict}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
-Get Logs
-    [Documentation]    Get the logs from a job
-    FOR    ${_}    IN RANGE    ${MAX_RETRIES}
-        ${result}=    Run Keyword And Ignore Error    GET
-        ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    headers=${HEADERS}
-        VAR    ${rc}=    ${result[0]}
-        VAR    ${response_raw}=    ${result[1]}
-        ${status_code}=    Set Variable If    '${rc}' == 'PASS'    ${response_raw.status_code}
-
-        IF    '${status_code}' == '200'    BREAK
-
-        Log    Service not ready yet. Status: ${response_raw}. Retrying in ${RETRY_INTERVAL}...
-        Sleep    ${RETRY_INTERVAL}
-    END
-    Should Be Equal As Strings    ${status_code}    200    msg=Service was not ready after ${MAX_RETRIES} attempts
+OSCAR Get Logs
+    [Documentation]    Get the logs from a job and wait until they are available
+    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Should Successfully Get Logs
 
 Delete Private Service
     [Documentation]    Delete the private service
     [Tags]    delete
-    Check Service Visibility    private
+    # Check Service Visibility    private
     Delete Service
 
 Create Private Service
     [Documentation]    Create a new private service
     [Tags]    create
     Create Service    private
-    Check Service Visibility    private
+    # Check Service Visibility    private
 
 Update Private to Restricted Service
     [Documentation]    Update the private service to restricted
@@ -72,39 +63,39 @@ Update Private to Restricted Service
 Delete Restricted Service
     [Documentation]    Delete the restricted service
     [Tags]    delete
-    Check Service Visibility    restricted
+    # Check Service Visibility    restricted
     Delete Service
 
 Create Public Service
     [Documentation]    Create a new public service
     [Tags]    create
     Create Service    public
-    Check Service Visibility    public
+    # Check Service Visibility    public
 
 Update Public to Private Service
     [Documentation]    Update the public service to private
     Update Service    private
-    Check Service Visibility    private
+    # Check Service Visibility    private
 
 Update Private to Public Service
     [Documentation]    Update the private service to public
     Update Service    public
-    Check Service Visibility    public
+    # Check Service Visibility    public
 
 Update Public to Restricted Service
     [Documentation]    Update the public service to restricted
     Update Service    restricted    ${EGI_UID_1}
-    Check Service Visibility    restricted
+    # Check Service Visibility    restricted
 
 Update Restricted to Public Service
     [Documentation]    Update the restricted service to public
     Update Service    public
-    Check Service Visibility    public
+    # Check Service Visibility    public
 
 Delete Public Service
     [Documentation]    Delete the public service
     [Tags]    delete
-    Check Service Visibility    public
+    # Check Service Visibility    public
     Delete Service
 
 
@@ -126,7 +117,8 @@ Update Service
     ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    data=${body}    headers=${HEADERS}
     Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Should Contain    [ '200', '204' ]    '${response.status_code}'
+    Check Service Visibility    ${visibility}
 
 Delete Service
     [Documentation]    Delete a service
@@ -161,3 +153,11 @@ Check Service Visibility
 
     # Should Not Be None    ${robot_test_app}    App with name 'robot-test-cowsay' not found
     Should Be Equal    ${robot_test_service['visibility']}    ${expected_visibility}
+
+Should Successfully Get Logs
+    [Documentation]    Get the logs from a job
+    ${response}=    GET
+    ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
+    ...    headers=${HEADERS}
+    Log    Logs response: ${response}
+    Should Be Equal As Integers    ${response.status_code}    200

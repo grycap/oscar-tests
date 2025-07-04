@@ -36,7 +36,6 @@ Create New Service
     [Tags]    create
     Prepare Service File
     ${response}=    Create Service    ${DATA_DIR}/service_file.yaml
-    # Sleep    120s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -54,47 +53,22 @@ List Services
     Should Be Equal As Integers    ${response.status_code}    200
     Should Contain    ${response.content}    "name":
 
-# Run Service Synchronously
-#     [Documentation]    Run a service synchronously with input data
-#     ${response}=    Run Service Synchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
-#     Log    ${response.content}
-#     Should Be Equal As Integers    ${response.status_code}    200
-#     Should Contain    ${response.content}    ROBOT
-
 Run Service Synchronously
-    [Documentation]    Run a service synchronously with input data
-    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
-        ${result}=    Run Keyword And Ignore Error
-        ...    Run Service Synchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
-
-        ${status}=      Set Variable    ${result[0]}
-        ${response}=    Set Variable    ${result[1]}
-        Log    ${response}
-
-        ${rc}=      Set Variable If    '${status}' == 'PASS'    ${response.status_code}    -1
-        ${content}=    Set Variable If    '${status}' == 'PASS'    ${response.content}    ${EMPTY}
-
-        ${success}=    Evaluate    ${rc} == 200 and "ROBOT" in '''${content}'''
-        Exit For Loop If    ${success}
-
-        Log    Service not ready or unexpected response. Retrying in ${RETRY_INTERVAL} seconds...
-        Sleep    ${RETRY_INTERVAL}
-    END
-
-    Log    ${response.content}
-    Should Be Equal As Integers    ${rc}    200    msg=Service did not return HTTP 200 after ${MAX_RETRIES} attempts
-    Should Contain    ${content}    ROBOT    msg=Expected 'ROBOT' not found in response content after ${MAX_RETRIES} attempts
+    [Documentation]    Wait until the service returns "ROBOT" in its response
+    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Service Should Return ROBOT    ${SERVICE_NAME}    ${INVOKE_FILE}
 
 Update Existing Service
     [Documentation]    Update an existing service using a new FDL file
     ${response}=    Update Service    ${SERVICE_NAME}    ${DATA_DIR}/service_file.yaml
     Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Should Contain    [ '200', '204' ]    '${response.status_code}'
 
 Run Service Asynchronously
     [Documentation]    Run a service asynchronously with input data
     ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
-    # Sleep    50s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -106,34 +80,12 @@ List Jobs
     Get Key From Dictionary    ${jobs_dict}
     Should Be Equal As Integers    ${response.status_code}    200
 
-# Get Job Logs
-#     [Documentation]    Check the logs of a job
-#     ${response}=    Get Job Logs    ${SERVICE_NAME}    ${JOB_NAME}
-#     Log    ${response.content}
-#     Should Be Equal As Integers    ${response.status_code}    200
-#     Should Contain    ${response.content}    Hello
-
 Get Job Logs
-    [Documentation]    Check the logs of a job
-    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
-        ${result}=    Run Keyword And Ignore Error
-        ...    Get Job Logs    ${SERVICE_NAME}    ${JOB_NAME}
-        ${status}=    Set Variable    ${result[0]}
-        ${response}=  Set Variable    ${result[1]}
-        ${status_code}=    Set Variable If    '${status}' == 'PASS'    ${response.status_code}    -1
-        ${content}=        Set Variable If    '${status}' == 'PASS'    ${response.content}    ${EMPTY}
-
-        Log    ${content}
-
-        ${success}=    Evaluate    ${status_code} == 200 and "Hello" in '''${content}'''
-        Exit For Loop If    ${success}
-
-        Log    Job not ready or message not found yet. Retrying in ${RETRY_INTERVAL} seconds...
-        Sleep    ${RETRY_INTERVAL}
-    END
-
-    Should Be Equal As Integers    ${status_code}    200    msg=Job logs did not return 200 after ${MAX_RETRIES} attempts
-    Should Contain    ${content}    Hello    msg=Expected 'Hello' not found in job logs after ${MAX_RETRIES} attempts
+    [Documentation]    Check the logs of a job and wait until job logs contain "ROBOT"
+    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Job Logs Should Contain ROBOT    ${SERVICE_NAME}    ${JOB_NAME}
 
 Remove Job
     [Documentation]    Remove a job created by the service
@@ -195,6 +147,21 @@ Prepare Service File
     ${service_content}=    Load Original Service File    ${SERVICE_FILE}
     ${service_content}=    Set Service File VO    ${service_content}
     Save YAML File    ${service_content}    ${DATA_DIR}/service_file.yaml
+
+Service Should Return ROBOT
+    [Documentation]    Run a service synchronously with input data
+    [Arguments]    ${service_name}    ${invoke_file}
+    ${response}=    Run Service Synchronously    ${service_name}    ${invoke_file}
+    Log    ${response.content}
+    Should Contain    ${response.content}    ROBOT
+
+Job Logs Should Contain ROBOT
+    [Documentation]    Check if job logs contain "ROBOT"
+    [Arguments]    ${service_name}    ${job_name}
+    ${response}=    Get Job Logs    ${service_name}    ${job_name}
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    ROBOT
 
 Create Storage Object
     [Documentation]    Create a storage object in the service's storage provider
