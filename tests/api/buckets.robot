@@ -89,7 +89,8 @@ Create Bucket
     [Arguments]    ${visibility}    ${egi_uid}=None
     Prepare Bucket File    ${visibility}    ${egi_uid}
     ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}    headers=${HEADERS}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201
+    ...    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -100,11 +101,12 @@ Update Bucket
     ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    data=${body}    headers=${HEADERS}
     Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Should Contain    [ '200', '204' ]    '${response.status_code}'
 
 Delete Bucket
     [Documentation]    Delete the current bucket
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_NAME}    expected_status=204    headers=${HEADERS}
+    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_NAME}
+    ...    expected_status=204    headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -114,7 +116,7 @@ Prepare Bucket File
     ${body_string}=    Get File    ${DATA_DIR}/bucket.json
     ${body}=    Convert String To JSON    ${body_string}
     ${body}=    Set Bucket File Visibility    ${body}    ${expected_visibility}
-    ${body}=    Set Bucket File Allowed Users    ${body}        @{allowed_users}
+    ${body}=    Set Bucket File Allowed Users    ${body}    @{allowed_users}
 
     ${json_output}=    Convert JSON To String    ${body}
     Create File    ${DATA_DIR}/custom_bucket.json    ${json_output}

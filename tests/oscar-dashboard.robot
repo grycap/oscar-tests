@@ -51,29 +51,50 @@ Create Service With FDL
     ...    xpath=//li[@data-type='success']//div[text()='Service ${SERVICE_NAME} created successfully']
     ...    visible    timeout=60s
 
+# Create Service With Form
+#    [Documentation]    Create a service using the Form option
+#    Navigate To Services Page
+#    Click    text="Create service"
+#    Click    text="Form"
+#    Fill Text    id=service-name-input    ${SERVICE_NAME}-form
+#    Fill Text    id=docker-image-input    ghcr.io/grycap/cowsay
+#    Click    id=vo-select-trigger
+#    Wait For Elements State    xpath=//div[@role='option']//span[text()='vo.ai4eosc.eu']
+#    ...    visible    timeout=60s
+#    Click    xpath=//div[@role='option']//span[text()='vo.ai4eosc.eu']
+#    Click    id=log-level-select-trigger
+#    Wait For Elements State    xpath=//div[@role='option']//span[text()='CRITICAL']    visible    timeout=60s
+#    Click    xpath=//div[@role='option']//span[text()='CRITICAL']
+#    Click    id=script-file-input
+#    Upload File By Selector    //input[@type='file']    ${SCRIPT_FILE}
+#    Click    text="Create"
+#    Wait For Elements State
+#    ...    xpath=//li[@data-type='success']//div[text()='Service created successfully']
+#    ...    visible    timeout=60s
+
 Invoke Synchronous Service
-   [Documentation]    Invoke the service synchronolously from inside the created service page
-   Navigate To Services Page
-   Filter Service By Name    ${SERVICE_NAME}
-   Sleep    2s
-   Click    xpath=//tbody/tr[td[text()='${SERVICE_NAME}']]
-   Click    text="Invoke"
-   Upload File By Selector    //input[@type='file' and @accept='image/*,.json,.yaml,.yml']    ${INVOKE_FILE}
-   Sleep    2s
-   Click    text="Invoke Service"
-   Wait For Elements State
-   ...    xpath=//div[contains(text(), 'Hello there from ROBOT')]    visible    timeout=60s
+    [Documentation]    Invoke the service synchronously from inside the created service page
+    Navigate To Services Page
+    Filter Service By Name    ${SERVICE_NAME}
+    Sleep    3s
+    Click    xpath=//tbody/tr[td[text()='${SERVICE_NAME}']]
+    Click    text="Invoke"
+    Upload File By Selector    //input[@type='file' and @accept='image/*,.json,.yaml,.yml']    ${INVOKE_FILE}
+    Sleep    2s
+    Click    text="Invoke Service"
+    Wait For Elements State
+    ...    xpath=//div[contains(text(), 'Hello there from ROBOT')]    visible    timeout=60s
 
 Invoke Asynchronous Service
-   [Documentation]    Invoke the service asynchronously from the bucket page
-   Navigate To Buckets Page
-   Click    xpath=//tbody/tr/td/a[text()='${BUCKET_NAME}']
-   Click    xpath=//tbody/tr/td/a[text()='input']
-   Click    text="Upload File"
-   Upload File By Selector    //input[@type='file']    ${INVOKE_FILE}
-   Click    text="Upload"
-   Wait For Elements State
-   ...    xpath=//li[@data-type='success']//div[text()='File uploaded successfully']
+    [Documentation]    Invoke the service asynchronously from the bucket page
+    Navigate To Buckets Page
+    Click    xpath=//tbody/tr/td/a[text()='${BUCKET_NAME}']
+    Click    xpath=//tbody/tr/td/a[text()='input']
+    Click    text="Upload File"
+    Upload File By Selector    //input[@type='file']    ${INVOKE_FILE}
+    Click    text="Upload"
+    Wait For Elements State
+    ...    xpath=//li[@data-type='success']//div[text()='File uploaded successfully']
 
 Check Logs
     [Documentation]    Check the logs of a service
@@ -103,44 +124,45 @@ Delete Log
     ...    visible    timeout=60s
 
 # Create Private Bucket
-#     [Documentation]    Create a bucket ${BUCKET_NAME}
-#     Navigate To Buckets Page
-#     Click    text="Create bucket"
-#     Fill Text    id=bucketName    ${BUCKET_NAME}
-#     Click    text="Create"
-#     Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Bucket created successfully']
-#     ...    visible    timeout=10s
+#    [Documentation]    Create a bucket ${BUCKET_NAME}
+#    Navigate To Buckets Page
+#    Click    text="Create bucket"
+#    Fill Text    id=bucketName    ${BUCKET_NAME}
+#    Click    text="Create"
+#    Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Bucket created successfully']
+#    ...    visible    timeout=10s
 
 # Deploy Notebook
-#     [Documentation]    Deploy the notebook in the ${BUCKET_NAME} bucket
-#     Navigate To Notebooks Page
-#     Click    id=bucket
-#     Click    xpath=//span[text()='${BUCKET_NAME}']
-#     Click    id=vo
-#     Wait For Elements State    xpath=//div[contains(@class, 'radix')]//div[contains(., 'vo.ai4eosc.eu')]
-#     ...    visible    timeout=60s
-#     Click    xpath=//div[contains(@class, 'radix')]//div[contains(., 'vo.ai4eosc.eu')]
-#     Click    text="Deploy"
-#     Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Jupyter Notebook instance deployed']
-#     ...    visible    timeout=60s
+#    [Documentation]    Deploy the notebook in the ${BUCKET_NAME} bucket
+#    Navigate To Notebooks Page
+#    Click    id=bucket
+#    Click    xpath=//span[text()='${BUCKET_NAME}']
+#    Click    id=vo
+#    Wait For Elements State    xpath=//div[contains(@class, 'radix')]//div[contains(., 'vo.ai4eosc.eu')]
+#    ...    visible    timeout=60s
+#    Click    xpath=//div[contains(@class, 'radix')]//div[contains(., 'vo.ai4eosc.eu')]
+#    Click    text="Deploy"
+#    Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Jupyter Notebook instance deployed']
+#    ...    visible    timeout=60s
 
 # Delete Notebook
-#     [Documentation]    Delete the notebook in the ${BUCKET_NAME} bucket
-#     Navigate To Notebooks Page
-#     Click    text="Delete"
-#     Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Jupyter Notebook instance deleted']
+#    [Documentation]    Delete the notebook in the ${BUCKET_NAME} bucket
+#    Navigate To Notebooks Page
+#    Click    text="Delete"
+#    Wait For Elements State    xpath=//li[@data-type='success']//div[text()='Jupyter Notebook instance deleted']
 
 Delete Services
-   [Documentation]    Delete the services created previously
-   Navigate To Services Page
-   Delete Selected Service    ${SERVICE_NAME}
+    [Documentation]    Delete the services created previously
+    Navigate To Services Page
+    Delete Selected Service    ${SERVICE_NAME}
+#    Delete Selected Service    ${SERVICE_NAME}-form
 
 # Delete Bucket
-#     [Documentation]    Delete the bucket created previously
-#     Navigate To Buckets Page
-#     Sleep    2s
-#     Click    css=tr:has-text("${BUCKET_NAME}") button:has(svg.lucide-trash)
-#     Click    text="Delete"
+#    [Documentation]    Delete the bucket created previously
+#    Navigate To Buckets Page
+#    Sleep    2s
+#    Click    css=tr:has-text("${BUCKET_NAME}") button:has(svg.lucide-trash)
+#    Click    text="Delete"
 
 Check Info
     [Documentation]    Check the info page
@@ -151,13 +173,13 @@ Log Out
     Navigate To Services Page
     Click    xpath=//div[span[text()='Log out']]
     ${current_url}=    Get URL
-    Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/login
+    Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}
 
 
 *** Keywords ***
 Prepare Environment
     [Documentation]    Open the browser and navigates to the dashboard
-    New Browser    ${BROWSER}    headless=True
+    New Browser    ${BROWSER}    headless=False
     New Page    url= ${OSCAR_DASHBOARD}
 
 Navigate To Services Page
@@ -173,10 +195,10 @@ Navigate To Buckets Page
     Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/minio
 
 # Navigate To Notebooks Page
-#     [Documentation]    Check the notebook page URL
-#     Click    div.w-full.text-sm >> "Notebooks"
-#     ${current_url}=    Get URL
-#     Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/notebooks
+#    [Documentation]    Check the notebook page URL
+#    Click    div.w-full.text-sm >> "Notebooks"
+#    ${current_url}=    Get URL
+#    Should Be Equal    ${current_url}    ${OSCAR_DASHBOARD}#/ui/notebooks
 
 Navigate To Info Page
     [Documentation]    Check the info page URL
