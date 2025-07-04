@@ -4,5 +4,6 @@ variables/.env-*
 *.txt
 *.xml
 *.html
+__pycache__
 browser
 True
