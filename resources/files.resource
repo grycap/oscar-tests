@@ -63,7 +63,7 @@ Set Service File Script
     IF    $script_content == None
         ${script}=    Get File    ${SCRIPT_FILE}
     ELSE
-        ${script}=    Set Variable    ${script_content}
+        VAR    ${script}=    ${script_content}
     END
 
     Set To Dictionary    ${modified_content}    script=${script}
@@ -72,7 +72,9 @@ Set Service File Script
 Set Service File Secret
     [Documentation]    Add secret to the OSCAR service in the service file
     [Arguments]    ${service_content}    ${secret_key}
-    Run Keyword If    '${secret_key}' == 'None' or '${secret_key}' == ''    Return From Keyword    ${service_content}
+    IF    '${secret_key}' == 'None' or '${secret_key}' == ''
+        RETURN    ${service_content}
+    END
     ${secrets}=    Create Dictionary    SECRET_KEY    ${secret_key}
     ${environment}=    Create Dictionary    secrets    ${secrets}
     Set To Dictionary    ${service_content}[functions][oscar][0][robot-oscar-cluster]    environment    ${environment}
