@@ -9,14 +9,11 @@ Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/custom_bucket.js
 
 
 *** Test Cases ***
-Create Bucket
-    [Documentation]    Create a new bucket
+Create Public Bucket
+    [Documentation]    Create a new public bucket
     [Tags]    create    bucket
-    ${body}=    Get File    ${DATA_DIR}/bucket.json
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
-    Log    ${response.content}
-    Should Be Equal As Strings    ${response.status_code}    201
+    Create Bucket    public
+    Check Bucket Visibility    public
 
 List Buckets
     [Documentation]    List all buckets
@@ -25,58 +22,99 @@ List Buckets
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    200
 
-Bucket Is Public
-    [Documentation]    Check that the created bucket is public
-    [Tags]    bucket
-    Check Bucket Visibility    public
-
-Update To Restricted Bucket
-    [Documentation]    Update the created bucket
-    [Tags]    bucket
-    Prepare Bucket File    restricted
-    ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
-    # ${body}=    Prepare Bucket File    restricted
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    data=${body}    headers=${HEADERS}
-    Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
-
-Bucket Is Restricted
-    [Documentation]    Check that the created bucket is restricted
-    [Tags]    bucket
+Update Public To Restricted Bucket
+    [Documentation]    Update the public bucket to restricted
+    Update Bucket    restricted    ${EGI_UID_1}
     Check Bucket Visibility    restricted
 
-Update To Private Bucket
-    [Documentation]    Update the created bucket
-    [Tags]    bucket
-    Prepare Bucket File    private
-    ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    data=${body}    headers=${HEADERS}
-    Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
-
-Bucket Is Private
-    [Documentation]    Check that the created bucket is restricted
-    [Tags]    bucket
+Update Restricted To Private Bucket
+    [Documentation]    Update the restricted bucket to private
+    Update Bucket    private
     Check Bucket Visibility    private
 
-Delete Bucket
-    [Documentation]    Delete the created bucket
+Delete Private Bucket
+    [Documentation]    Delete the private bucket
     [Tags]    delete    bucket
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_NAME}    expected_status=204
-    ...    headers=${HEADERS}
-    Log    ${response.content}
-    Should Be Equal As Strings    ${response.status_code}    204
+    Check Bucket Visibility    private
+    Delete Bucket
+
+Create Private Bucket
+    [Documentation]    Create a new private bucket
+    [Tags]    create    bucket
+    Create Bucket    private
+    Check Bucket Visibility    private
+
+Update Private To Restricted Bucket
+    [Documentation]    Update the private bucket to restricted
+    Update Bucket    restricted    ${EGI_UID_1}
+    Check Bucket Visibility    restricted
+
+Delete Restricted Bucket
+    [Documentation]    Delete the restricted bucket
+    [Tags]    delete    bucket
+    Check Bucket Visibility    restricted
+    Delete Bucket
+
+Create Restricted Bucket
+    [Documentation]    Create a new restricted bucket
+    [Tags]    create    bucket
+    Create Bucket    restricted    ${EGI_UID_1}
+    Check Bucket Visibility    restricted
+
+Update Restricted To Public Bucket
+    [Documentation]    Update the restricted bucket to public
+    Update Bucket    public
+    Check Bucket Visibility    public
+
+Update Public To Private Bucket
+    [Documentation]    Update the public bucket to private
+    Update Bucket    private
+    Check Bucket Visibility    private
+
+Update Private To Public Bucket
+    [Documentation]    Update the private bucket to public
+    Update Bucket    public
+    Check Bucket Visibility    public
+
+Delete Public Bucket
+    [Documentation]    Delete the public bucket
+    [Tags]    delete    bucket
+    Check Bucket Visibility    public
+    Delete Bucket
 
 
 *** Keywords ***
+Create Bucket
+    [Documentation]    Create a new bucket with the given visibility and optional EGI UID
+    [Arguments]    ${visibility}    ${egi_uid}=None
+    Prepare Bucket File    ${visibility}    ${egi_uid}
+    ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}    headers=${HEADERS}
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    201
+
+Update Bucket
+    [Documentation]    Update an existing bucket with the given visibility and optional EGI UID
+    [Arguments]    ${visibility}    ${egi_uid}=None
+    Prepare Bucket File    ${visibility}    ${egi_uid}
+    ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
+    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    data=${body}    headers=${HEADERS}
+    Log    ${response.content}
+    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+
+Delete Bucket
+    [Documentation]    Delete the current bucket
+    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_NAME}    expected_status=204    headers=${HEADERS}
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    204
 
 Prepare Bucket File
     [Documentation]    Prepare the bucket file for bucket creation
-    [Arguments]    ${expected_visibility}
+    [Arguments]    ${expected_visibility}    @{allowed_users}
     ${body_string}=    Get File    ${DATA_DIR}/bucket.json
     ${body}=    Convert String To JSON    ${body_string}
-
-    ${body}=    Set Bucket File Visibility    ${body}    ${expected_visibility}    ${EGI_UID_1}
+    ${body}=    Set Bucket File Visibility    ${body}    ${expected_visibility}
+    ${body}=    Set Bucket File Allowed Users    ${body}        @{allowed_users}
 
     ${json_output}=    Convert JSON To String    ${body}
     Create File    ${DATA_DIR}/custom_bucket.json    ${json_output}
