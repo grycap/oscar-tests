@@ -64,6 +64,36 @@ pipeline {
                 }
             }
         }
+
+        stage('Run OSCAR service permissions tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('permissions', 'tests/api/service-permissions.robot')
+                    }
+                }
+            }
+        }
+
+        stage('Run OSCAR bucket tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('bucket', 'tests/api/buckets.robot')
+                    }
+                }
+            }
+        }
+
+        stage('Run OSCAR secrets tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('secrets', 'tests/api/secrets.robot')
+                    }
+                }
+            }
+        }
         
         stage('Run OSCAR cli tests') {
             steps {
@@ -100,6 +130,16 @@ pipeline {
                 catchError(stageResult: 'FAILURE') {
                     script {
                         runOscarTest('metrics', 'tests/oscar-metrics.robot')
+                    }
+                }
+            }
+        }
+
+        stage('Run OSCAR exposed services tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('expose_services', 'tests/expose_services.robot')
                     }
                 }
             }
