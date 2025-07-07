@@ -12,6 +12,10 @@ Test Setup          Reload
 
 
 *** Variables ***
+${SERVICE_FILE}         ${DATA_DIR}/00-cowsay.yaml
+${SCRIPT_FILE}          ${DATA_DIR}/00-cowsay-script.sh
+${SERVICE_NAME}         robot-test-cowsay
+
 ${OSCAR_DASHBOARD}      %{OSCAR_DASHBOARD}
 ${BROWSER}              chromium
 

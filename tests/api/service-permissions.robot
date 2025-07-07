@@ -8,6 +8,12 @@ Suite Setup         Check Valid OIDC Token
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/custom_service_file.json
 
 
+*** Variables ***
+${SERVICE_FILE}     ${DATA_DIR}/00-cowsay.yaml
+${SCRIPT_FILE}      ${DATA_DIR}/00-cowsay-script.sh
+${SERVICE_NAME}     robot-test-cowsay
+
+
 *** Test Cases ***
 Create Restricted Service
     [Documentation]    Create a new restricted service
@@ -134,7 +140,8 @@ Prepare Service File
     ${service_content}=    Set Service File VO    ${service_content}
     ${service_content}=    Set Service File Isolation Level    ${service_content}    ${expected_visibility}
     ${service_content}=    Set Service File Allowed Users    ${service_content}    @{allowed_users}
-    ${service_content}=    Set Service File Script    ${service_content}
+    ${script_content}=    Get File    ${SCRIPT_FILE}
+    ${service_content}=    Set Service File Script    ${service_content}    ${script_content}
     Dump Service File To JSON File    ${service_content}    ${DATA_DIR}/custom_service_file.json
     # RETURN    ${service_content}
 

@@ -5,7 +5,13 @@ Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/token.resource
 
 Suite Setup         Check Valid OIDC Token
-Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
+Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/custom_service_file.json
+
+
+*** Variables ***
+${SERVICE_FILE}     ${DATA_DIR}/00-cowsay.yaml
+${SCRIPT_FILE}      ${DATA_DIR}/00-cowsay-script.sh
+${SERVICE_NAME}     robot-test-cowsay
 
 
 *** Test Cases ***
@@ -32,7 +38,7 @@ OSCAR Create Service
     [Tags]    create
     # ${body}=    Prepare Service File
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
 
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...    headers=${HEADERS}
@@ -58,11 +64,11 @@ OSCAR Invoke Synchronous Service
     Wait Until Keyword Succeeds
     ...    ${MAX_RETRIES}x
     ...    ${RETRY_INTERVAL}
-    ...    Should Successfully Invoke Service    ${body}
+    ...    Invoke Service    ${body}
 
 OSCAR Update Service
     [Documentation]    Update a service
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Contain    [ '200', '204' ]    '${response.status_code}'
@@ -87,7 +93,7 @@ OSCAR Get Logs
     Wait Until Keyword Succeeds
     ...    ${MAX_RETRIES}x
     ...    ${RETRY_INTERVAL}
-    ...    Should Successfully Get Logs
+    ...    Get Logs
 
 OSCAR Delete Job
     [Documentation]    Delete a job from a service
@@ -117,11 +123,12 @@ Prepare Service File
     [Documentation]    Prepare the service file for service creation
     ${service_content}=    Load Original Service File    ${SERVICE_FILE}
     ${service_content}=    Set Service File VO    ${service_content}
-    ${service_content}=    Set Service File Script    ${service_content}
-    Dump Service File To JSON File    ${service_content}    ${DATA_DIR}/service_file.json
+    ${script_content}=    Get File    ${SCRIPT_FILE}
+    ${service_content}=    Set Service File Script    ${service_content}    ${script_content}
+    Dump Service File To JSON File    ${service_content}    ${DATA_DIR}/custom_service_file.json
     # RETURN    ${service_content}
 
-Should Successfully Invoke Service
+Invoke Service
     [Documentation]    Invoke the synchronous service
     [Arguments]    ${body}
     ${response}=    POST
@@ -131,7 +138,7 @@ Should Successfully Invoke Service
     Log    Response: ${response}
     Should Be Equal As Integers    ${response.status_code}    200
 
-Should Successfully Get Logs
+Get Logs
     [Documentation]    Get the logs from a job
     ${response}=    GET
     ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}

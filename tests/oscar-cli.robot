@@ -5,7 +5,12 @@ Resource            ${CURDIR}/../resources/files.resource
 Resource            ${CURDIR}/../resources/token.resource
 
 Suite Teardown      Clean Test Artifacts    True    00-cowsay-invoke-body-downloaded.json
-...                     ${DATA_DIR}/service_file.yaml
+...                     ${DATA_DIR}/custom_service_file.yaml
+
+
+*** Variables ***
+${SERVICE_FILE}     ${DATA_DIR}/00-cowsay.yaml
+${SERVICE_NAME}     robot-test-cowsay
 
 
 *** Test Cases ***
@@ -51,7 +56,12 @@ OSCAR CLI Apply
     [Documentation]    Check that OSCAR CLI creates a service in the default cluster
     [Tags]    create
     Prepare Service File
-    ${result}=    Run Process    oscar-cli    apply    ${DATA_DIR}/service_file.yaml    stdout=True    stderr=True
+    ${result}=    Run Process
+    ...    oscar-cli
+    ...    apply
+    ...    ${DATA_DIR}/custom_service_file.yaml
+    ...    stdout=True
+    ...    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
@@ -152,7 +162,7 @@ Prepare Service File
     [Documentation]    Prepare the service file for service creation
     ${service_content}=    Load Original Service File    ${SERVICE_FILE}
     ${service_content}=    Set Service File VO    ${service_content}
-    Save YAML File    ${service_content}    ${DATA_DIR}/service_file.yaml
+    Save YAML File    ${service_content}    ${DATA_DIR}/custom_service_file.yaml
 
 Service Should Return ROBOT
     [Documentation]    Check that OSCAR CLI runs a service synchronously (with file)
