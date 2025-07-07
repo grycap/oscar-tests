@@ -13,6 +13,10 @@ ${DATA_DIR}             ${EXECDIR}/data
 ${INVOKE_FILE}          ${DATA_DIR}/00-cowsay-invoke-body.json
 ${EGI_UID_1}            ${EGI_UID}
 
+${BUCKET_NAME}          robot-test
+${MAX_RETRIES}          20
+${RETRY_INTERVAL}       5s
+
 
 *** Keywords ***
 Clean Test Artifacts
