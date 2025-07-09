@@ -13,7 +13,6 @@ Create Public Bucket
     [Documentation]    Create a new public bucket
     [Tags]    create    bucket
     Create Bucket    public
-    Check Bucket Visibility    public
 
 List Buckets
     [Documentation]    List all buckets
@@ -25,12 +24,10 @@ List Buckets
 Update Public To Restricted Bucket
     [Documentation]    Update the public bucket to restricted
     Update Bucket    restricted    ${EGI_UID_1}
-    Check Bucket Visibility    restricted
 
 Update Restricted To Private Bucket
     [Documentation]    Update the restricted bucket to private
     Update Bucket    private
-    Check Bucket Visibility    private
 
 Delete Private Bucket
     [Documentation]    Delete the private bucket
@@ -42,12 +39,10 @@ Create Private Bucket
     [Documentation]    Create a new private bucket
     [Tags]    create    bucket
     Create Bucket    private
-    Check Bucket Visibility    private
 
 Update Private To Restricted Bucket
     [Documentation]    Update the private bucket to restricted
     Update Bucket    restricted    ${EGI_UID_1}
-    Check Bucket Visibility    restricted
 
 Delete Restricted Bucket
     [Documentation]    Delete the restricted bucket
@@ -59,22 +54,18 @@ Create Restricted Bucket
     [Documentation]    Create a new restricted bucket
     [Tags]    create    bucket
     Create Bucket    restricted    ${EGI_UID_1}
-    Check Bucket Visibility    restricted
 
 Update Restricted To Public Bucket
     [Documentation]    Update the restricted bucket to public
     Update Bucket    public
-    Check Bucket Visibility    public
 
 Update Public To Private Bucket
     [Documentation]    Update the public bucket to private
     Update Bucket    private
-    Check Bucket Visibility    private
 
 Update Private To Public Bucket
     [Documentation]    Update the private bucket to public
     Update Bucket    public
-    Check Bucket Visibility    public
 
 Delete Public Bucket
     [Documentation]    Delete the public bucket
@@ -93,6 +84,7 @@ Create Bucket
     ...    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
+    Check Bucket Visibility    ${visibility}
 
 Update Bucket
     [Documentation]    Update an existing bucket with the given visibility and optional EGI UID
@@ -102,6 +94,7 @@ Update Bucket
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Contain    [ '200', '204' ]    '${response.status_code}'
+    Check Bucket Visibility    ${visibility}
 
 Delete Bucket
     [Documentation]    Delete the current bucket
