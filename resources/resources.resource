@@ -68,3 +68,34 @@ Remove Files From Tests And Verify
         Remove File    ${file}
         File Should Not Exist    ${file}
     END
+
+Set Service File For Update
+    [Documentation]    Set the service file with the VO and set value
+    [Arguments]  ${key}  ${value}
+    ${yaml_content}=    Get File    ${SERVICE_FILE}
+    ${loaded_content}=  yaml.Safe Load  ${yaml_content}
+    Set To Dictionary    ${loaded_content}[functions][oscar][0][robot-oscar-cluster]    vo=${VO}
+    Set To Dictionary    ${loaded_content}[functions][oscar][0][robot-oscar-cluster]    ${key}=${value}
+    RETURN    ${loaded_content}
+
+Verify Bucket
+    [Documentation]    List all buckets
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    headers=${HEADERS}
+    RETURN      ${response}
+
+Get Service File Update   
+    [Documentation]    Prepare the service file
+    [Arguments]    ${key}     ${value}
+    ${service_content}=    Set Service File For Update      ${key}      ${value}
+
+    # Extract the inner dictionary (remove 'functions', 'oscar' and 'robot-oscar-cluster')
+    ${modified_content}=    Set Variable    ${service_content}[functions][oscar][0][robot-oscar-cluster]
+
+    # Update the script value
+    ${script_value}=    Catenate
+    ...    \#!/bin/sh\n\nif [ \"$INPUT_TYPE\" = \"json\" ]\nthen\n
+    ...    jq '.message' \"$INPUT_FILE_PATH\" -r | /usr/games/cowsay\nelse\n
+    ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\nfi\n\
+    Set To Dictionary    ${modified_content}    script=${script_value}
+    ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
+    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}

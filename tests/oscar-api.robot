@@ -55,13 +55,6 @@ OSCAR Read Service
     Log    ${response.content}
     Should Contain    ${response.content}    "name":"robot-test-cowsay"
 
-OSCAR Invoke Synchronous Service
-    [Documentation]  Invoke the synchronous service
-    ${body}=        Get File    ${DATA_DIR}/${INVOKE_FILE}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/robot-test-cowsay    expected_status=200    data=${body}
-    ...                     headers=${HEADERS}
-    Log    ${response.content}
-    Should Contain    ${response.content}    Hello
 
 OSCAR Update Service
     [Documentation]  Update a service
@@ -92,6 +85,28 @@ OSCAR Get Logs
     ...                        headers=${HEADERS}
     Log    ${get_logs.content}
     Should Contain    ${get_logs.content}    Hello
+
+OSCAR Invoke Asynchronous Service with token
+    [Documentation]  Invoke the asynchronous service with token
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay    expected_status=200
+    ...                    headers=${HEADERS}
+    Log    ${response.content}
+    ${service_token}=      Evaluate      json.loads($response.content)['token']
+    VAR    ${service_token}    ${service_token}
+    VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+    ${body}=        Get File    ${DATA_DIR}/${INVOKE_FILE}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/job/robot-test-cowsay    expected_status=201    data=${body}
+    ...                     headers=${new_headers}
+    Should Be Equal As Strings    ${response.status_code}    201
+
+OSCAR Invoke Synchronous Service
+    [Documentation]  Invoke the synchronous service
+    ${body}=        Get File    ${DATA_DIR}/${INVOKE_FILE}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/robot-test-cowsay    expected_status=200    data=${body}
+    ...                     headers=${HEADERS}
+    Log    ${response.content}
+    Should Contain    ${response.content}    Hello
 
 OSCAR Delete Job
     [Documentation]  Delete a job from a service

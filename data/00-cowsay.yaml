@@ -9,3 +9,8 @@ functions:
       input:
       - storage_provider: minio
         path: robot-test/input
+      output:
+      - storage_provider: minio
+        path: robot-test/output
+      isolation_level: SERVICE
+      visibility: private
