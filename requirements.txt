@@ -4,3 +4,4 @@ robotframework-browser
 robotframework-requests
 pyyaml
 PyJWT
+oscar-python
