@@ -2,20 +2,17 @@
 Documentation     Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
 
 Library           RequestsLibrary
-Resource          ${CURDIR}/../resources/resources.resource
+Resource          ${CURDIR}/../resources/files.resource
+Resource          ${CURDIR}/../resources/token.resource
 
-Suite Teardown    Remove Files From Tests And Verify    True    ${DATA_DIR}/service_file.json
+Suite Setup       Check Valid OIDC Token
+Suite Teardown    Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
 *** Variables ***
 ${bucket_name}    robot-test
 
 *** Test Cases ***
-Check Valid OIDC Token
-    [Documentation]    Get the access token
-    ${token}=    Get Access Token
-    Check JWT Expiration    ${token}
-
 OSCAR API Health
     [Documentation]    Check API health
     ${response}=    GET  ${OSCAR_ENDPOINT}/health  expected_status=200
@@ -25,7 +22,7 @@ OSCAR API Health
 Create Bucket Private
     [Documentation]    Create a new private bucket
     [Tags]    create    bucket
-    ${body}=    Get File    ${DATA_DIR}/private-bucket.json
+    ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
     ...    headers=${HEADERS}
     Log    ${response.content}
@@ -40,7 +37,11 @@ Verify Bucket Private creation
 Update Bucket from Private -> to Restricted
     [Documentation]    Update Private bucket -> Restricted
     [Tags]    update    bucket
-    ${body}=    Get File    ${DATA_DIR}/restricted-bucket.json
+    ${body}=    Get File    ${DATA_DIR}/bucket.json
+    ${body}=  yaml.Safe Load  ${body}
+    ${body}=    Set Bucket File Visibility      ${body}     restricted
+    ${body}=    Set Bucket File Allowed Users   ${body}     ${first_user}
+    ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
     ...    headers=${HEADERS}
     Log    ${response.content}
@@ -55,7 +56,10 @@ Verify Bucket Update from Private -> to Restricted
 Update Bucket from Restricted -> to Public
     [Documentation]    Update Restricted bucket -> Public
     [Tags]    update    bucket
-    ${body}=    Get File    ${DATA_DIR}/public-bucket.json
+    ${body}=    Get File    ${DATA_DIR}/bucket.json
+    ${body}=  yaml.Safe Load  ${body}
+    ${body}=    Set Bucket File Visibility      ${body}     public
+    ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
     ...    headers=${HEADERS}
     Log    ${response.content}
@@ -72,7 +76,7 @@ Verify Bucket Update from Restricted -> to Public
 Update Bucket from Public -> to Private
     [Documentation]    Update public bucket -> private
     [Tags]    update    bucket
-    ${body}=    Get File    ${DATA_DIR}/private-bucket.json
+    ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
     ...    headers=${HEADERS}
     Log    ${response.content}
@@ -89,7 +93,10 @@ Verify Bucket Update from Public -> to Private
 Update Bucket from Private -> to Public
     [Documentation]    Update private bucket -> public
     [Tags]    update    bucket
-    ${body}=    Get File    ${DATA_DIR}/public-bucket.json
+    ${body}=    Get File    ${DATA_DIR}/bucket.json
+    ${body}=  yaml.Safe Load  ${body}
+    ${body}=    Set Bucket File Visibility      ${body}     public
+    ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
     ...    headers=${HEADERS}
     Log    ${response.content}
@@ -105,7 +112,11 @@ Verify Bucket Update from Private -> to Public
 Update Bucket from Public -> to Restricted
     [Documentation]    Update public bucket -> restricted
     [Tags]    update    bucket
-    ${body}=    Get File    ${DATA_DIR}/restricted-bucket.json
+    ${body}=    Get File    ${DATA_DIR}/bucket.json
+    ${body}=  yaml.Safe Load  ${body}
+    ${body}=    Set Bucket File Visibility      ${body}     restricted
+    ${body}=    Set Bucket File Allowed Users   ${body}     ${first_user}
+    ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
     ...    headers=${HEADERS}
     Log    ${response.content}
@@ -121,7 +132,7 @@ Verify Bucket Update from Public -> to Restricted
 Update Bucket from Restricted -> to Private
     [Documentation]    Update restricted bucket -> private
     [Tags]    update    bucket
-    ${body}=    Get File    ${DATA_DIR}/private-bucket.json
+    ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
     ...    headers=${HEADERS}
     Log    ${response.content}
@@ -151,7 +162,11 @@ Verify Bucket Private Delete
 Create Bucket Restricted
     [Documentation]    Create a new restricted bucket
     [Tags]    create    bucket
-    ${body}=    Get File    ${DATA_DIR}/restricted-bucket.json
+    ${body}=    Get File    ${DATA_DIR}/bucket.json
+    ${body}=  yaml.Safe Load  ${body}
+    ${body}=    Set Bucket File Visibility      ${body}     restricted
+    ${body}=    Set Bucket File Allowed Users   ${body}     ${first_user}
+    ${body}= 	Convert JSON To String 	${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
     ...    headers=${HEADERS}
     Log    ${response.content}
@@ -182,7 +197,10 @@ Verify Bucket Restricted Delete
 Create Bucket Public
     [Documentation]    Create a new public bucket
     [Tags]    create    bucket
-    ${body}=    Get File    ${DATA_DIR}/public-bucket.json
+    ${body}=    Get File    ${DATA_DIR}/bucket.json
+    ${body}=  yaml.Safe Load  ${body}
+    ${body}=    Set Bucket File Visibility      ${body}     public
+    ${body}= 	Convert JSON To String 	${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
     ...    headers=${HEADERS}
     Log    ${response.content}

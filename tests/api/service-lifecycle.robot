@@ -1,9 +1,11 @@
 *** Settings ***
 Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Basic endpoint coverage
 
-Resource            ${CURDIR}/../../resources/resources.resource
+Resource            ${CURDIR}/../../resources/token.resource
+Resource            ${CURDIR}/../../resources/files.resource
 
-Suite Teardown      Remove Files From Tests And Verify    True    ${DATA_DIR}/service_file.json
+Suite Setup         Check Valid OIDC Token
+Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
 *** Variables ***
@@ -11,12 +13,6 @@ ${SERVICE_NAME}     robot-test-cowsay
 
 
 *** Test Cases ***
-Check Valid OIDC Token
-    [Documentation]    Get the access token
-    [Tags]    create    delete
-    ${token}=    Get Access Token
-    Check JWT Expiration    ${token}
-
 OSCAR API Health
     [Documentation]    Check API health
     ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200
@@ -43,7 +39,7 @@ OSCAR Create Service
 
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...    headers=${HEADERS}
-    Sleep    120s
+    Sleep    60s
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -72,7 +68,7 @@ OSCAR Invoke Asynchronous Service
     ${body}=    Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
     ...    headers=${HEADERS}
-    Sleep    120s
+    Sleep    60s
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR List Jobs
@@ -99,18 +95,32 @@ OSCAR Invoke Asynchronous Service with token
     VAR    ${service_token}    ${service_token}
     VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
-    ${body}=        Get File    ${DATA_DIR}/${INVOKE_FILE}
+    ${body}=        Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/robot-test-cowsay    expected_status=201    data=${body}
     ...                     headers=${new_headers}
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR Invoke Synchronous Service
     [Documentation]  Invoke the synchronous service
-    ${body}=        Get File    ${DATA_DIR}/${INVOKE_FILE}
+    ${body}=        Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/run/robot-test-cowsay    expected_status=200    data=${body}
     ...                     headers=${HEADERS}
     Log    ${response.content}
     Should Contain    ${response.content}    Hello
+
+OSCAR Invoke Synchronous Service with token
+    [Documentation]  Invoke the synchronous service with token
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay    expected_status=200
+    ...                    headers=${HEADERS}
+    Log    ${response.content}
+    ${service_token}=      Evaluate      json.loads($response.content)['token']
+    VAR    ${service_token}    ${service_token}
+    VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+    ${body}=        Get File    ${INVOKE_FILE}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/robot-test-cowsay    expected_status=200    data=${body}
+    ...                     headers=${new_headers}
+    Should Be Equal As Strings    ${response.status_code}    200
 
 OSCAR Delete Job
     [Documentation]    Delete a job from a service
@@ -138,7 +148,8 @@ OSCAR Delete Service
 *** Keywords ***
 Prepare Service File
     [Documentation]    Prepare the service file
-    ${service_content}=    Modify VO Service File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Get File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Set Service File VO    ${service_content}
 
     # Extract the inner dictionary (remove 'functions', 'oscar' and 'robot-oscar-cluster')
     VAR    ${modified_content}=    ${service_content}[functions][oscar][0][robot-oscar-cluster]
