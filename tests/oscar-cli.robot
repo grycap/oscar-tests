@@ -2,8 +2,9 @@
 Documentation       Tests for the OSCAR CLI against a deployed OSCAR cluster.
 
 Resource            ${CURDIR}/../resources/resources.resource
+Resource            ${CURDIR}/../resources/files.resource
 
-Suite Teardown      Remove Files From Tests And Verify    True    00-cowsay-invoke-body-downloaded.json
+Suite Teardown      Clean Test Artifacts        True    ${DATA_DIR}/00-cowsay-invoke-body-downloaded.json
 ...                     ${DATA_DIR}/service_file.yaml
 
 
@@ -55,7 +56,7 @@ OSCAR CLI Apply
     [Tags]    create
     Prepare Service File
     ${result}=    Run Process    oscar-cli    apply    ${DATA_DIR}/service_file.yaml    stdout=True    stderr=True
-    Sleep    120s
+    Sleep    60s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
@@ -66,28 +67,12 @@ OSCAR CLI List Services
     Should Be Equal As Integers    ${result.rc}    0
     # Should Contain    ${result.stdout}    ${SERVICE_NAME}
 
-OSCAR CLI Run Services Synchronously With File
-    [Documentation]    Check that OSCAR CLI runs a service (with a file) synchronously in the default cluster
-    ${result}=    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --file-input
-    ...    ${INVOKE_FILE}    stdout=True    stderr=True
-    Log    ${result.stdout}
-    # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    Hello
-
-OSCAR CLI Run Services Synchronously With Prompt
-    [Documentation]    Check that OSCAR CLI runs a service (with prompt) synchronously in the default cluster
-    ${result}=    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --text-input
-    ...    {"message": "Hello there from AI4EOSC"}    stdout=True    stderr=True
-    Log    ${result.stdout}
-    # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    Hello
-
 OSCAR CLI Put File
     [Documentation]    Check that OSCAR CLI puts a file in a service's storage provider
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
-    ...    ${INVOKE_FILE}    robot-test/input/${INVOKE_FILE}
+    ...    ${EXECDIR}/data/00-cowsay-invoke-body.json       robot-test/input/${INVOKE_FILE_NAME}
     ...    stdout=True    stderr=True
-    Sleep    120s
+    Sleep    10s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
@@ -97,7 +82,7 @@ OSCAR CLI List Files
     ...    minio.default    robot-test/input/
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    00-cowsay-invoke-body.json
+    Should Contain    ${result.stdout}    ${INVOKE_FILE_NAME}
 
 OSCAR CLI Logs List
     [Documentation]    Check that OSCAR CLI lists the logs for a service
@@ -126,11 +111,27 @@ OSCAR CLI Logs Remove
 OSCAR CLI Get File
     [Documentation]    Check that OSCAR CLI gets a file from a service's storage provider
     ${result}=    Run Process    oscar-cli    service    get-file    ${SERVICE_NAME}    minio.default
-    ...    robot-test/input/${INVOKE_FILE}    00-cowsay-invoke-body-downloaded.json
+    ...    robot-test/input/${INVOKE_FILE_NAME}    ${DATA_DIR}/00-cowsay-invoke-body-downloaded.json
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
-    File Should Exist    00-cowsay-invoke-body-downloaded.json
+    File Should Exist    ${DATA_DIR}/00-cowsay-invoke-body-downloaded.json
+
+OSCAR CLI Run Services Synchronously With File
+    [Documentation]    Check that OSCAR CLI runs a service (with a file) synchronously in the default cluster
+    ${result}=    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --file-input
+    ...    ${EXECDIR}/data/00-cowsay-invoke-body.json    stdout=True    stderr=True
+    Log    ${result.stdout}
+    # Should Be Equal As Integers    ${result.rc}    0
+    Should Contain    ${result.stdout}    Hello
+
+OSCAR CLI Run Services Synchronously With Prompt
+    [Documentation]    Check that OSCAR CLI runs a service (with prompt) synchronously in the default cluster
+    ${result}=    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --text-input
+    ...    {"message": "Hello there from AI4EOSC"}    stdout=True    stderr=True
+    Log    ${result.stdout}
+    # Should Be Equal As Integers    ${result.rc}    0
+    Should Contain    ${result.stdout}    Hello
 
 OSCAR CLI Services Remove
     [Documentation]    Check that OSCAR CLI deletes a service
@@ -157,7 +158,8 @@ Get Job Name From Logs
 
 Prepare Service File
     [Documentation]    Prepare the service file
-    ${service_content}=    Modify VO Service File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Get File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Set Service File VO    ${service_content}
     # Convert file content to YAML
     ${output}=    yaml.Dump    ${service_content}
     Create File    ${DATA_DIR}/service_file.yaml    ${output}
