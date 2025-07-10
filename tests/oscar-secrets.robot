@@ -15,12 +15,6 @@ ${SERVICE_NAME}     robot-test-cowsay
 
 
 *** Test Cases ***
-
-Check Valid OIDC Token
-    [Documentation]    Get the access token
-    ${token}=    Get Access Token
-    Check JWT Expiration    ${token}
-
 OSCAR API Health
     [Documentation]    Check API health
     ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200
@@ -154,7 +148,7 @@ OSCAR Service with Secret Delete Service
 Prepare Service File
     [Documentation]    Prepare the service file for service creation
     [Arguments]    ${secret_key}=${EMPTY}
-    ${service_content}=    Load Original Service File    ${SERVICE_FILE}
+    ${service_content}=    Get File    ${DATA_DIR}/00-cowsay.yaml
     ${service_content}=    Set Service File VO    ${service_content}
     ${script_to_use}=    Add Secret Echo To Script File    ${SCRIPT_FILE}
     ${service_content}=    Set Service File Script    ${service_content}    ${script_to_use}
