@@ -10,8 +10,10 @@ Library             yaml
 ${OSCAR_ENDPOINT}       ${OSCAR_ENDPOINT}
 ${VO}                   ${EGI_VO}
 ${DATA_DIR}             ${EXECDIR}/data
-${INVOKE_FILE}          ${DATA_DIR}/00-cowsay-invoke-body.json
+${INVOKE_FILE_NAME}     00-cowsay-invoke-body.json
+${INVOKE_FILE}          ${DATA_DIR}/${INVOKE_FILE_NAME}
 ${EGI_UID_1}            ${EGI_UID}
+${SERVICE_FILE}         ${DATA_DIR}/00-cowsay.yaml
 
 ${BUCKET_NAME}          robot-test
 ${MAX_RETRIES}          20
@@ -45,6 +47,7 @@ Load Original Service File
 Set Service File VO
     [Documentation]    Set or add the VO for the OSCAR service in the service file
     [Arguments]    ${service_content}
+    ${service_content}=  yaml.Safe Load  ${service_content}
 
     # Get the first element inside functions -> oscar
     ${first_service_item}=    Get From List    ${service_content}[functions][oscar]    0
@@ -156,3 +159,34 @@ Save YAML File
     [Arguments]    ${service_content}    ${saved_file}
     ${yaml_string}=    yaml.Safe Dump    ${service_content}
     Create File    ${saved_file}    ${yaml_string}
+
+Get Service File Update   
+    [Documentation]    Prepare the service file
+    [Arguments]    ${key}     ${value}
+    ${service_content}=    Set Service File For Update      ${key}      ${value}
+
+    # Extract the inner dictionary (remove 'functions', 'oscar' and 'robot-oscar-cluster')
+    ${modified_content}=    Set Variable    ${service_content}[functions][oscar][0][robot-oscar-cluster]
+
+    # Update the script value
+    ${script_value}=    Catenate
+    ...    \#!/bin/sh\n\nif [ \"$INPUT_TYPE\" = \"json\" ]\nthen\n
+    ...    jq '.message' \"$INPUT_FILE_PATH\" -r | /usr/games/cowsay\nelse\n
+    ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\nfi\n\
+    Set To Dictionary    ${modified_content}    script=${script_value}
+    ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
+    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+
+Set Service File For Update
+    [Documentation]    Set the service file with the VO and set value
+    [Arguments]  ${key}  ${value}
+    ${yaml_content}=    Get File    ${SERVICE_FILE}
+    ${loaded_content}=  yaml.Safe Load  ${yaml_content}
+    Set To Dictionary    ${loaded_content}[functions][oscar][0][robot-oscar-cluster]    vo=${VO}
+    Set To Dictionary    ${loaded_content}[functions][oscar][0][robot-oscar-cluster]    ${key}=${value}
+    RETURN    ${loaded_content}
+
+Verify Bucket
+    [Documentation]    List all buckets
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    headers=${HEADERS}
+    RETURN      ${response}
