@@ -5,7 +5,11 @@ Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/token.resource
 
 Suite Setup         Check Valid OIDC Token
-Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/custom_bucket.json
+Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
+
+
+*** Variables ***
+${MODIFIED_SERVICE_FILE}    custom_bucket.json
 
 
 *** Test Cases ***
@@ -79,7 +83,7 @@ Create Bucket
     [Documentation]    Create a new bucket with the given visibility and optional EGI UID
     [Arguments]    ${visibility}    @{egi_uid}
     Prepare Bucket File    ${visibility}    @{egi_uid}
-    ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
+    ${body}=    Get File    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201
     ...    data=${body}    headers=${HEADERS}
     Log    ${response.content}
@@ -90,7 +94,7 @@ Update Bucket
     [Documentation]    Update an existing bucket with the given visibility and optional EGI UID
     [Arguments]    ${visibility}    @{egi_uid}
     Prepare Bucket File    ${visibility}    @{egi_uid}
-    ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
+    ${body}=    Get File    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Contain    [ '200', '204' ]    '${response.status_code}'
@@ -112,7 +116,7 @@ Prepare Bucket File
     ${body}=    Set Bucket File Allowed Users    ${body}    @{allowed_users}
 
     ${json_output}=    Convert JSON To String    ${body}
-    Create File    ${DATA_DIR}/custom_bucket.json    ${json_output}
+    Create File    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}    ${json_output}
     # RETURN    ${json_output}
 
 Check Bucket Visibility

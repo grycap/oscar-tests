@@ -5,13 +5,14 @@ Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/token.resource
 
 Suite Setup         Check Valid OIDC Token
-Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/custom_service_file.json
+Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
 
 
 *** Variables ***
-${SERVICE_FILE}     ${DATA_DIR}/00-cowsay.yaml
-${SCRIPT_FILE}      ${DATA_DIR}/00-cowsay-script.sh
-${SERVICE_NAME}     robot-test-cowsay
+${SERVICE_FILE}             ${DATA_DIR}/00-cowsay.yaml
+${SCRIPT_FILE}              ${DATA_DIR}/00-cowsay-script.sh
+${SERVICE_NAME}             robot-test-cowsay
+${MODIFIED_SERVICE_FILE}    custom_service_file.yaml
 
 
 *** Test Cases ***
@@ -26,7 +27,7 @@ OSCAR Create Service
     [Tags]    create
     # ${body}=    Prepare Service File
     Prepare Service File    robot-secret
-    ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
+    ${body}=    Get File    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
 
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...    headers=${HEADERS}
@@ -66,7 +67,7 @@ OSCAR Delete Job
 OSCAR Update Service
     [Documentation]    Update a service
     Prepare Service File    another-robot-secret
-    ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
+    ${body}=    Get File    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Contain    [ '200', '204' ]    '${response.status_code}'
@@ -104,7 +105,7 @@ OSCAR Delete Job Updated
 OSCAR Update Service Again
     [Documentation]    Update a service
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
+    ${body}=    Get File    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Contain    [ '200', '204' ]    '${response.status_code}'
@@ -151,7 +152,7 @@ Prepare Service File
     ${service_content}=    Set Service File Script    ${service_content}    ${script_to_use}
     ${service_content}=    Set Service File Secret    ${service_content}    ${secret_key}
 
-    Dump Service File To JSON File    ${service_content}    ${DATA_DIR}/custom_service_file.json
+    Dump Service File To JSON File    ${service_content}    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
 
 Get Logs Text
     [Documentation]    Fetch logs and return the text

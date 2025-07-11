@@ -6,16 +6,17 @@ Resource            ${CURDIR}/../resources/files.resource
 Resource            ${CURDIR}/../resources/token.resource
 
 Suite Setup         Check Valid OIDC Token
-Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/custom_service_file.yaml
+Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
 ...                     ${EXECDIR}/00-cowsay-invoke-body.json
 Test Setup          Connect To Oscar Cluster
 
 
 *** Variables ***
-${SERVICE_FILE}     ${DATA_DIR}/00-cowsay.yaml
-${SERVICE_NAME}     robot-test-cowsay
-${CLUSTER_ID}       robot-oscar-cluster
-${SSL}              True
+${SERVICE_FILE}             ${DATA_DIR}/00-cowsay.yaml
+${SERVICE_NAME}             robot-test-cowsay
+${CLUSTER_ID}               robot-oscar-cluster
+${MODIFIED_SERVICE_FILE}    custom_service_file.yaml
+${SSL}                      True
 
 
 *** Test Cases ***
@@ -37,7 +38,7 @@ Create New Service
     [Documentation]    Create a new service with a given FDL file
     [Tags]    create
     Prepare Service File
-    ${response}=    Create Service    ${DATA_DIR}/custom_service_file.yaml
+    ${response}=    Create Service    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -64,7 +65,7 @@ Run Service Synchronously
 
 Update Existing Service
     [Documentation]    Update an existing service using a new FDL file
-    ${response}=    Update Service    ${SERVICE_NAME}    ${DATA_DIR}/custom_service_file.yaml
+    ${response}=    Update Service    ${SERVICE_NAME}    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
     Log    ${response.content}
     Should Contain    [ '200', '204' ]    '${response.status_code}'
 
@@ -148,7 +149,7 @@ Prepare Service File
     [Documentation]    Prepare the service file for service creation
     ${service_content}=    Load Original Service File    ${SERVICE_FILE}
     ${service_content}=    Set Service File VO    ${service_content}
-    Save YAML File    ${service_content}    ${DATA_DIR}/custom_service_file.yaml
+    Save YAML File    ${service_content}    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
 
 Service Should Return ROBOT
     [Documentation]    Run a service synchronously with input data
