@@ -11,7 +11,8 @@ ${OSCAR_ENDPOINT}       ${OSCAR_ENDPOINT}
 ${VO}                   ${EGI_VO}
 ${DATA_DIR}             ${EXECDIR}/data
 ${INVOKE_FILE}          ${DATA_DIR}/00-cowsay-invoke-body.json
-${EGI_UID_1}            ${EGI_UID}
+${EGI_UID_1}            ${EGI_UID_1}
+${EGI_UID_2}            ${EGI_UID_2}
 
 ${BUCKET_NAME}          robot-test
 ${MAX_RETRIES}          20
