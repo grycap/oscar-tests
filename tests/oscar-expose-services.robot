@@ -46,7 +46,7 @@ OSCAR Expose Service Delete Service
 *** Keywords ***
 Prepare Service File
     [Documentation]    Prepare the service file for service creation
-    ${service_content}=    Load Original Service File    ${DATA_DIR}/expose_services/nginx_expose.yaml
+    ${service_content}=    Get File    ${DATA_DIR}/expose_services/nginx_expose.yaml
     ${service_content}=    Set Service File VO    ${service_content}
     ${script_content}=    Get File    ${SCRIPT_FILE}
     ${service_content}=    Set Service File Script    ${service_content}    ${script_content}
