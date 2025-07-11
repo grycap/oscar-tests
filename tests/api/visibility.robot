@@ -2,8 +2,8 @@
 Documentation     Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
 
 Library           RequestsLibrary
-Resource          ${CURDIR}/../resources/token.resource
-Resource          ${CURDIR}/../resources/files.resource
+Resource          ${CURDIR}/../../resources/token.resource
+Resource          ${CURDIR}/../../resources/files.resource
 
 Suite Setup       Check Valid OIDC Token
 Suite Teardown    Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
