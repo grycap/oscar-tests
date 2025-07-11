@@ -138,9 +138,9 @@ Validate Allowed Users
     [Documentation]    Validate that actual allowed_users matches expected allowed_users
     [Arguments]    ${actual_allowed_users}    @{expected_allowed_users}
     ${expected_count}=    Get Length    ${expected_allowed_users}
-    
+
     # No users in allowed_users
-    IF    ${expected_count} == 0
+    IF    not ${expected_count}
         Should Be Equal    ${actual_allowed_users}    ${None}
     ELSE
         # Check that actual_allowed_users is a list (there are 2 UIDs or more)
@@ -148,10 +148,9 @@ Validate Allowed Users
         Should Be True    ${is_list}
         ${actual_count}=    Get Length    ${actual_allowed_users}
         Should Be Equal As Integers    ${actual_count}    ${expected_count}
-        
+
         # For each expected UID, check it matches in the actual list
         FOR    ${uid}    IN    @{expected_allowed_users}
             Should Contain    ${actual_allowed_users}    ${uid}
         END
-
     END
