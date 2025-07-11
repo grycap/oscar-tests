@@ -23,7 +23,7 @@ List Buckets
 
 Update Public To Restricted Bucket
     [Documentation]    Update the public bucket to restricted
-    Update Bucket    restricted    ${EGI_UID_1}
+    Update Bucket    restricted    ${EGI_UID_1}    ${EGI_UID_2}
 
 Update Restricted To Private Bucket
     [Documentation]    Update the restricted bucket to private
@@ -47,7 +47,7 @@ Update Private To Restricted Bucket
 Delete Restricted Bucket
     [Documentation]    Delete the restricted bucket
     [Tags]    delete    bucket
-    Check Bucket Visibility    restricted
+    Check Bucket Visibility    restricted    ${EGI_UID_1}
     Delete Bucket
 
 Create Restricted Bucket
@@ -77,24 +77,24 @@ Delete Public Bucket
 *** Keywords ***
 Create Bucket
     [Documentation]    Create a new bucket with the given visibility and optional EGI UID
-    [Arguments]    ${visibility}    ${egi_uid}=None
-    Prepare Bucket File    ${visibility}    ${egi_uid}
+    [Arguments]    ${visibility}    @{egi_uid}
+    Prepare Bucket File    ${visibility}    @{egi_uid}
     ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201
     ...    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
-    Check Bucket Visibility    ${visibility}
+    Check Bucket Visibility    ${visibility}    @{egi_uid}
 
 Update Bucket
     [Documentation]    Update an existing bucket with the given visibility and optional EGI UID
-    [Arguments]    ${visibility}    ${egi_uid}=None
-    Prepare Bucket File    ${visibility}    ${egi_uid}
+    [Arguments]    ${visibility}    @{egi_uid}
+    Prepare Bucket File    ${visibility}    @{egi_uid}
     ${body}=    Get File    ${DATA_DIR}/custom_bucket.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Contain    [ '200', '204' ]    '${response.status_code}'
-    Check Bucket Visibility    ${visibility}
+    Check Bucket Visibility    ${visibility}    @{egi_uid}
 
 Delete Bucket
     [Documentation]    Delete the current bucket
@@ -117,7 +117,7 @@ Prepare Bucket File
 
 Check Bucket Visibility
     [Documentation]    Check the visibility of a bucket
-    [Arguments]    ${expected_visibility}
+    [Arguments]    ${expected_visibility}    @{expected_allowed_users}
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    headers=${HEADERS}
     Log    ${response.content}
 
@@ -129,3 +129,29 @@ Check Bucket Visibility
 
     # Check visibility
     Should Be Equal    ${robot_test_bucket['visibility']}    ${expected_visibility}
+
+    # Validate allowed_users
+    ${actual_allowed_users}=    Get From Dictionary    ${robot_test_bucket}    allowed_users
+    Validate Allowed Users    ${actual_allowed_users}    @{expected_allowed_users}
+
+Validate Allowed Users
+    [Documentation]    Validate that actual allowed_users matches expected allowed_users
+    [Arguments]    ${actual_allowed_users}    @{expected_allowed_users}
+    ${expected_count}=    Get Length    ${expected_allowed_users}
+    
+    # No users in allowed_users
+    IF    ${expected_count} == 0
+        Should Be Equal    ${actual_allowed_users}    ${None}
+    ELSE
+        # Check that actual_allowed_users is a list (there are 2 UIDs or more)
+        ${is_list}=    Evaluate    isinstance(${actual_allowed_users}, list)
+        Should Be True    ${is_list}
+        ${actual_count}=    Get Length    ${actual_allowed_users}
+        Should Be Equal As Integers    ${actual_count}    ${expected_count}
+        
+        # For each expected UID, check it matches in the actual list
+        FOR    ${uid}    IN    @{expected_allowed_users}
+            Should Contain    ${actual_allowed_users}    ${uid}
+        END
+
+    END
