@@ -66,6 +66,14 @@ OSCAR Invoke Synchronous Service
     ...    ${RETRY_INTERVAL}
     ...    Invoke Service    ${body}
 
+OSCAR Invoke Synchronous With Service Token
+    [Documentation]    Invoke the synchronous service using a service token
+    ${body}=    Get File    ${INVOKE_FILE}
+    Wait Until Keyword Succeeds
+    ...    ${MAX_RETRIES}x
+    ...    ${RETRY_INTERVAL}
+    ...    Invoke Sync Service With Token    ${body}    ${SERVICE_NAME}
+
 OSCAR Update Service
     [Documentation]    Update a service
     ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
@@ -79,6 +87,11 @@ OSCAR Invoke Asynchronous Service
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
     ...    headers=${HEADERS}
     Should Be Equal As Strings    ${response.status_code}    201
+
+OSCAR Invoke Asynchronous With Service Token
+    [Documentation]    Invoke the asynchronous service using a service token
+    ${body}=    Get File    ${INVOKE_FILE}
+    Invoke Async Service With Token    ${body}    ${SERVICE_NAME}
 
 OSCAR List Jobs
     [Documentation]    List all jobs from a service with their status
@@ -131,17 +144,30 @@ Prepare Service File
 Invoke Service
     [Documentation]    Invoke the synchronous service
     [Arguments]    ${body}
-    ${response}=    POST
-    ...    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}
-    ...    data=${body}
-    ...    headers=${HEADERS}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    data=${body}    headers=${HEADERS}
     Log    Response: ${response}
     Should Be Equal As Integers    ${response.status_code}    200
 
 Get Logs
     [Documentation]    Get the logs from a job
-    ${response}=    GET
-    ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
-    ...    headers=${HEADERS}
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    headers=${HEADERS}
     Log    Logs response: ${response}
     Should Be Equal As Integers    ${response.status_code}    200
+
+Invoke Sync Service With Token
+    [Documentation]    Invoke the synchronous service with service-specific token
+    [Arguments]    ${body}    ${service_name}
+    ${service_token_headers}=    Get Service Token Headers    ${service_name}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${service_name}    data=${body}
+    ...    headers=${service_token_headers}
+    Log    Response: ${response}
+    Should Be Equal As Integers    ${response.status_code}    200
+
+Invoke Async Service With Token
+    [Documentation]    Invoke the asynchronous service with service-specific token
+    [Arguments]    ${body}    ${service_name}
+    ${service_token_headers}=    Get Service Token Headers    ${service_name}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${service_name}    expected_status=201
+    ...    data=${body}    headers=${service_token_headers}
+    Log    Response: ${response}
+    Should Be Equal As Strings    ${response.status_code}    201
