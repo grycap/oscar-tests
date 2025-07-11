@@ -3,7 +3,9 @@ Documentation       Tests for the OSCAR's UI dashboard.
 
 Library             String
 Library             Browser
-Resource            ${CURDIR}/../resources/resources.resource
+Resource            ${CURDIR}/../resources/files.resource
+Resource            ${CURDIR}/../resources/token.resource
+
 
 Suite Setup         Prepare Environment
 Suite Teardown      Run Suite Teardown Tasks
@@ -17,12 +19,6 @@ ${BROWSER}              chromium
 
 
 *** Test Cases ***
-Check Valid OIDC Token
-    [Documentation]    Get the access token
-    ${TOKEN}=    Get Access Token
-    Check JWT Expiration    ${TOKEN}
-    VAR    ${TOKEN}=    ${TOKEN}    scope=SUITE
-
 Open OSCAR Dashboard Page
     [Documentation]    Checks the title of the page
     ${title}=    Get Title
@@ -31,7 +27,8 @@ Open OSCAR Dashboard Page
 Login to the application
     [Documentation]    Log in using the OIDC authentication
     Fill Text    xpath=//input[@name='endpoint']    ${OSCAR_ENDPOINT}
-    VAR    ${auth_data}=    {"authenticated": "true", "token": "${TOKEN}", "endpoint": "${OSCAR_ENDPOINT}"}
+    ${token}=    Get Access Token
+    VAR    ${auth_data}=    {"authenticated": "true", "token": "${token}", "endpoint": "${OSCAR_ENDPOINT}"}
     ${auth_data_json}=    Evaluate    json.dumps(${auth_data})    json
     LocalStorage Set Item    authData    ${auth_data_json}
     Reload
@@ -98,4 +95,4 @@ Delete Selected Service
 Run Suite Teardown Tasks
     [Documentation]    Closes the browser and removes the files
     Close Browser
-    Remove Files From Tests And Verify    True    ./custom_service_file.yaml
+    Clean Test Artifacts    True    ./custom_service_file.yaml

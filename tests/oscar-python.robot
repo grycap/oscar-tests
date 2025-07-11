@@ -2,11 +2,12 @@
 Documentation       Tests for the OSCAR Python library
 
 Library             robot_libs.oscar_lib.OscarLibrary
-Resource            ${CURDIR}/../resources/resources.resource
+Resource            ${CURDIR}/../resources/token.resource
+Resource            ${CURDIR}/../resources/files.resource
 
-Suite Teardown      Remove Files From Tests And Verify    True    ${DATA_DIR}/service_file.yaml
-...                     ${EXECDIR}/00-cowsay-invoke-body.json
 Test Setup          Connect To Oscar Cluster
+Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.yaml
+...                     ${EXECDIR}/00-cowsay-invoke-body.json
 
 
 *** Variables ***
@@ -16,11 +17,6 @@ ${SERVICE_NAME}     robot-test-cowsay
 
 
 *** Test Cases ***
-Check Valid OIDC Token
-    [Documentation]    Get the access token
-    ${token}=    Get Access Token
-    Check JWT Expiration    ${token}
-
 Get Cluster Info
     [Documentation]    Retrieve information about the OSCAR cluster
     ${response}=    Get Cluster Info
@@ -46,7 +42,7 @@ Create New Service
     [Documentation]    Create a new service with a given FDL file
     Prepare Service File
     ${response}=    Create Service    ${DATA_DIR}/service_file.yaml
-    Sleep    120s
+    Sleep    60s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -56,13 +52,6 @@ Get Service Details
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    200
     Should Contain    ${response.content}    "${SERVICE_NAME}"
-
-Run Service Synchronously
-    [Documentation]    Run a service synchronously with input data
-    ${response}=    Run Service Synchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
-    Log    ${response.content}
-    Should Be Equal As Integers    ${response.status_code}    200
-    Should Contain    ${response.content}    ROBOT
 
 Update Existing Service
     [Documentation]    Update an existing service using a new FDL file
@@ -133,6 +122,13 @@ Download File
     Log    ${response}
     File Should Exist    ${EXECDIR}/00-cowsay-invoke-body.json
 
+Run Service Synchronously
+    [Documentation]    Run a service synchronously with input data
+    ${response}=    Run Service Synchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    ROBOT
+
 Remove Service
     [Documentation]    Remove a service by name
     [Tags]    delete
@@ -149,7 +145,8 @@ Connect To Oscar Cluster
 
 Prepare Service File
     [Documentation]    Prepare the service file
-    ${service_content}=    Modify VO Service File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Get File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Set Service File VO    ${service_content}
     # Convert file content to YAML
     ${output}=    yaml.Dump    ${service_content}
     Create File    ${DATA_DIR}/service_file.yaml    ${output}
