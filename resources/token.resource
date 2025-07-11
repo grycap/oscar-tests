@@ -53,3 +53,20 @@ Check JWT Expiration
     ${current_time}=    Get Current Date    result_format=epoch
     Log    Current Time: ${current_time}
     Should Be True    ${expiry_time} > ${current_time}    Token is expired
+
+Get Service Token
+    [Documentation]    Get the service token for the given service name
+    [Arguments]    ${service_name}
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${service_name}    expected_status=200
+    ...    headers=${HEADERS}
+    Log    Service Info Response: ${response.content}
+    ${service_token}=    Evaluate    json.loads($response.content)['token']
+    RETURN    ${service_token}
+
+Get Service Token Headers
+    [Documentation]    Get service token and build Authorization headers
+    [Arguments]    ${service_name}
+    ${service_token}=    Get Service Token    ${service_name}
+    &{service_token_headers}=    Create Dictionary    Authorization=Bearer ${service_token}    Content-Type=text/json
+    ...    Accept=application/json
+    RETURN    &{service_token_headers}
