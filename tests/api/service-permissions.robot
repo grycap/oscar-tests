@@ -5,13 +5,14 @@ Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/token.resource
 
 Suite Setup         Check Valid OIDC Token
-Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/custom_service_file.json
+Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
 
 
 *** Variables ***
-${SERVICE_FILE}     ${DATA_DIR}/00-cowsay.yaml
-${SCRIPT_FILE}      ${DATA_DIR}/00-cowsay-script.sh
-${SERVICE_NAME}     robot-test-cowsay
+${SERVICE_FILE}             ${DATA_DIR}/00-cowsay.yaml
+${SCRIPT_FILE}              ${DATA_DIR}/00-cowsay-script.sh
+${SERVICE_NAME}             robot-test-cowsay
+${MODIFIED_SERVICE_FILE}    custom_service_file.yaml
 
 
 *** Test Cases ***
@@ -19,12 +20,10 @@ Create Restricted Service
     [Documentation]    Create a new restricted service
     [Tags]    create
     Create Service    restricted    ${EGI_UID_1}
-    # Check Service Visibility    restricted
 
 Update Restricted to Private Service
     [Documentation]    Update the restricted service to private
     Update Service    private
-    # Check Service Visibility    private
 
 Invoke Asynchronous Private Service
     [Documentation]    Invoke the asynchronous private service
@@ -52,56 +51,49 @@ OSCAR Get Logs
 Delete Private Service
     [Documentation]    Delete the private service
     [Tags]    delete
-    # Check Service Visibility    private
+    Check Service Visibility    private
     Delete Service
 
 Create Private Service
     [Documentation]    Create a new private service
     [Tags]    create
     Create Service    private
-    # Check Service Visibility    private
 
 Update Private to Restricted Service
     [Documentation]    Update the private service to restricted
     Update Service    restricted    ${EGI_UID_1}
-    Check Service Visibility    restricted
 
 Delete Restricted Service
     [Documentation]    Delete the restricted service
     [Tags]    delete
-    # Check Service Visibility    restricted
+    Check Service Visibility    restricted
     Delete Service
 
 Create Public Service
     [Documentation]    Create a new public service
     [Tags]    create
     Create Service    public
-    # Check Service Visibility    public
 
 Update Public to Private Service
     [Documentation]    Update the public service to private
     Update Service    private
-    # Check Service Visibility    private
 
 Update Private to Public Service
     [Documentation]    Update the private service to public
     Update Service    public
-    # Check Service Visibility    public
 
 Update Public to Restricted Service
     [Documentation]    Update the public service to restricted
     Update Service    restricted    ${EGI_UID_1}
-    # Check Service Visibility    restricted
 
 Update Restricted to Public Service
     [Documentation]    Update the restricted service to public
     Update Service    public
-    # Check Service Visibility    public
 
 Delete Public Service
     [Documentation]    Delete the public service
     [Tags]    delete
-    # Check Service Visibility    public
+    Check Service Visibility    public
     Delete Service
 
 
@@ -110,7 +102,7 @@ Create Service
     [Documentation]    Create a new service with the given visibility and allowed users
     [Arguments]    ${visibility}    @{allowed_users}
     Prepare Service File    ${visibility}    @{allowed_users}
-    ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
+    ${body}=    Get File    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
@@ -120,7 +112,7 @@ Update Service
     [Documentation]    Update the service with the given visibility and allowed users
     [Arguments]    ${visibility}    @{allowed_users}
     Prepare Service File    ${visibility}    @{allowed_users}
-    ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
+    ${body}=    Get File    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Contain    [ '200', '204' ]    '${response.status_code}'
@@ -142,7 +134,7 @@ Prepare Service File
     ${service_content}=    Set Service File Allowed Users    ${service_content}    @{allowed_users}
     ${script_content}=    Get File    ${SCRIPT_FILE}
     ${service_content}=    Set Service File Script    ${service_content}    ${script_content}
-    Dump Service File To JSON File    ${service_content}    ${DATA_DIR}/custom_service_file.json
+    Dump Service File To JSON File    ${service_content}    ${DATA_DIR}/${MODIFIED_SERVICE_FILE}
     # RETURN    ${service_content}
 
 Check Service Visibility
@@ -163,8 +155,6 @@ Check Service Visibility
 
 Should Successfully Get Logs
     [Documentation]    Get the logs from a job
-    ${response}=    GET
-    ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
-    ...    headers=${HEADERS}
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    headers=${HEADERS}
     Log    Logs response: ${response}
     Should Be Equal As Integers    ${response.status_code}    200
