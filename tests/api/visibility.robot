@@ -32,9 +32,9 @@ OSCAR Create Service
     Log    ${response}  
     Log    ${response.content} 
     Should Be Equal As Strings    ${response.status_code}    201
+    Sleep    20s
 
-Verify Bucket update
-    [Documentation]   Buckets is private 1
+Verify Bucket update is private 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
@@ -46,7 +46,7 @@ OSCAR Update Service visibility private -> restricted
     ${users}=       Create List     ${first_user}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
-    Sleep    2s
+    Sleep    20s
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -61,7 +61,7 @@ OSCAR Update Service visibility restricted -> public
     ${users}=       Create List     ${first_user}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
-    Sleep    2s
+    Sleep    20s
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -76,7 +76,7 @@ OSCAR Update Service visibility public -> private
     ${users}=       Create List     ${first_user}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
-    Sleep    2s
+    Sleep    20s
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -91,7 +91,7 @@ OSCAR Update Service private -> public
     ${users}=       Create List     ${first_user}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
-    Sleep    2s
+    Sleep    20s
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -107,7 +107,7 @@ OSCAR Update Service visibility public -> restricted
     ${users}=       Create List     ${first_user}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
-    Sleep    2s
+    Sleep    20s
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -123,7 +123,7 @@ OSCAR Update Service visibility restricted -> private
     ${users}=       Create List     ${first_user}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
-    Sleep    2s
+    Sleep    20s
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -139,6 +139,7 @@ OSCAR Delete Service private
     ...                       headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
+    Sleep    20s
 
 Verify Bucket delete 1
     ${response}=    Verify Bucket
@@ -157,6 +158,7 @@ OSCAR Create Service restricted
     Log    ${response}  
     Log    ${response.content} 
     Should Be Equal As Strings    ${response.status_code}    201
+    Sleep    20s
 
 Verify Bucket restricted
     ${response}=    Verify Bucket
@@ -170,6 +172,7 @@ delete restricted
     ...                       headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
+    Sleep    20s
 
 Verify Bucket delete 2
     ${response}=    Verify Bucket
@@ -188,6 +191,7 @@ OSCAR Create Service public
     Log    ${response}  
     Log    ${response.content} 
     Should Be Equal As Strings    ${response.status_code}    201
+    Sleep    20s
 
 Verify Bucket public
     ${response}=    Verify Bucket
@@ -201,6 +205,7 @@ OSCAR Delete Service public
     ...                       headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
+    Sleep    20s
 
 Verify Bucket delete 3
     ${response}=    Verify Bucket
