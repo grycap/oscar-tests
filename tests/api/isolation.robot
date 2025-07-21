@@ -39,6 +39,7 @@ OSCAR Service isolation_level SERVICE Create
     ...                     headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
+    Sleep    20s
 
 Verify Service isolation_level SERVICE Creation
     ${response}=    Verify Bucket
@@ -57,6 +58,7 @@ OSCAR Service isolation_level SERVICE -> USER Update
     ${content2}=    Update File     ${content}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Sleep    20s
     
 Verify isolation_level SERVICE -> USER Update
     [Documentation]   isolation_level user update
@@ -78,6 +80,7 @@ OSCAR Service isolation_level USER -> USER Update with more users
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Sleep    20s
 
 Verify isolation_level USER -> USER Update with more users
     [Documentation]   isolation_level user update
@@ -97,6 +100,7 @@ OSCAR Service isolation_level USER -> USER Update with less users
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Sleep    20s
 
 Verify isolation_level USER -> USER Update with less users
     [Documentation]   isolation_level user update
@@ -114,6 +118,7 @@ OSCAR Update Service isolation_level user -> service
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Sleep    20s
 
 
 Verify isolation_level USER -> SERVICE Update
@@ -133,6 +138,7 @@ OSCAR Delete Service isolation_level SERVICE
     ...                       headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
+    Sleep    20s
 
 Verify Delete isolation_level SERVICE
     [Documentation]   isolation_level user 
@@ -155,6 +161,7 @@ OSCAR Service isolation_level USER Create
     ...                     headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
+    Sleep    20s
 
 
 Verify isolation_level SERVICE Creation
@@ -173,6 +180,7 @@ OSCAR Delete Service isolation_level USER
     ...                       headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
+    Sleep    20s
     
 Verify isolation_level USER Creation
     [Documentation]   isolation_level user 
