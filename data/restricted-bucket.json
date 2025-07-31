@@ -1,0 +1,7 @@
+{
+  "bucket_path": "robot-test",
+  "visibility": "restricted",
+  "allowed_users": [
+    "5e14d33ac4abc96272cc163da6a200c2e18591bfb3b0f32a4c9c867f5e938463@egi.eu"
+  ]
+}
