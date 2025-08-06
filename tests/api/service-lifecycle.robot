@@ -31,6 +31,18 @@ OSCAR System Info
     Log    ${response.content}
     Should Contain    ${response.content}    "version":
 
+OSCAR System Status
+    [Documentation]    Get system info
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/status    expected_status=200    headers=&{HEADERS}
+    Log    ${response.content}
+    Should Contain    ${response.content}    "numberNodes"
+
+OSCAR System Status with OSCAR USER
+    [Documentation]    Get system info
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/status    expected_status=200    headers=&{HEADERS_OSCAR}
+    Log    ${response.content}
+    Should Contain    ${response.content}    "numberNodes"
+
 OSCAR Create Service
     [Documentation]    Create a new service
     [Tags]    create
@@ -53,6 +65,19 @@ OSCAR Read Service
     [Documentation]    Read a service
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
     ...    headers=${HEADERS}
+    Log    ${response.content}
+    Should Contain    ${response.content}    "name":"${SERVICE_NAME}"
+
+OSCAR List Services as OSCAR user
+    [Documentation]    Retrieve a list of services
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services    expected_status=200    headers=${HEADERS_OSCAR}
+    Log    ${response.content}
+    Should Contain    ${response.content}    "oscar_service":
+
+OSCAR Read Service as OSCAR user
+    [Documentation]    Read a service
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
+    ...    headers=${HEADERS_OSCAR}
     Log    ${response.content}
     Should Contain    ${response.content}    "name":"${SERVICE_NAME}"
 
