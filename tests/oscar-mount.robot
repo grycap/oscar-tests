@@ -68,7 +68,7 @@ OSCAR CLI Put File to input bucket
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
     ...    ${EXECDIR}/data/00-cowsay.yaml       robot-test/input/${INVOKE_FILE_NAME}
     ...    stdout=True    stderr=True
-    Sleep    10s
+    Sleep    30s
     Should Be Equal As Integers    ${result.rc}    0
 
 Check the good execution
@@ -79,6 +79,7 @@ Check the good execution
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
     ${get_logs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=200
     ...    headers=${HEADERS}
+    Sleep    5s
     Should Contain    ${get_logs.content}    Hello
 
 OSCAR Delete Service
@@ -108,7 +109,7 @@ Prepare Service File
 
     # Update the script value
     ${script_value}=    Catenate
-    ...    \#!/bin/sh\n\nif [ \"$INPUT_TYPE\" = \"json\" ]\nthen\n
+    ...    \#!/bin/sh\n\nsleep 5\nif [ \"$INPUT_TYPE\" = \"json\" ]\nthen\n
     ...    jq '.message' \"$INPUT_FILE_PATH\" -r | /usr/games/cowsay\nelse\n
     ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\n
     ...    cat \"/mnt/${MOUNT_BUCKET_NAME}/${INVOKE_FILE_NAME}\"\nfi\n\
