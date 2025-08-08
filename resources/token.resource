@@ -34,6 +34,8 @@ Get Access Token
     Log    Access Token: ${access_token}
     VAR    &{HEADERS}=    Authorization=Bearer ${access_token}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
+    VAR    &{HEADERS_OSCAR}=    Authorization=Basic ${BASIC_USER}    Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
     RETURN    ${access_token}
 
 Decode JWT Token

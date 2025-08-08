@@ -5,7 +5,6 @@ Library           RequestsLibrary
 Resource          ${CURDIR}/../../resources/token.resource
 Resource          ${CURDIR}/../../resources/files.resource
 
-Suite Setup       Check Valid OIDC Token
 Suite Teardown    Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
@@ -15,6 +14,18 @@ ${bucket_name}    robot-test
 
 
 *** Test Cases ***
+Check Valid OIDC Token
+    [Documentation]    Get the access token
+    ${token}=    Get Access Token   ${REFRESH_TOKEN}
+    Check JWT Expiration    ${token}
+    VAR    &{HEADERS}=    Authorization=Bearer ${token}    Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+    ${token2}=    Get Access Token   ${REFRESH_TOKEN2}
+    Check JWT Expiration    ${token2}
+    VAR    &{HEADERS2}=    Authorization=Bearer ${token2}    Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+
+
 OSCAR API Health
     [Documentation]    Check API health
     ${response}=    GET  ${OSCAR_ENDPOINT}/health  expected_status=200
@@ -34,26 +45,37 @@ OSCAR Create Service
     Should Be Equal As Strings    ${response.status_code}    201
     Sleep    20s
 
-Verify Bucket update is private 
+Verify Visibility of service and check the Bucket is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    ${response}=    Get Services        ${HEADERS}
+    Should Contain       ${response}      ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
 
 OSCAR Update Service visibility private -> restricted
     [Documentation]  Update a service private -> restricted
     GetService File Update     visibility     restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${users}=       Create List     ${first_user}
+    Append To List      ${users}    ${second_user}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
-Verify Bucket update is restricted
+Verify Visibility of service and check the Bucket is updated to restricted from private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    ${response}=    Get Services        ${HEADERS}
+    Should Contain       ${response}      ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    Should Contain       ${response}      ${service_name}
+
 
 OSCAR Update Service visibility restricted -> public
     GetService File Update      visibility     public
@@ -65,10 +87,14 @@ OSCAR Update Service visibility restricted -> public
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
-Verify Bucket update is public
+Verify Visibility of service and check the Bucket is updated to public from restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    ${response}=    Get Services        ${HEADERS}
+    Should Contain       ${response}      ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    Should Contain       ${response}      ${service_name}
 
 OSCAR Update Service visibility public -> private
     Get Service File Update      visibility     private
@@ -80,10 +106,15 @@ OSCAR Update Service visibility public -> private
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
-Verify Bucket is private 2
+Verify Visibility of service and check the Bucket is updated to private from public
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    ${response}=    Get Services        ${HEADERS}
+    Should Contain       ${response}      ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
 
 OSCAR Update Service private -> public
     Get Service File Update      visibility     public
@@ -95,10 +126,14 @@ OSCAR Update Service private -> public
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
-Verify Bucket is public 2
+Verify Visibility of service and check the Bucket is updated to public from private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    ${response}=    Get Services        ${HEADERS}
+    Should Contain       ${response}      ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    Should Contain       ${response}      ${service_name}
 
 OSCAR Update Service visibility public -> restricted
     [Documentation]  Update a service public -> restricted
@@ -111,11 +146,16 @@ OSCAR Update Service visibility public -> restricted
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
-Verify Bucket is restricted 2
+Verify Visibility of service and check the Bucket is updated to restricted from public
     [Documentation]    Buckets 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    ${response}=    Get Services        ${HEADERS}
+    Should Contain       ${response}      ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
 
 OSCAR Update Service visibility restricted -> private
     Get Service File Update      visibility     private
@@ -128,10 +168,15 @@ OSCAR Update Service visibility restricted -> private
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
 
-Verify Bucket update is private 3
+Verify Visibility of service and check the Bucket is updated to private from restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    ${response}=    Get Services        ${HEADERS}
+    Should Contain       ${response}      ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
 
 OSCAR Delete Service private
     [Documentation]  Delete the created service
@@ -141,11 +186,17 @@ OSCAR Delete Service private
     Should Be Equal As Strings    ${response.status_code}    204
     Sleep    20s
 
-Verify Bucket delete 1
+Verify if private Bucket is deleted 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     ${output} = 	Convert To String 	${response.status_code}
     Should Not Match Regexp    ${output}    ${bucket_name}
+    ${response}=    Get Services        ${HEADERS}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
 
 OSCAR Create Service restricted
     [Documentation]  Create a new service
@@ -160,13 +211,17 @@ OSCAR Create Service restricted
     Should Be Equal As Strings    ${response.status_code}    201
     Sleep    20s
 
-Verify Bucket restricted
+Verify Visibility of service and check the Bucket is restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    ${response}=    Get Services        ${HEADERS}
+    Should Contain       ${response}      ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
 
-
-delete restricted
+OSCAR Delete Service restricted
     [Documentation]  Delete the created service
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${service_name}   expected_status=204
     ...                       headers=${HEADERS}
@@ -174,11 +229,17 @@ delete restricted
     Should Be Equal As Strings    ${response.status_code}    204
     Sleep    20s
 
-Verify Bucket delete 2
+Verify if restricted Bucket is deleted 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     ${output} = 	Convert To String 	${response.status_code}
     Should Not Match Regexp    ${output}    ${bucket_name}
+    ${response}=    Get Services        ${HEADERS}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
 
 OSCAR Create Service public
     [Documentation]  Create a new service
@@ -193,10 +254,14 @@ OSCAR Create Service public
     Should Be Equal As Strings    ${response.status_code}    201
     Sleep    20s
 
-Verify Bucket public
+Verify Visibility of service and check the Bucket is public
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    ${response}=    Get Services        ${HEADERS}
+    Should Contain       ${response}      ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    Should Contain       ${response}      ${service_name}
 
 
 OSCAR Delete Service public
@@ -207,11 +272,17 @@ OSCAR Delete Service public
     Should Be Equal As Strings    ${response.status_code}    204
     Sleep    20s
 
-Verify Bucket delete 3
+Verify if public Bucket is deleted 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     ${output} = 	Convert To String 	${response.status_code}
     Should Not Match Regexp    ${output}    ${bucket_name}
+    ${response}=    Get Services        ${HEADERS}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
+    ${response}=    Get Services        ${HEADERS2}
+    ${output} = 	Convert To String 	${response}
+    Should Not Match Regexp    ${output}    ${service_name}
 
 
 *** Keywords ***
@@ -240,6 +311,21 @@ Prepare Service File
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
     Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
 
+
+Get Access Token
+    [Documentation]    Retrieve OIDC token using a refresh token
+    [Arguments]    ${this_refresh_token}  
+    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}${TOKEN_ENDPOINT}'    -d
+    ...    'grant_type\=refresh_token&refresh_token\=${this_refresh_token}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
+    ...    shell=True    stdout=True    stderr=True
+    ${json_output}=    Convert String To Json    ${result.stdout}
+    ${access_token}=    Get Value From Json    ${json_output}    $.access_token
+    VAR    ${access_token}    ${access_token}[0]
+    Log    Access Token: ${access_token}
+    VAR    &{HEADERS2}    Authorization=Bearer ${access_token}   Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+    RETURN    ${access_token}
+
 Update File
     [Arguments]    ${content}       ${key}      ${value}
     ${loaded_content}=  yaml.Safe Load  ${content}
@@ -253,3 +339,8 @@ Modify Service File
     ${loaded_content}=  yaml.Safe Load  ${yaml_content}
     Set To Dictionary    ${loaded_content}[functions][oscar][0][robot-oscar-cluster]    vo=${VO}
     RETURN    ${loaded_content}
+
+Get Services
+    [Arguments]    ${header_options} 
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services    expected_status=200    headers=${header_options}
+    RETURN      ${response.content}
