@@ -35,6 +35,7 @@ The following information is required:
   - `OSCAR_ENDPOINT`: The endpoint of the OSCAR cluster (e.g. https://mycluster.oscar.grycap.net) 
   - `OSCAR_METRICS`: The endpoint of the OSCAR metrics.
   - `OSCAR_DASHBOARD`: The endpoint of the OSCAR UI (dashboard).
+  - `BASIC_USER:`: Base64-encoded information of the authentication for the 'oscar' user (echo -n "oscar:password"  | base64)
   - `EGI_AAI_URL`: The base URL of the EGI AAI (Authentication and Authorisation Infrastructure) server.
       - For the production server, use `https://aai.egi.eu`.
       - For the demo server, use `https://aai-demo.egi.eu`.
