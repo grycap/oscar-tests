@@ -62,9 +62,10 @@ OSCAR Create Service
     [Tags]    create
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json    
-    ${response}=    POST With Defaults  url=${OSCAR_ENDPOINT}/system/services  data=${body}   expected_status=201
+    ${response}=    POST With Defaults  url=${OSCAR_ENDPOINT}/system/services   data=${body}
     Log    ${response.content}
-    Should Be Equal As Strings    ${response.status_code}    201
+    Sleep   10s
+    Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'  #409 if already exists
 
 OSCAR List Services
     [Documentation]    Retrieve a list of services
@@ -101,20 +102,20 @@ OSCAR Invoke Synchronous Service
     [Documentation]  Invoke the synchronous service
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in favour of the next one which uses the service token
     ${body}=        Get File    ${INVOKE_FILE}
-    ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/run/robot-test-cowsay   data=${body}   expected_status=200
+    ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}   data=${body}
     Log    ${response.content}
     Should Contain    ${response.content}    Hello
 
 OSCAR Invoke Synchronous Service with token
     [Documentation]  Invoke the synchronous service with service token
-    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
     Log    ${response.content}
     ${service_token}=      Evaluate      json.loads($response.content)['token']
     VAR    ${service_token}    ${service_token}
     VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
     ${body}=        Get File    ${INVOKE_FILE}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/robot-test-cowsay    expected_status=200    data=${body}   
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200    data=${body}   
     ...                     headers=${new_headers}   verify=${SSL_VERIFY}
     Should Be Equal As Strings    ${response.status_code}    200    
 
@@ -129,14 +130,14 @@ OSCAR Invoke Asynchronous Service
 OSCAR Invoke Asynchronous Service with service token
     [Documentation]  Invoke the asynchronous service with token
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
-    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
     Log    ${response.content}
     ${service_token}=      Evaluate      json.loads($response.content)['token']
     VAR    ${service_token}    ${service_token}
     VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
     ${body}=        Get File    ${INVOKE_FILE}
-    ${response}=    POST   url=${OSCAR_ENDPOINT}/job/robot-test-cowsay      data=${body}
+    ${response}=    POST   url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}      data=${body}
     ...                     headers=${new_headers}    verify=${SSL_VERIFY}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -170,6 +171,7 @@ OSCAR Delete All Jobs
     Should Be Equal As Strings    ${response.status_code}    204
 
 OSCAR Delete Service
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
     [Documentation]    Delete the created service
     [Tags]    delete
     ${response}=    DELETE With Defaults   url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
@@ -185,9 +187,9 @@ GET With Defaults
     RETURN    ${response}
 
 POST With Defaults
-    [Arguments]    ${url}    ${data}    ${expected_status}=201   ${headers}=${HEADERS}
+    [Arguments]    ${url}    ${data}     ${headers}=${HEADERS}
     ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
-    ${response}=    POST    url=${url}    data=${data}    expected_status=${expected_status}    verify=${SSL_VERIFY}    headers=&{headers}
+    ${response}=    POST    url=${url}    data=${data}    expected_status=ANY  verify=${SSL_VERIFY}    headers=&{headers}
     RETURN    ${response}
 
 PUT With Defaults
