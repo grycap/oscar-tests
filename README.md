@@ -64,6 +64,12 @@ This executes all the defined tests. You can also execute a single test suite wi
 robot -V variables/.env.yaml -d robot_results/ tests/api/service-lifecycle.robot
 ```
 
+If you are testing an OSCAR deployment in localhost, you can override SSL verification via:
+
+```sh
+robot -V variables/.env-localhost.yaml -v SSL_VERIFY:${False} -v LOCAL_TESTING:${True} -d robot_results tests/api/service-lifecycle.robot
+```
+
 ## 📊 Test Reports and Logs
 
 After running the tests, you’ll get detailed logs and reports in the:
