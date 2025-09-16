@@ -45,10 +45,10 @@ Verify Service isolation_level SERVICE Creation
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id} ","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
 
 OSCAR Service isolation_level SERVICE -> USER Update
@@ -67,7 +67,7 @@ Verify isolation_level SERVICE -> USER Update
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
 
 OSCAR Service isolation_level USER -> USER Update with more users
@@ -109,7 +109,7 @@ Verify isolation_level USER -> USER Update with less users
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
 
 OSCAR Update Service isolation_level user -> service
@@ -126,10 +126,10 @@ Verify isolation_level USER -> SERVICE Update
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
 
 OSCAR Delete Service isolation_level SERVICE
@@ -144,11 +144,11 @@ Verify Delete isolation_level SERVICE
     [Documentation]   isolation_level user 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}","visibility":"private"
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
 
 OSCAR Service isolation_level USER Create
@@ -171,7 +171,7 @@ Verify isolation_level SERVICE Creation
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
 
 OSCAR Delete Service isolation_level USER
@@ -182,15 +182,15 @@ OSCAR Delete Service isolation_level USER
     Should Be Equal As Strings    ${response.status_code}    204
     Sleep    20s
     
-Verify isolation_level USER Creation
+Verify isolation_level USER Delete
     [Documentation]   isolation_level user 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}","visibility":"private"
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
+    ${output} = 	Convert To String 	${response.content}
     Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
 
 *** Keywords ***

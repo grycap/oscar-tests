@@ -11,6 +11,7 @@ Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.jso
 *** Variables ***
 ${SERVICE_NAME}     robot-test-cowsay
 ${MOUNT_BUCKET_NAME}        robot-test/mount
+${BUCKET_NAME}        robot-test
 
 *** Test Cases ***
 OSCAR API Health
@@ -97,6 +98,15 @@ OSCAR CLI Cluster Remove
     ${result}=    Run Process    oscar-cli    cluster    remove    robot-oscar-cluster    stdout=True    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
+
+Delete Bucket ${MOUNT_BUCKET_NAME}. To reset state
+    [Documentation]    Delete a restricted bucket
+    [Tags]    Delete    bucket
+    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_NAME}   expected_status=204   
+    ...    headers=${HEADERS}
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    204
+
 
 *** Keywords ***
 Prepare Service File
