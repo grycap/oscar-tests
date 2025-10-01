@@ -35,11 +35,17 @@ The following information is required:
   - `OSCAR_ENDPOINT`: The endpoint of the OSCAR cluster (e.g. https://mycluster.oscar.grycap.net) 
   - `OSCAR_METRICS`: The endpoint of the OSCAR metrics.
   - `OSCAR_DASHBOARD`: The endpoint of the OSCAR UI (dashboard).
+  - `BASIC_USER:`: Base64-encoded information of the authentication for the 'oscar' user (echo -n "oscar:password"  | base64)
   - `EGI_AAI_URL`: The base URL of the EGI AAI (Authentication and Authorisation Infrastructure) server.
       - For the production server, use `https://aai.egi.eu`.
       - For the demo server, use `https://aai-demo.egi.eu`.
   - `REFRESH_TOKEN`: The OIDC token used to automate the execution of the test suite. In order to get a Refresh Token, head to the [Check-in Token Portal](https://aai.egi.eu/token/) or [Demo Check-in Token Portal](https://aai-demo.egi.eu/token/), click **Authorise** and then **Create Refresh Token** button to generate a new token.
   - `EGI_VO`: The virtual organization used to test the OSCAR cluster.
+  - `FIRST_USER`: User ID
+  - `FIRST_USER_ID`: Get the first 10 characters of FIRST_USER (e.g. FIRST_USER: 1234567890987654321 -> FIRST_USER_ID: 1234567890) 
+  - `REFRESH_TOKEN_SECOND_USER`: The OIDC token of the second user used to automate the execution
+  - `SECOND_USER`: User ID of the second user
+  - `SECOND_USER_ID`: Get the first 10 characters of SECOND_USER
 
 
 
