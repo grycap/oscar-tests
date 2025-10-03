@@ -40,7 +40,7 @@ Update Bucket from Private -> to Restricted
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${body}=  yaml.Safe Load  ${body}
     ${body}=    Set Bucket File Visibility      ${body}     restricted
-    ${body}=    Set Bucket File Allowed Users   ${body}     ${first_user}
+    ${body}=    Set Bucket File Allowed Users   ${body}     ${FIRST_USER}
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
     ...    headers=${HEADERS}
@@ -115,7 +115,7 @@ Update Bucket from Public -> to Restricted
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${body}=  yaml.Safe Load  ${body}
     ${body}=    Set Bucket File Visibility      ${body}     restricted
-    ${body}=    Set Bucket File Allowed Users   ${body}     ${first_user}
+    ${body}=    Set Bucket File Allowed Users   ${body}     ${FIRST_USER}
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
     ...    headers=${HEADERS}
@@ -165,7 +165,7 @@ Create Bucket Restricted
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${body}=  yaml.Safe Load  ${body}
     ${body}=    Set Bucket File Visibility      ${body}     restricted
-    ${body}=    Set Bucket File Allowed Users   ${body}     ${first_user}
+    ${body}=    Set Bucket File Allowed Users   ${body}     ${FIRST_USER}
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
     ...    headers=${HEADERS}

@@ -101,7 +101,7 @@ OSCAR List Jobs
     ${list_jobs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=200
     ...    headers=${HEADERS}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
-    Get Key From Dictionary    ${jobs_dict}
+    Get Key From Dictionary    ${jobs_dict["jobs"]}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
 OSCAR Get Logs
