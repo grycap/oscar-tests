@@ -6,7 +6,7 @@ functions:
       vo: <VO>
       memory: 1Gi
       image: ghcr.io/grycap/cowsay
-      script: data/00-cowsay-script.sh
+      script: 00-cowsay-script.sh
       input:
       - storage_provider: minio
         path: robot-test/input
