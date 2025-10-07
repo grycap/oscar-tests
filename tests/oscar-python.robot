@@ -71,7 +71,7 @@ List Jobs
     ${response}=    List Jobs    ${SERVICE_NAME}
     Log    ${response.content}
     ${jobs_dict}=    Evaluate    dict(${response.content})
-    Get Key From Dictionary    ${jobs_dict}
+    Get Key From Dictionary    ${jobs_dict["jobs"]} 
     Should Be Equal As Integers    ${response.status_code}    200
 
 Get Job Logs
