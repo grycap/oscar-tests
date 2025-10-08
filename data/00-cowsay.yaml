@@ -9,9 +9,9 @@ functions:
       script: data/00-cowsay-script.sh
       input:
       - storage_provider: minio
-        path: robot-test/input
+        path: robot-test-cowsay/input
       output:
       - storage_provider: minio
-        path: robot-test/output
+        path: robot-test-cowsay/output
       isolation_level: SERVICE
       visibility: private
