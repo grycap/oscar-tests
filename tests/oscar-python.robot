@@ -14,7 +14,7 @@ Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.yam
 ${CLUSTER_ID}       robot-oscar-cluster
 ${SSL}              True
 ${SERVICE_NAME}     robot-test-cowsay
-
+${bucket_name}      robot-test-cowsay
 
 *** Test Cases ***
 Get Cluster Info
@@ -97,13 +97,13 @@ Upload File
     [Documentation]    Upload a file to the service's storage provider
     Create Storage Object
     ${response}=    Upload File To Storage    minio.default
-    ...    ${DATA_DIR}/00-cowsay-invoke-body.json    robot-test/input/robot-upload
+    ...    ${DATA_DIR}/00-cowsay-invoke-body.json    ${bucket_name}/input/robot-upload
     Log    ${response}
 
 List Files From Path
     [Documentation]    List files from a specific path in the service's storage provider
     Create Storage Object
-    ${response}=    List Files From Path    minio.default    robot-test/input/
+    ${response}=    List Files From Path    minio.default    ${bucket_name}/input/
     Log    ${response}
 
     FOR    ${item}    IN    @{response['Contents']}
@@ -118,7 +118,7 @@ Download File
     [Documentation]    Download a file from the service's storage provider
     Create Storage Object
     ${response}=    Download File From Storage    minio.default
-    ...    ${EXECDIR}    robot-test/input/robot-upload/00-cowsay-invoke-body.json
+    ...    ${EXECDIR}    ${bucket_name}/input/robot-upload/00-cowsay-invoke-body.json
     Log    ${response}
     File Should Exist    ${EXECDIR}/00-cowsay-invoke-body.json
 
