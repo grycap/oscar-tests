@@ -10,6 +10,7 @@ Suite Teardown      Clean Test Artifacts        True    ${DATA_DIR}/00-cowsay-in
 
 *** Variables ***
 ${SERVICE_NAME}     robot-test-cowsay
+${bucket_name}      robot-test-cowsay
 
 
 *** Test Cases ***
@@ -70,7 +71,7 @@ OSCAR CLI List Services
 OSCAR CLI Put File
     [Documentation]    Check that OSCAR CLI puts a file in a service's storage provider
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
-    ...    ${EXECDIR}/data/00-cowsay-invoke-body.json       robot-test/input/${INVOKE_FILE_NAME}
+    ...    ${EXECDIR}/data/00-cowsay-invoke-body.json       ${bucket_name}/input/${INVOKE_FILE_NAME}
     ...    stdout=True    stderr=True
     Sleep    10s
     Log    ${result.stdout}
@@ -79,7 +80,7 @@ OSCAR CLI Put File
 OSCAR CLI List Files
     [Documentation]    Check that OSCAR CLI lists files from a service's storage provider path
     ${result}=    Run Process    oscar-cli    service    list-files    ${SERVICE_NAME}
-    ...    minio.default    robot-test/input/
+    ...    minio.default    ${bucket_name}/input/
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
     Should Contain    ${result.stdout}    ${INVOKE_FILE_NAME}
@@ -111,7 +112,7 @@ OSCAR CLI Logs Remove
 OSCAR CLI Get File
     [Documentation]    Check that OSCAR CLI gets a file from a service's storage provider
     ${result}=    Run Process    oscar-cli    service    get-file    ${SERVICE_NAME}    minio.default
-    ...    robot-test/input/${INVOKE_FILE_NAME}    ${DATA_DIR}/00-cowsay-invoke-body-downloaded.json
+    ...    ${bucket_name}/input/${INVOKE_FILE_NAME}    ${DATA_DIR}/00-cowsay-invoke-body-downloaded.json
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
