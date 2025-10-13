@@ -110,8 +110,9 @@ OSCAR Invoke Synchronous Service with token
     VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
     ${body}=        Get File    ${INVOKE_FILE}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200    data=${body}   
-    ...                     headers=${new_headers}   verify=${SSL_VERIFY}
+    ${verify}=    Convert To Boolean    ${SSL_VERIFY}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200    data=${body}
+    ...                     headers=${new_headers}   verify=${verify}
     Should Be Equal As Strings    ${response.status_code}    200    
 
 OSCAR Invoke Asynchronous Service
@@ -161,8 +162,9 @@ OSCAR Invoke Asynchronous Service with service token
     VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
     ${body}=        Get File    ${INVOKE_FILE}
+    ${verify}=    Convert To Boolean    ${SSL_VERIFY}
     ${response}=    POST   url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}      data=${body}
-    ...                     headers=${new_headers}    verify=${SSL_VERIFY}
+    ...                     headers=${new_headers}    verify=${verify}
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR Delete All Jobs
@@ -185,25 +187,29 @@ OSCAR Delete Service
 GET With Defaults
     [Arguments]    ${url}    ${expected_status}=200   ${headers}=${HEADERS}
     ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
-    ${response}=    GET    url=${url}    expected_status=${expected_status}    verify=${SSL_VERIFY}    headers=&{headers}
+    ${verify}=    Convert To Boolean    ${SSL_VERIFY}
+    ${response}=    GET    url=${url}    expected_status=${expected_status}    verify=${verify}    headers=&{headers}
     RETURN    ${response}
 
 POST With Defaults
     [Arguments]    ${url}    ${data}     ${headers}=${HEADERS}
     ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
-    ${response}=    POST    url=${url}    data=${data}    expected_status=ANY  verify=${SSL_VERIFY}    headers=&{headers}
+    ${verify}=    Convert To Boolean    ${SSL_VERIFY}
+    ${response}=    POST    url=${url}    data=${data}    expected_status=ANY  verify=${verify}    headers=&{headers}
     RETURN    ${response}
 
 PUT With Defaults
     [Arguments]    ${url}    ${data}    ${expected_status}=204   ${headers}=${HEADERS}
     ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
-    ${response}=    PUT    url=${url}    data=${data}    expected_status=${expected_status}    verify=${SSL_VERIFY}    headers=&{headers}
+    ${verify}=    Convert To Boolean    ${SSL_VERIFY}
+    ${response}=    PUT    url=${url}    data=${data}    expected_status=${expected_status}    verify=${verify}    headers=&{headers}
     RETURN    ${response}
 
 DELETE With Defaults
     [Arguments]    ${url}    ${expected_status}=204   ${headers}=${HEADERS}
     ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
-    ${response}=    DELETE    url=${url}    expected_status=${expected_status}    verify=${SSL_VERIFY}    headers=&{headers}
+    ${verify}=    Convert To Boolean    ${SSL_VERIFY}
+    ${response}=    DELETE    url=${url}    expected_status=${expected_status}    verify=${verify}    headers=&{headers}
     RETURN    ${response}
 
 #Delete Service Now
