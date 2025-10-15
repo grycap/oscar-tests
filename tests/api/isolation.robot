@@ -10,7 +10,7 @@ Suite Teardown    Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 *** Variables ***
 ${service_name}     robot-test-cowsay
-${bucket_name}      robot-test
+${bucket_name}      robot-test-cowsay
 
 *** Test Cases ***
 Check Valid OIDC Token
