@@ -75,7 +75,7 @@ OSCAR Service isolation_level USER -> USER Update with more users
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${content}=     Update File     ${body}     isolation_level     USER
     ${users}=       Create List     ${FIRST_USER}
-    Append To List      ${users}    ${SECOND_USER_ID}
+    Append To List      ${users}    ${SECOND_USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}
     Log    ${response.content}
@@ -89,7 +89,7 @@ Verify isolation_level USER -> USER Update with more users
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
     Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${FIRST_USER_ID}","visibility":"private"
     ${response}=    Verify Second Bucket
-     Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${SECOND_USER_ID}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${SECOND_USER_ID}","visibility":"private"
 
 OSCAR Service isolation_level USER -> USER Update with less users
     Prepare Service File

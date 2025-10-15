@@ -3,6 +3,7 @@ Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluste
 
 Resource            ${CURDIR}/../resources/token.resource
 Resource            ${CURDIR}/../resources/files.resource
+Resource            ${CURDIR}/../resources/api_call.resource
 
 Suite Setup         Check Valid OIDC Token
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
@@ -11,7 +12,8 @@ Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.jso
 *** Variables ***
 ${SERVICE_NAME}     robot-test-cowsay
 ${MOUNT_BUCKET_NAME}        robot-test/mount
-${BUCKET_NAME}        robot-test
+${MOUNT_BUCKET_NAME_RAW}        robot-test
+${BUCKET_NAME}        robot-test-cowsay
 
 *** Test Cases ***
 OSCAR API Health
@@ -67,16 +69,15 @@ OSCAR CLI Put File to mount bucket
 OSCAR CLI Put File to input bucket
     [Documentation]    Check that OSCAR CLI puts a file in a service's storage provider
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
-    ...    ${EXECDIR}/data/00-cowsay.yaml       robot-test/input/${INVOKE_FILE_NAME}
+    ...    ${EXECDIR}/data/00-cowsay.yaml       ${BUCKET_NAME}/input/${INVOKE_FILE_NAME}
     ...    stdout=True    stderr=True
     Sleep    30s
     Should Be Equal As Integers    ${result.rc}    0
 
 Check the good execution
-    ${list_jobs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ${list_jobs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
-    Get Key From Dictionary    ${jobs_dict}
+    Get Key From Dictionary    ${jobs_dict["jobs"]}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
     ${get_logs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=200
     ...    headers=${HEADERS}
@@ -99,10 +100,10 @@ OSCAR CLI Cluster Remove
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
-Delete Bucket ${MOUNT_BUCKET_NAME}. To reset state
+Delete Bucket ${MOUNT_BUCKET_NAME_RAW}. To reset state
     [Documentation]    Delete a restricted bucket
     [Tags]    Delete    bucket
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_NAME}   expected_status=204   
+    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${MOUNT_BUCKET_NAME_RAW}   expected_status=204   
     ...    headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
