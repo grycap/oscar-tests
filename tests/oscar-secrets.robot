@@ -3,6 +3,7 @@ Documentation       Tests for the OSCAR Manager's secrets
 
 Resource            ${CURDIR}/../resources/files.resource
 Resource            ${CURDIR}/../resources/token.resource
+Resource            ${CURDIR}/../resources/api_call.resource
 
 Suite Setup         Check Valid OIDC Token
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/custom_service_file.json
@@ -17,7 +18,7 @@ ${SERVICE_NAME}     robot-test-cowsay
 *** Test Cases ***
 OSCAR API Health
     [Documentation]    Check API health
-    ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200
+    ${response}=    GET With Defaults  ${OSCAR_ENDPOINT}/health
     Log    ${response.content}
     Should Be Equal As Strings    ${response.content}    Ok
 
@@ -43,10 +44,9 @@ OSCAR Service with Secret Invoke Asynchronous
 
 OSCAR Service with Secret List Jobs
     [Documentation]    List all jobs from a service with their status
-    ${list_jobs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ${list_jobs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
-    Get Key From Dictionary    ${jobs_dict}
+    Get Key From Dictionary    ${jobs_dict["jobs"]}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
 OSCAR Service with Secret Get Logs
@@ -82,10 +82,9 @@ OSCAR Service with Secret Invoke Asynchronous Service
 
 OSCAR Service with Secret List Jobs Updated
     [Documentation]    List all jobs from a service with their status
-    ${list_jobs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ${list_jobs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
-    Get Key From Dictionary    ${jobs_dict}
+    Get Key From Dictionary    ${jobs_dict["jobs"]}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
 OSCAR Service with Secret Get Logs Updated
@@ -121,10 +120,9 @@ OSCAR Service with Secret Invoke Asynchronous Service Again
 
 OSCAR Service with Secret List Jobs Again
     [Documentation]    List all jobs from a service with their status
-    ${list_jobs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ${list_jobs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
-    Get Key From Dictionary    ${jobs_dict}
+    Get Key From Dictionary    ${jobs_dict["jobs"]}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
 OSCAR Service with Secret Get Logs Again

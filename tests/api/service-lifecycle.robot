@@ -3,6 +3,8 @@ Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluste
 
 Resource            ${CURDIR}/../../resources/token.resource
 Resource            ${CURDIR}/../../resources/files.resource
+Resource            ${CURDIR}/../../resources/api_call.resource
+
 
 
 Suite Setup         Check Valid OIDC Token
@@ -182,29 +184,7 @@ OSCAR Delete Service
 
 
 *** Keywords ***
-GET With Defaults
-    [Arguments]    ${url}    ${expected_status}=200   ${headers}=${HEADERS}
-    ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
-    ${response}=    GET    url=${url}    expected_status=${expected_status}    verify=${SSL_VERIFY}    headers=&{headers}
-    RETURN    ${response}
 
-POST With Defaults
-    [Arguments]    ${url}    ${data}     ${headers}=${HEADERS}
-    ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
-    ${response}=    POST    url=${url}    data=${data}    expected_status=ANY  verify=${SSL_VERIFY}    headers=&{headers}
-    RETURN    ${response}
-
-PUT With Defaults
-    [Arguments]    ${url}    ${data}    ${expected_status}=204   ${headers}=${HEADERS}
-    ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
-    ${response}=    PUT    url=${url}    data=${data}    expected_status=${expected_status}    verify=${SSL_VERIFY}    headers=&{headers}
-    RETURN    ${response}
-
-DELETE With Defaults
-    [Arguments]    ${url}    ${expected_status}=204   ${headers}=${HEADERS}
-    ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
-    ${response}=    DELETE    url=${url}    expected_status=${expected_status}    verify=${SSL_VERIFY}    headers=&{headers}
-    RETURN    ${response}
 
 #Delete Service Now
 #    ${del_response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
