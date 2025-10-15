@@ -18,6 +18,8 @@ ${SERVICE_FILE}         ${DATA_DIR}/00-cowsay.yaml
 ${BUCKET_NAME}          robot-test
 ${MAX_RETRIES}          20
 ${RETRY_INTERVAL}       5s
+${LOCAL_TESTING}        ${False}
+${SSL_VERIFY}           ${True}
 
 
 *** Keywords ***

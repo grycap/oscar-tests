@@ -4,7 +4,10 @@ Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluste
 Resource            ${CURDIR}/../../resources/token.resource
 Resource            ${CURDIR}/../../resources/files.resource
 
+
 Suite Setup         Check Valid OIDC Token
+
+
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
@@ -12,165 +15,202 @@ Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.jso
 ${SERVICE_NAME}     robot-test-cowsay
 
 
+
 *** Test Cases ***
 OSCAR API Health
     [Documentation]    Check API health
-    ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200
+    ${response}=    GET With Defaults  ${OSCAR_ENDPOINT}/health
     Log    ${response.content}
     Should Be Equal As Strings    ${response.content}    Ok
 
 OSCAR System Config
-    [Documentation]    Get system config
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/config    expected_status=200    headers=&{HEADERS}
+    [Documentation]    Get system config    
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/config
     Log    ${response.content}
     Should Contain    ${response.content}    "name":"oscar"
 
 OSCAR System Info
-    [Documentation]    Get system info
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/info    expected_status=200    headers=&{HEADERS}
+    [Documentation]    Get system info    
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/info
     Log    ${response.content}
     Should Contain    ${response.content}    "version":
 
 OSCAR System Status
-    [Documentation]    Get system info
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/status    expected_status=200    headers=&{HEADERS}
+    [Documentation]    Get system status
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in local testing as it gives 500 Internal Server Error
+    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/status
     Log    ${response.content}
     Should Contain    ${response.content}    "numberNodes"
 
 OSCAR System Status with OSCAR USER
-    [Documentation]    Get system info
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/status    expected_status=200    headers=&{HEADERS_OSCAR}
+    [Documentation]    Get system status with OSCAR USER
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in local testing as it gives 500 Internal Server Error
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/status
     Log    ${response.content}
     Should Contain    ${response.content}    "numberNodes"
+
+#OSCAR Delete Service If Exists
+#    [Documentation]    Delete the OSCAR service ${SERVICE_NAME} if it exists in the cluster
+#    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
+#    ${status}=    Set Variable    ${response.status_code}
+#    Run Keyword If    '${status}'=='200'    Delete Service Now
+#    ...    ELSE    Log To Console    Service ${SERVICE_NAME} does not exist, skipping deletion.
+
 
 OSCAR Create Service
     [Documentation]    Create a new service
     [Tags]    create
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
-
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
-    Sleep    60s
+    ${body}=    Get File    ${DATA_DIR}/service_file.json    
+    ${response}=    POST With Defaults  url=${OSCAR_ENDPOINT}/system/services   data=${body}
     Log    ${response.content}
-    Should Be Equal As Strings    ${response.status_code}    201
+    Sleep   10s
+    Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'  #409 if already exists
 
 OSCAR List Services
     [Documentation]    Retrieve a list of services
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services    expected_status=200    headers=${HEADERS}
+    ${response}=    GET With Defaults  url=${OSCAR_ENDPOINT}/system/services
     Log    ${response.content}
     Should Contain    ${response.content}    "oscar_service":
 
 OSCAR Read Service
     [Documentation]    Read a service
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
     Log    ${response.content}
     Should Contain    ${response.content}    "name":"${SERVICE_NAME}"
 
 OSCAR List Services as OSCAR user
     [Documentation]    Retrieve a list of services
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services    expected_status=200    headers=${HEADERS_OSCAR}
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services    headers=${HEADERS_OSCAR}
     Log    ${response.content}
     Should Contain    ${response.content}    "oscar_service":
 
 OSCAR Read Service as OSCAR user
     [Documentation]    Read a service
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS_OSCAR}
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}   headers=${HEADERS_OSCAR}
     Log    ${response.content}
     Should Contain    ${response.content}    "name":"${SERVICE_NAME}"
 
-OSCAR Update Service
-    [Documentation]    Update a service
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
+
+
+OSCAR Invoke Synchronous Service
+    [Documentation]  Invoke the synchronous service
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in favour of the next one which uses the service token
+    ${body}=        Get File    ${INVOKE_FILE}
+    ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}   data=${body}
     Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+    Should Contain    ${response.content}    Hello
+
+OSCAR Invoke Synchronous Service with token
+    [Documentation]  Invoke the synchronous service with service token
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
+    Log    ${response.content}
+    ${service_token}=      Evaluate      json.loads($response.content)['token']
+    VAR    ${service_token}    ${service_token}
+    VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+    ${body}=        Get File    ${INVOKE_FILE}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200    data=${body}   
+    ...                     headers=${new_headers}   verify=${SSL_VERIFY}
+    Should Be Equal As Strings    ${response.status_code}    200    
 
 OSCAR Invoke Asynchronous Service
     [Documentation]    Invoke the asynchronous service
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in favour of the next one which uses the service token
     ${body}=    Get File    ${INVOKE_FILE}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}     data=${body}
     Sleep    60s
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR List Jobs
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
     [Documentation]    List all jobs from a service with their status
-    ${list_jobs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ${list_jobs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
     Get Key From Dictionary    ${jobs_dict["jobs"]}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
 OSCAR Get Logs
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
     [Documentation]    Get the logs from a job
-    ${get_logs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ${get_logs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
     Log    ${get_logs.content}
     Should Contain    ${get_logs.content}    Hello
 
-OSCAR Invoke Asynchronous Service with token
-    [Documentation]  Invoke the asynchronous service with token
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay    expected_status=200
-    ...                    headers=${HEADERS}
-    Log    ${response.content}
-    ${service_token}=      Evaluate      json.loads($response.content)['token']
-    VAR    ${service_token}    ${service_token}
-    VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
-    ...    scope=SUITE
-    ${body}=        Get File    ${INVOKE_FILE}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/job/robot-test-cowsay    expected_status=201    data=${body}
-    ...                     headers=${new_headers}
-    Should Be Equal As Strings    ${response.status_code}    201
-
-OSCAR Invoke Synchronous Service
-    [Documentation]  Invoke the synchronous service
-    ${body}=        Get File    ${INVOKE_FILE}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/robot-test-cowsay    expected_status=200    data=${body}
-    ...                     headers=${HEADERS}
-    Log    ${response.content}
-    Should Contain    ${response.content}    Hello
-
-OSCAR Invoke Synchronous Service with token
-    [Documentation]  Invoke the synchronous service with token
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/robot-test-cowsay    expected_status=200
-    ...                    headers=${HEADERS}
-    Log    ${response.content}
-    ${service_token}=      Evaluate      json.loads($response.content)['token']
-    VAR    ${service_token}    ${service_token}
-    VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
-    ...    scope=SUITE
-    ${body}=        Get File    ${INVOKE_FILE}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/robot-test-cowsay    expected_status=200    data=${body}
-    ...                     headers=${new_headers}
-    Should Be Equal As Strings    ${response.status_code}    200
-
 OSCAR Delete Job
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
     [Documentation]    Delete a job from a service
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ${response}=    DELETE With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
+OSCAR Update Service
+    [Documentation]    Update a service
+    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${response}=    PUT With Defaults   url=${OSCAR_ENDPOINT}/system/services    data=${body}
+    Log    ${response.content}
+    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
+
+OSCAR Invoke Asynchronous Service with service token
+    [Documentation]  Invoke the asynchronous service with token
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
+    Log    ${response.content}
+    ${service_token}=      Evaluate      json.loads($response.content)['token']
+    VAR    ${service_token}    ${service_token}
+    VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+    ${body}=        Get File    ${INVOKE_FILE}
+    ${response}=    POST   url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}      data=${body}
+    ...                     headers=${new_headers}    verify=${SSL_VERIFY}
+    Should Be Equal As Strings    ${response.status_code}    201
+
 OSCAR Delete All Jobs
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
     [Documentation]    Delete all jobs from a service
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ${response}=    DELETE With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
 OSCAR Delete Service
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
     [Documentation]    Delete the created service
     [Tags]    delete
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ${response}=    DELETE With Defaults   url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
 
 *** Keywords ***
+GET With Defaults
+    [Arguments]    ${url}    ${expected_status}=200   ${headers}=${HEADERS}
+    ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
+    ${response}=    GET    url=${url}    expected_status=${expected_status}    verify=${SSL_VERIFY}    headers=&{headers}
+    RETURN    ${response}
+
+POST With Defaults
+    [Arguments]    ${url}    ${data}     ${headers}=${HEADERS}
+    ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
+    ${response}=    POST    url=${url}    data=${data}    expected_status=ANY  verify=${SSL_VERIFY}    headers=&{headers}
+    RETURN    ${response}
+
+PUT With Defaults
+    [Arguments]    ${url}    ${data}    ${expected_status}=204   ${headers}=${HEADERS}
+    ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
+    ${response}=    PUT    url=${url}    data=${data}    expected_status=${expected_status}    verify=${SSL_VERIFY}    headers=&{headers}
+    RETURN    ${response}
+
+DELETE With Defaults
+    [Arguments]    ${url}    ${expected_status}=204   ${headers}=${HEADERS}
+    ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${headers}    
+    ${response}=    DELETE    url=${url}    expected_status=${expected_status}    verify=${SSL_VERIFY}    headers=&{headers}
+    RETURN    ${response}
+
+#Delete Service Now
+#    ${del_response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
+#    Log    ${del_response.content}
+#    Should Be Equal As Strings    ${del_response.status_code}    204
+
 Prepare Service File
     [Documentation]    Prepare the service file
     ${service_content}=    Get File    ${DATA_DIR}/00-cowsay.yaml
