@@ -6,6 +6,7 @@ Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/api_call.resource
 
 
+
 Suite Setup         Check Valid OIDC Token
 
 
