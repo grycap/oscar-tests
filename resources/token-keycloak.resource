@@ -9,12 +9,11 @@ Library             JSONLibrary
 
 
 *** Variables ***
-${REFRESH_TOKEN}        ${REFRESH_TOKEN}
-${TOKEN_URL}            ${EGI_AAI_URL}
-${TOKEN_ENDPOINT}       /auth/realms/egi/protocol/openid-connect/token
-${CLIENT_ID}            token-portal
-${SCOPE}                openid%20email%20profile%20voperson_id%20eduperson_entitlement
-
+${TOKEN_ENDPOINT}       ${KEYCLOAK_ENDPOINT}
+${CLIENT_ID}            ${CLIENT_ID}
+${SCOPE}                ${SCOPE}
+${KEYCLOAK_USERNAME}    ${KEYCLOAK_USERNAME}
+${KEYCLOAK_PASSWORD}    ${KEYCLOAK_PASSWORD}
 
 *** Keywords ***
 Check Valid OIDC Token
@@ -25,9 +24,9 @@ Check Valid OIDC Token
 
 Get Access Token
     [Documentation]    Retrieve OIDC token using a refresh token
-    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}${TOKEN_ENDPOINT}'    -d
-    ...    'grant_type\=refresh_token&refresh_token\=${REFRESH_TOKEN}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
-    ...    shell=True    stdout=True    stderr=True
+    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_ENDPOINT}'   -d
+    ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME}&password\=${KEYCLOAK_PASSWORD}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
+    ...     shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
     ${access_token}=    Get Value From Json    ${json_output}    $.access_token
     VAR    ${access_token}=    ${access_token}[0]
@@ -59,21 +58,26 @@ Check JWT Expiration
 
 Checks Valids OIDC Token
     [Documentation]    Get the access token
-    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}${TOKEN_ENDPOINT}'    -d
-    ...    'grant_type\=refresh_token&refresh_token\=${REFRESH_TOKEN}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
-    ...    shell=True    stdout=True    stderr=True
+    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_ENDPOINT}'   -d
+    ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME}&password\=${KEYCLOAK_PASSWORD}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
+    ...     shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
-    ${token}=    Get Value From Json    ${json_output}    $.access_token
-    VAR    ${token}=    ${token}[0]
-    Check JWT Expiration    ${token}
-    VAR    &{HEADERS}=    Authorization=Bearer ${token}    Content-Type=text/json    Accept=application/json
+    ${access_token}=    Get Value From Json    ${json_output}    $.access_token
+    VAR    ${access_token}=    ${access_token}[0]
+    Log    Access Token: ${access_token}
+    VAR    &{HEADERS}=    Authorization=Bearer ${access_token}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
-    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}${TOKEN_ENDPOINT}'    -d
-    ...    'grant_type\=refresh_token&refresh_token\=${REFRESH_TOKEN_SECOND_USER}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
-    ...    shell=True    stdout=True    stderr=True
+    VAR    &{HEADERS_OSCAR}=    Authorization=Basic ${BASIC_USER}    Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+
+    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_ENDPOINT}'   -d
+    ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME_AUX}&password\=${KEYCLOAK_PASSWORD_AUX}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
+    ...     shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
-    ${token2}=    Get Value From Json    ${json_output}    $.access_token
-    VAR    ${token2}=    ${token2}[0]
-    Check JWT Expiration    ${token2}
-    VAR    &{HEADERS2}=    Authorization=Bearer ${token2}    Content-Type=text/json    Accept=application/json
+    ${access_token}=    Get Value From Json    ${json_output}    $.access_token
+    VAR    ${access_token}=    ${access_token}[0]
+    Log    Access Token: ${access_token}
+    VAR    &{HEADERS2}=    Authorization=Bearer ${access_token}    Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+    VAR    &{HEADERS_OSCAR}=    Authorization=Basic ${BASIC_USER}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE

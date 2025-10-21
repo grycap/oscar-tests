@@ -1,9 +1,10 @@
 *** Settings ***
 Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Basic endpoint coverage
 
-Resource            ${CURDIR}/../../resources/token.resource
+Resource            ${CURDIR}/../../resources/token-keycloak.resource
 Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/api_call.resource
+Resource            ${CURDIR}/../../resources/service.resource
 
 
 
