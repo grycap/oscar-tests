@@ -91,12 +91,20 @@ OSCAR CLI Logs List
     Log    ${result.stdout}
     Get Job Name From Logs
     Should Be Equal As Integers    ${result.rc}    0
-    # Should Contain    ${result.stdout}    ${SERVICE_NAME}-
+    Should Contain    ${result.stdout}    ${SERVICE_NAME}-
 
 OSCAR CLI Logs Get
     [Documentation]    Check that OSCAR CLI gets the logs from a service's job
     ${result}=    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
     ...    ${JOB_NAME}    stdout=True    stderr=True
+    Log    ${result.stdout}
+    # Should Be Equal As Integers    ${result.rc}    0
+    Should Contain    ${result.stdout}    Hello
+
+OSCAR CLI Logs Get Latest
+    [Documentation]    Check that OSCAR CLI gets the logs from a service's job
+    ${result}=    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
+    ...    -l    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
     Should Contain    ${result.stdout}    Hello
