@@ -7,14 +7,15 @@ Resource            ${CURDIR}/../../resources/api_call.resource
 
 
 
-Suite Setup         Check Valid OIDC Token
+Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Assign Random Service Name
 
 
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
 *** Variables ***
-${SERVICE_NAME}     robot-test-cowsay
+${SERVICE_BASE}     robot-test-cowsay
+${SERVICE_NAME}     ${SERVICE_BASE}
 
 
 
@@ -205,5 +206,12 @@ Prepare Service File
     ...    jq '.message' \"$INPUT_FILE_PATH\" -r | /usr/games/cowsay\nelse\n
     ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\nfi\n\
     Set To Dictionary    ${modified_content}    script=${script_value}
+    Set To Dictionary    ${modified_content}    name=${SERVICE_NAME}
+    ${input_entries}=    Get From Dictionary    ${modified_content}    input
+    ${first_input}=    Get From List    ${input_entries}    0
+    Set To Dictionary    ${first_input}    path=${SERVICE_NAME}/input
+    ${output_entries}=    Get From Dictionary    ${modified_content}    output
+    ${first_output}=    Get From List    ${output_entries}    0
+    Set To Dictionary    ${first_output}    path=${SERVICE_NAME}/output
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
     Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
