@@ -10,7 +10,7 @@ Suite Teardown    Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 *** Variables ***
 ${service_name}     robot-test-cowsay
-${bucket_name}      robot-test
+${bucket_name}      robot-test-cowsay
 
 *** Test Cases ***
 Check Valid OIDC Token
@@ -19,7 +19,7 @@ Check Valid OIDC Token
     Check JWT Expiration    ${token}
     VAR    &{HEADERS}=    Authorization=Bearer ${token}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
-    ${token2}=    Get Access Token   ${REFRESH_TOKEN2}
+    ${token2}=    Get Access Token   ${REFRESH_TOKEN_SECOND_USER}
     Check JWT Expiration    ${token2}
     VAR    &{HEADERS2}=    Authorization=Bearer ${token2}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
@@ -44,17 +44,17 @@ OSCAR Service isolation_level SERVICE Create
 Verify Service isolation_level SERVICE Creation
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id} ","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${FIRST_USER_ID} ","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${SECOND_USER_ID}","visibility":"private"
 
 OSCAR Service isolation_level SERVICE -> USER Update
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${content}=     Update File     ${body}     isolation_level     USER
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
@@ -64,18 +64,18 @@ Verify isolation_level SERVICE -> USER Update
     [Documentation]   isolation_level user update
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}-${FIRST_USER_ID}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${SECOND_USER_ID}","visibility":"private"
 
 OSCAR Service isolation_level USER -> USER Update with more users
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${content}=     Update File     ${body}     isolation_level     USER
-    ${users}=       Create List     ${first_user}
-    Append To List      ${users}    ${second_user}
+    ${users}=       Create List     ${FIRST_USER}
+    Append To List      ${users}    ${SECOND_USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}
     Log    ${response.content}
@@ -86,16 +86,16 @@ Verify isolation_level USER -> USER Update with more users
     [Documentation]   isolation_level user update
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}-${FIRST_USER_ID}","visibility":"private"
     ${response}=    Verify Second Bucket
-     Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}-${SECOND_USER_ID}","visibility":"private"
 
 OSCAR Service isolation_level USER -> USER Update with less users
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${content}=     Update File     ${body}     isolation_level     USER
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}
     Log    ${response.content}
@@ -106,11 +106,11 @@ Verify isolation_level USER -> USER Update with less users
     [Documentation]   isolation_level user update
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}-${FIRST_USER_ID}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${SECOND_USER_ID}","visibility":"private"
 
 OSCAR Update Service isolation_level user -> service
     [Documentation]  Update a service private -> restricted
@@ -125,12 +125,12 @@ Verify isolation_level USER -> SERVICE Update
     [Documentation]   isolation_level user 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${FIRST_USER_ID}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${SECOND_USER_ID}","visibility":"private"
 
 OSCAR Delete Service isolation_level SERVICE
     [Documentation]  Delete the created service
@@ -144,18 +144,18 @@ Verify Delete isolation_level SERVICE
     [Documentation]   isolation_level user 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}","visibility":"private"
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}","visibility":"private"
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${FIRST_USER_ID}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${SECOND_USER_ID}","visibility":"private"
 
 OSCAR Service isolation_level USER Create
     [Documentation]  Create a new service
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${content}=     Update File     ${body}     isolation_level     USER
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${content2}
     ...                     headers=${HEADERS}
@@ -168,11 +168,11 @@ Verify isolation_level SERVICE Creation
     [Documentation]   isolation_level user update
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}-${FIRST_USER_ID}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${SECOND_USER_ID}","visibility":"private"
 
 OSCAR Delete Service isolation_level USER
     [Documentation]  Delete the created service
@@ -182,16 +182,16 @@ OSCAR Delete Service isolation_level USER
     Should Be Equal As Strings    ${response.status_code}    204
     Sleep    20s
     
-Verify isolation_level USER Creation
+Verify isolation_level USER Delete
     [Documentation]   isolation_level user 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}","visibility":"private"
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}","visibility":"private"
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${FIRST_USER_ID}","visibility":"private"
     ${response}=    Verify Second Bucket
-    ${output} = 	Convert To String 	${response.status_code}
-    Should Not Match Regexp    ${output}    "bucket_path":"${bucket_name}-${id2}","visibility":"private"
+    ${output} = 	Convert To String 	${response.content}
+    Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${SECOND_USER_ID}","visibility":"private"
 
 *** Keywords ***
 Get Key From Dictionary
