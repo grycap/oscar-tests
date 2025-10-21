@@ -39,7 +39,7 @@ OSCAR Verify Bucket ${bucket_name} and Service ${SERVICE_NAME} exist
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
 
 
 OSCAR Delete Service ${SERVICE_NAME} 1
@@ -58,7 +58,7 @@ OSCAR Verify Bucket ${bucket_name} still exits and the service ${SERVICE_NAME} d
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
     ${output} = 	Convert To String 	${response.content}
-    Should Contain    ${output}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${output}    "bucket_name":"${bucket_name}","visibility":"private"
 
 Delete Bucket private ${bucket_name} to reset the state
     [Documentation]    Delete a private bucket ${bucket_name}
@@ -72,7 +72,7 @@ Create private Bucket ${MOUNT_BUCKET_NAME_OTHER}
     [Documentation]    Create a new private bucket
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${body}=  yaml.Safe Load  ${body}
-    Set To Dictionary    ${body}    bucket_path=${MOUNT_BUCKET_NAME_OTHER}
+    Set To Dictionary    ${body}    bucket_name=${MOUNT_BUCKET_NAME_OTHER}
     ${body}= 	Convert JSON To String 	${body}
     Log     ${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
@@ -81,7 +81,7 @@ Create private Bucket ${MOUNT_BUCKET_NAME_OTHER}
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
-    Should Contain    ${response.content}    "bucket_path":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"private"
     
     
 OSCAR Create Service Mount - where the bucket ${MOUNT_BUCKET_NAME_OTHER} exist and its mine and private
@@ -108,7 +108,7 @@ OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} and Service ${SERVICE_NAME} exist
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
-    Should Contain    ${response.content}    "bucket_path":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"private"
 
 
 OSCAR Delete Service ${SERVICE_NAME} 2
@@ -130,7 +130,7 @@ OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} still exits and the service ${SER
     Log    ${response.content}
     ${output} = 	Convert To String 	${response.content}
     ${output} = 	Convert To String 	${response.content}
-    Should Contain    ${output}    "bucket_path":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"private"
+    Should Contain    ${output}    "bucket_name":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"private"
 
 
 Delete Bucket ${MOUNT_BUCKET_NAME_OTHER} to reset the state
@@ -165,7 +165,7 @@ OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} and Service Exist
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
-    Should Contain    ${response.content}    "bucket_path":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"private"
 
 
 OSCAR Delete Service ${SERVICE_NAME} 3
@@ -186,7 +186,7 @@ OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} still exits and the service ${SER
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
     ${output} = 	Convert To String 	${response.content}
-    Should Contain    ${output}    "bucket_path":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"private"
+    Should Contain    ${output}    "bucket_name":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"private"
 
 Delete Bucket ${MOUNT_BUCKET_NAME_OTHER}
     [Documentation]    Delete a restricted bucket
@@ -201,7 +201,7 @@ Create public Bucket ${MOUNT_BUCKET_NAME_OTHER}
     [Documentation]    Create a new private bucket
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${body}=  yaml.Safe Load  ${body}
-    Set To Dictionary    ${body}    bucket_path=${MOUNT_BUCKET_NAME_OTHER}
+    Set To Dictionary    ${body}    bucket_name=${MOUNT_BUCKET_NAME_OTHER}
     ${body}=    Set Bucket File Visibility      ${body}     public
     ${body}= 	Convert JSON To String 	${body}
     Log     ${body}
@@ -211,7 +211,7 @@ Create public Bucket ${MOUNT_BUCKET_NAME_OTHER}
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
-    Should Contain    ${response.content}    "bucket_path":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${MOUNT_BUCKET_NAME_OTHER}","visibility":"public"
 
 
 OSCAR Create Service with public Bucket ${MOUNT_BUCKET_NAME_OTHER}. Must answers with error 
