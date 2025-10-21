@@ -1,4 +1,8 @@
 *** Keywords ***
+Assign Random Service Name
+    ${service_name}=    Generate Random Service Name    ${SERVICE_BASE}
+    Set Suite Variable    ${SERVICE_NAME}    ${service_name}
+
 Generate Random Service Name
     [Arguments]    ${base_name}    ${length}=4
     ${suffix}=    Evaluate    ''.join(random.choices(string.ascii_lowercase + string.digits, k=${length}))    modules=random,string

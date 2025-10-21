@@ -5,6 +5,7 @@ Library           RequestsLibrary
 Resource          ${CURDIR}/../../resources/token.resource
 Resource          ${CURDIR}/../../resources/files.resource
 
+Suite Setup       Checks Valids OIDC Token
 Suite Teardown    Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
@@ -13,16 +14,6 @@ ${service_name}     robot-test-cowsay
 ${bucket_name}      robot-test-cowsay
 
 *** Test Cases ***
-Check Valid OIDC Token
-    [Documentation]    Get the access token
-    ${token}=    Get Access Token   ${REFRESH_TOKEN}
-    Check JWT Expiration    ${token}
-    VAR    &{HEADERS}=    Authorization=Bearer ${token}    Content-Type=text/json    Accept=application/json
-    ...    scope=SUITE
-    ${token2}=    Get Access Token   ${REFRESH_TOKEN_SECOND_USER}
-    Check JWT Expiration    ${token2}
-    VAR    &{HEADERS2}=    Authorization=Bearer ${token2}    Content-Type=text/json    Accept=application/json
-    ...    scope=SUITE
 
 OSCAR API Health
     [Documentation]    Check API health
@@ -236,20 +227,6 @@ Update File List
     ${service_content_json}=    Evaluate    json.dumps(${loaded_content})    json
     RETURN      ${service_content_json}
 
-
-Get Access Token
-    [Documentation]    Retrieve OIDC token using a refresh token
-    [Arguments]    ${this_refresh_token}  
-    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}${TOKEN_ENDPOINT}'    -d
-    ...    'grant_type\=refresh_token&refresh_token\=${this_refresh_token}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
-    ...    shell=True    stdout=True    stderr=True
-    ${json_output}=    Convert String To Json    ${result.stdout}
-    ${access_token}=    Get Value From Json    ${json_output}    $.access_token
-    VAR    ${access_token}    ${access_token}[0]
-    Log    Access Token: ${access_token}
-    VAR    &{HEADERS2}    Authorization=Bearer ${access_token}   Content-Type=text/json    Accept=application/json
-    ...    scope=SUITE
-    RETURN    ${access_token}
 
 
 Verify Second Bucket
