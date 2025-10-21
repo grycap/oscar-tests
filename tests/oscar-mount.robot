@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Basic endpoint coverage
 
-Resource            ${CURDIR}/../../${RESOURCE_TO_USE} 
+Resource            ${CURDIR}/../${RESOURCE_TO_USE} 
 Resource            ${CURDIR}/../resources/files.resource
 Resource            ${CURDIR}/../resources/api_call.resource
 
@@ -16,6 +16,12 @@ ${MOUNT_BUCKET_NAME_RAW}        robot-test
 ${BUCKET_NAME}        robot-test-cowsay
 
 *** Test Cases ***
+Refresh Token Exist
+    ${exists}=    Run Keyword And Return Status    Variable Should Exist    ${REFRESH_TOKEN}
+    IF  not ${exists}
+        Set Refresh Token
+    END
+
 OSCAR API Health
     [Documentation]    Check API health
     ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200

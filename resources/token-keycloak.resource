@@ -22,6 +22,16 @@ Check Valid OIDC Token
     ${token}=    Get Access Token
     Check JWT Expiration    ${token}
 
+Set Refresh Token 
+    [Documentation]    Get the refresh token
+    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_ENDPOINT}'   -d
+    ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME}&password\=${KEYCLOAK_PASSWORD}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
+    ...     shell=True    stdout=True    stderr=True
+    ${json_output}=    Convert String To Json    ${result.stdout}
+    ${refresh_token}=    Get Value From Json    ${json_output}    $.refresh_token
+    VAR     ${REFRESH_TOKEN}=       ${refresh_token}[0]
+    Set Global Variable    ${REFRESH_TOKEN}
+
 Get Access Token
     [Documentation]    Retrieve OIDC token using a refresh token
     ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_ENDPOINT}'   -d
