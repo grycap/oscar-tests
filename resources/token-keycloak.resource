@@ -9,7 +9,7 @@ Library             JSONLibrary
 
 
 *** Variables ***
-${TOKEN_ENDPOINT}       ${KEYCLOAK_ENDPOINT}
+${TOKEN_ENDPOINT}       ${AAI_URL}
 ${CLIENT_ID}            ${CLIENT_ID}
 ${SCOPE}                ${SCOPE}
 ${KEYCLOAK_USERNAME}    ${KEYCLOAK_USERNAME}
