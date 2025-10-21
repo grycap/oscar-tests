@@ -2,7 +2,7 @@
 Documentation     Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
 
 Library           RequestsLibrary
-Resource          ${CURDIR}/../../resources/token.resource
+Resource          ${CURDIR}/../../${RESOURCE_TO_USE} 
 Resource          ${CURDIR}/../../resources/files.resource
 
 Suite Setup       Checks Valids OIDC Token
