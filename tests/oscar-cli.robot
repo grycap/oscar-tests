@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation       Tests for the OSCAR CLI against a deployed OSCAR cluster.
 
-Resource            ${CURDIR}/../../${RESOURCE_TO_USE} 
+Resource            ${CURDIR}/../${RESOURCE_TO_USE} 
 Resource            ${CURDIR}/../resources/files.resource
 
 Suite Teardown      Clean Test Artifacts        True    ${DATA_DIR}/00-cowsay-invoke-body-downloaded.json
@@ -14,6 +14,13 @@ ${bucket_name}      robot-test-cowsay
 
 
 *** Test Cases ***
+Refresh Token Exist
+    ${exists}=    Run Keyword And Return Status    Variable Should Exist    ${REFRESH_TOKEN}
+    IF  not ${exists}
+        Set Refresh Token
+    END
+
+    
 OSCAR CLI Installed
     [Documentation]    Check that OSCAR CLI is installed
     ${result}=    Run Process    oscar-cli    stdout=True    stderr=True
