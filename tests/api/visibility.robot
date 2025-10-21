@@ -48,7 +48,7 @@ OSCAR Create Service
 Verify Visibility of service and check the Bucket is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -70,7 +70,7 @@ OSCAR Update Service visibility private -> restricted
 Verify Visibility of service and check the Bucket is updated to restricted from private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -90,7 +90,7 @@ OSCAR Update Service visibility restricted -> public
 Verify Visibility of service and check the Bucket is updated to public from restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -109,7 +109,7 @@ OSCAR Update Service visibility public -> private
 Verify Visibility of service and check the Bucket is updated to private from public
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -129,7 +129,7 @@ OSCAR Update Service private -> public
 Verify Visibility of service and check the Bucket is updated to public from private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -150,7 +150,7 @@ Verify Visibility of service and check the Bucket is updated to restricted from 
     [Documentation]    Buckets 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -171,7 +171,7 @@ OSCAR Update Service visibility restricted -> private
 Verify Visibility of service and check the Bucket is updated to private from restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -214,7 +214,7 @@ OSCAR Create Service restricted
 Verify Visibility of service and check the Bucket is restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -257,7 +257,7 @@ OSCAR Create Service public
 Verify Visibility of service and check the Bucket is public
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}

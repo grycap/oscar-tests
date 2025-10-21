@@ -32,7 +32,7 @@ Verify Bucket Private creation
     [Documentation]    List all buckets and check is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
 
 Update Bucket from Private -> to Restricted
     [Documentation]    Update Private bucket -> Restricted
@@ -51,7 +51,7 @@ Verify Bucket Update from Private -> to Restricted
     [Documentation]    List all buckets is restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
 
 Update Bucket from Restricted -> to Public
     [Documentation]    Update Restricted bucket -> Public
@@ -69,7 +69,7 @@ Verify Bucket Update from Restricted -> to Public
     [Documentation]    List all buckets is public
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
 
 
 
@@ -87,7 +87,7 @@ Verify Bucket Update from Public -> to Private
     [Documentation]    List all buckets is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
 
 
 Update Bucket from Private -> to Public
@@ -106,7 +106,7 @@ Verify Bucket Update from Private -> to Public
     [Documentation]    List all buckets is public
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
 
 
 Update Bucket from Public -> to Restricted
@@ -126,7 +126,7 @@ Verify Bucket Update from Public -> to Restricted
     [Documentation]    List all buckets is restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
 
 
 Update Bucket from Restricted -> to Private
@@ -142,7 +142,7 @@ Verify Bucket Update from Restricted -> to Private
     [Documentation]    List all buckets is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
 
 Delete Bucket Private
     [Documentation]    Delete a private bucket
@@ -176,7 +176,7 @@ Verify Bucket Restricted creation
     [Documentation]    List all buckets and check is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
 
 
 Delete Bucket Restricted
@@ -210,7 +210,7 @@ Verify Bucket Public creation
     [Documentation]    List all buckets and check is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
 
 Delete Bucket Public
     [Documentation]    Delete a public bucket

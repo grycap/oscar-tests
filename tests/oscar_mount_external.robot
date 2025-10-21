@@ -51,11 +51,11 @@ Verify Bucket Private creation
     ${response}=    External Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     ${output} = 	Convert To String 	${response.content}
-    IF    '"bucket_path":"${BUCKET_EXTERNAL}","visibility":"private"' not in '${output}'
+    IF    '"bucket_name":"${BUCKET_EXTERNAL}","visibility":"private"' not in '${output}'
         Log     "Not bucket, let's create" 
         ${body}=    Get File    ${DATA_DIR}/bucket.json
         ${body}=  yaml.Safe Load  ${body}
-        Set To Dictionary    ${body}    bucket_path=${BUCKET_EXTERNAL}
+        Set To Dictionary    ${body}    bucket_name=${BUCKET_EXTERNAL}
         ${body}= 	Convert JSON To String 	${body}
         Log     ${body}
         ${response}=    POST    url=${OSCAR_EXTERNAL}/system/buckets    expected_status=201    data=${body}
@@ -64,7 +64,7 @@ Verify Bucket Private creation
         ${response}=    External Verify Bucket
         Should Be Equal As Strings    ${response.status_code}    200
         Log    ${response.content}
-        Should Contain    ${response.content}    "bucket_path":"${BUCKET_EXTERNAL}","visibility":"private"
+        Should Contain    ${response.content}    "bucket_name":"${BUCKET_EXTERNAL}","visibility":"private"
     END
 
 
