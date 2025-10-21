@@ -2,7 +2,7 @@
 Documentation       Tests for the OSCAR Python library
 
 Library             robot_libs.oscar_lib.OscarLibrary
-Resource            ${CURDIR}/../resources/token.resource
+Resource            ${CURDIR}/../../${RESOURCE_TO_USE} 
 Resource            ${CURDIR}/../resources/files.resource
 
 Test Setup          Connect To Oscar Cluster
