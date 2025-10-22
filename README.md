@@ -26,27 +26,37 @@ You can install it by following the [documentation](https://docs.oscar.grycap.ne
 
 ### 🧑‍💻 Setting Up the Configuration File
 
-The test suite uses environment variables to store sensitive information such as  endpoints and credentials.
+The test suite uses environment variables to store sensitive information such as endpoints and credentials. I'd recommend that you have two environment files. The first includes the cluster information, and the second contains the authentication process credentials. This way, you can switch between authentication processes such as EGI-CheckIn or Keycloak. Also, you can create one environment file that contains all the information.
 
 Create a `.env.yaml` file according to the template shown in `env-template.yaml`
 
-The following information is required:
-
+The following information is required about the cluster information:
   - `OSCAR_ENDPOINT`: The endpoint of the OSCAR cluster (e.g. https://mycluster.oscar.grycap.net) 
   - `OSCAR_METRICS`: The endpoint of the OSCAR metrics.
   - `OSCAR_DASHBOARD`: The endpoint of the OSCAR UI (dashboard).
   - `BASIC_USER:`: Base64-encoded information of the authentication for the 'oscar' user (echo -n "oscar:password"  | base64)
-  - `EGI_AAI_URL`: The base URL of the EGI AAI (Authentication and Authorisation Infrastructure) server.
-      - For the production server, use `https://aai.egi.eu`.
-      - For the demo server, use `https://aai-demo.egi.eu`.
-  - `REFRESH_TOKEN`: The OIDC token used to automate the execution of the test suite. In order to get a Refresh Token, head to the [Check-in Token Portal](https://aai.egi.eu/token/) or [Demo Check-in Token Portal](https://aai-demo.egi.eu/token/), click **Authorise** and then **Create Refresh Token** button to generate a new token.
-  - `EGI_VO`: The virtual organization used to test the OSCAR cluster.
-  - `FIRST_USER`: User ID
-  - `FIRST_USER_ID`: Get the first 10 characters of FIRST_USER (e.g. FIRST_USER: 1234567890987654321 -> FIRST_USER_ID: 1234567890) 
-  - `REFRESH_TOKEN_SECOND_USER`: The OIDC token of the second user used to automate the execution
-  - `SECOND_USER`: User ID of the second user
-  - `SECOND_USER_ID`: Get the first 10 characters of SECOND_USER
 
+The next parameters are required to configure the authentication process:
+  - `AUTHENTICATION_PROCESS`: This parameter selects the authentication process between EGI `resources/token-egi.resource` and Keycloak `resources/token-keycloak.resource`. **ALWAYS REQUIRED**.
+  - `AAI_URL`: The URL token of the AAI (Authentication and Authorisation Infrastructure) server. **ALWAYS REQUIRED**.
+      - For the EGI production server, use `https://aai.egi.eu/auth/realms/egi/protocol/openid-connect/token`.
+      - For the EGI demo server, use `https://aai-demo.egi.eu/auth/realms/egi/protocol/openid-connect/token`.
+  - `AAI_VO`: The virtual organization used to test the OSCAR cluster. **ALWAYS REQUIRED**.
+  - `CLIENT_ID`: Client ID of Keycloak. Only needed in Keycloak.
+  - `SCOPE`: Scope of Keycloak.  Only needed in Keycloak.
+  - `FIRST_USER`: User ID. **ALWAYS REQUIRED**.
+  - `REFRESH_TOKEN`: The OIDC token used to automate the execution of the test suite. In order to get a Refresh Token, head to the [Check-in Token Portal](https://aai.egi.eu/token/) or [Demo Check-in Token Portal](https://aai-demo.egi.eu/token/), click **Authorise** and then **Create Refresh Token** button to generate a new token. Only used in EGI.
+  - `KEYCLOAK_USERNAME` and `KEYCLOAK_PASSWORD`: The user/password Keycloak authentication. Only used in Keycloak.
+
+In case you are testing isolation or visibility, you have to add a second user:
+  - `SECOND_USER`: User ID of the second user. **ALWAYS REQUIRED**.
+  - `REFRESH_TOKEN_SECOND_USER`: The OIDC token of the second user used to automate the execution.
+  - `KEYCLOAK_USERNAME_AUX` and `KEYCLOAK_PASSWORD_AUX`: The user/password of a second user in Keycloak.
+
+In case you are testing the mount feat using an external OSCAR cluster add,:
+  - `OSCAR_EXTERNAL`: Endpoint of an external OSCAR cluster.
+  - `MINIO_EXTERNAL`: MinIO endpoint of external OSCAR cluster.
+  - `MINIO_SECRET_KEY`: Secret Key of `FIRST_USER` used the `MINIO_EXTERNAL`.
 
 
 ### 🧪 Running Tests
