@@ -4,7 +4,7 @@ Documentation       Tests for the OSCAR's UI dashboard.
 Library             String
 Library             Browser
 Resource            ${CURDIR}/../resources/files.resource
-Resource            ${CURDIR}/../${RESOURCE_TO_USE} 
+Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS} 
 
 
 Suite Setup         Prepare Environment

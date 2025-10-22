@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation       Stress tests for the OSCAR Manager API executed through Locust.
 
-Resource            ${CURDIR}/../../resources/token.resource
+Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS} 
 Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/service.resource
 Library             OperatingSystem
