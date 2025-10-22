@@ -2,10 +2,10 @@
 Documentation     Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
 Library           Process
 Library           RequestsLibrary
-Resource          ${CURDIR}/../../${RESOURCE_TO_USE} 
+Resource          ${CURDIR}/../../${AUTHENTICATION_PROCESS} 
 Resource          ${CURDIR}/../../resources/files.resource
 
-Suite Setup       Checks Valids OIDC Token
+Suite Setup       SetUp
 Suite Teardown    Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
@@ -233,3 +233,13 @@ Verify Second Bucket
     [Documentation]    List all buckets
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    headers=${HEADERS2}
     RETURN      ${response}
+
+Setup
+    Checks Valids OIDC Token
+    setIDs
+
+setIDs
+    ${FIRST_USER_ID}=   Set Variable        ${FIRST_USER}[0:10]
+    Set Global Variable     ${FIRST_USER_ID}
+    ${SECOND_USER_ID}=   Set Variable        ${SECOND_USER}[0:10]
+    Set Global Variable     ${SECOND_USER_ID}

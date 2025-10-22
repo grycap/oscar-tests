@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Basic endpoint coverage
 
-Resource            ${CURDIR}/../../${RESOURCE_TO_USE} 
+Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS} 
 Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/api_call.resource
 Resource            ${CURDIR}/../../resources/service.resource

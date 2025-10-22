@@ -2,7 +2,7 @@
 Documentation       Tests for the OSCAR Manager's secrets
 
 Resource            ${CURDIR}/../resources/files.resource
-Resource            ${CURDIR}/../${RESOURCE_TO_USE} 
+Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS} 
 Resource            ${CURDIR}/../resources/api_call.resource
 
 Suite Setup         Check Valid OIDC Token
