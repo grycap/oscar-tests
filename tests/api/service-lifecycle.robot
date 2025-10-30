@@ -114,8 +114,9 @@ OSCAR Invoke Synchronous Service with token
     VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
     ${body}=        Get File    ${INVOKE_FILE}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200    data=${body}   
-    ...                     headers=${new_headers}   verify=${SSL_VERIFY}
+    ${verify}=    Convert To Boolean    ${SSL_VERIFY}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200    data=${body}
+    ...                     headers=${new_headers}   verify=${verify}
     Should Be Equal As Strings    ${response.status_code}    200    
 
 OSCAR Invoke Asynchronous Service
@@ -165,8 +166,9 @@ OSCAR Invoke Asynchronous Service with service token
     VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
     ${body}=        Get File    ${INVOKE_FILE}
+    ${verify}=    Convert To Boolean    ${SSL_VERIFY}
     ${response}=    POST   url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}      data=${body}
-    ...                     headers=${new_headers}    verify=${SSL_VERIFY}
+    ...                     headers=${new_headers}    verify=${verify}
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR Delete All Jobs

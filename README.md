@@ -72,7 +72,7 @@ robot -V variables/.env.yaml -d robot_results/ tests/api/service-lifecycle.robot
 If you are testing an OSCAR deployment in localhost, you can override SSL verification via:
 
 ```sh
-robot -V variables/.env-localhost.yaml -v SSL_VERIFY:${False} -v LOCAL_TESTING:${True} -d robot_results tests/api/service-lifecycle.robot
+robot -V variables/.env-localhost.yaml -v SSL_VERIFY:False -v LOCAL_TESTING:True -d robot_results tests/api/service-lifecycle.robot
 ```
 
 You can run stress tests with [Locust](https://locust.io) via:
