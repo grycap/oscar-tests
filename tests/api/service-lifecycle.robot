@@ -8,15 +8,14 @@ Resource            ${CURDIR}/../../resources/service.resource
 
 
 
-Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Assign Random Service Name
+Suite Setup         Run Keywords    Check Valid OIDC Token 
 
 
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
 *** Variables ***
-${SERVICE_BASE}     robot-test-cowsay
-${SERVICE_NAME}     ${SERVICE_BASE}
+${SERVICE_NAME}     robot-test-cowsay
 
 
 
@@ -68,7 +67,7 @@ OSCAR Create Service
     ${body}=    Get File    ${DATA_DIR}/service_file.json    
     ${response}=    POST With Defaults  url=${OSCAR_ENDPOINT}/system/services   data=${body}
     Log    ${response.content}
-    Sleep   10s
+    Sleep   30s
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'  #409 if already exists
 
 OSCAR List Services
