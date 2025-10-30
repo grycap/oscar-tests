@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation       Tests for the OSCAR CLI against a deployed OSCAR cluster.
 
-Resource            ${CURDIR}/../resources/token.resource
+Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS} 
 Resource            ${CURDIR}/../resources/files.resource
 
 Suite Teardown      Clean Test Artifacts        True    ${DATA_DIR}/00-cowsay-invoke-body-downloaded.json
@@ -14,6 +14,13 @@ ${bucket_name}      robot-test-cowsay
 
 
 *** Test Cases ***
+Refresh Token Exist
+    ${exists}=    Run Keyword And Return Status    Variable Should Exist    ${REFRESH_TOKEN}
+    IF  not ${exists}
+        Set Refresh Token
+    END
+
+    
 OSCAR CLI Installed
     [Documentation]    Check that OSCAR CLI is installed
     ${result}=    Run Process    oscar-cli    stdout=True    stderr=True
@@ -91,12 +98,20 @@ OSCAR CLI Logs List
     Log    ${result.stdout}
     Get Job Name From Logs
     Should Be Equal As Integers    ${result.rc}    0
-    # Should Contain    ${result.stdout}    ${SERVICE_NAME}-
+    Should Contain    ${result.stdout}    ${SERVICE_NAME}-
 
 OSCAR CLI Logs Get
     [Documentation]    Check that OSCAR CLI gets the logs from a service's job
     ${result}=    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
     ...    ${JOB_NAME}    stdout=True    stderr=True
+    Log    ${result.stdout}
+    # Should Be Equal As Integers    ${result.rc}    0
+    Should Contain    ${result.stdout}    Hello
+
+OSCAR CLI Logs Get Latest
+    [Documentation]    Check that OSCAR CLI gets the logs from a service's job
+    ${result}=    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
+    ...    -l    stdout=True    stderr=True
     Log    ${result.stdout}
     # Should Be Equal As Integers    ${result.rc}    0
     Should Contain    ${result.stdout}    Hello

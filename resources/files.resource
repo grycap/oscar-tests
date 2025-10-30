@@ -8,11 +8,10 @@ Library             yaml
 
 *** Variables ***
 ${OSCAR_ENDPOINT}       ${OSCAR_ENDPOINT}
-${VO}                   ${EGI_VO}
+${VO}                   ${AAI_VO}
 ${DATA_DIR}             ${EXECDIR}/data
 ${INVOKE_FILE_NAME}     00-cowsay-invoke-body.json
 ${INVOKE_FILE}          ${DATA_DIR}/${INVOKE_FILE_NAME}
-${EGI_UID_1}            ${EGI_UID}
 ${SERVICE_FILE}         ${DATA_DIR}/00-cowsay.yaml
 
 ${BUCKET_NAME}          robot-test

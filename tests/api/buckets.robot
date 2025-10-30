@@ -2,7 +2,7 @@
 Documentation     Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
 
 Library           RequestsLibrary
-Resource          ${CURDIR}/../../resources/token.resource
+Resource          ${CURDIR}/../../${AUTHENTICATION_PROCESS} 
 Resource          ${CURDIR}/../../resources/files.resource
 
 Suite Setup       Check Valid OIDC Token
@@ -32,7 +32,7 @@ Verify Bucket Private creation
     [Documentation]    List all buckets and check is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
 
 Update Bucket from Private -> to Restricted
     [Documentation]    Update Private bucket -> Restricted
@@ -40,7 +40,7 @@ Update Bucket from Private -> to Restricted
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${body}=  yaml.Safe Load  ${body}
     ${body}=    Set Bucket File Visibility      ${body}     restricted
-    ${body}=    Set Bucket File Allowed Users   ${body}     ${first_user}
+    ${body}=    Set Bucket File Allowed Users   ${body}     ${FIRST_USER}
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
     ...    headers=${HEADERS}
@@ -51,7 +51,7 @@ Verify Bucket Update from Private -> to Restricted
     [Documentation]    List all buckets is restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
 
 Update Bucket from Restricted -> to Public
     [Documentation]    Update Restricted bucket -> Public
@@ -69,7 +69,7 @@ Verify Bucket Update from Restricted -> to Public
     [Documentation]    List all buckets is public
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
 
 
 
@@ -87,7 +87,7 @@ Verify Bucket Update from Public -> to Private
     [Documentation]    List all buckets is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
 
 
 Update Bucket from Private -> to Public
@@ -106,7 +106,7 @@ Verify Bucket Update from Private -> to Public
     [Documentation]    List all buckets is public
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
 
 
 Update Bucket from Public -> to Restricted
@@ -115,7 +115,7 @@ Update Bucket from Public -> to Restricted
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${body}=  yaml.Safe Load  ${body}
     ${body}=    Set Bucket File Visibility      ${body}     restricted
-    ${body}=    Set Bucket File Allowed Users   ${body}     ${first_user}
+    ${body}=    Set Bucket File Allowed Users   ${body}     ${FIRST_USER}
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
     ...    headers=${HEADERS}
@@ -126,7 +126,7 @@ Verify Bucket Update from Public -> to Restricted
     [Documentation]    List all buckets is restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
 
 
 Update Bucket from Restricted -> to Private
@@ -142,7 +142,7 @@ Verify Bucket Update from Restricted -> to Private
     [Documentation]    List all buckets is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
 
 Delete Bucket Private
     [Documentation]    Delete a private bucket
@@ -165,7 +165,7 @@ Create Bucket Restricted
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${body}=  yaml.Safe Load  ${body}
     ${body}=    Set Bucket File Visibility      ${body}     restricted
-    ${body}=    Set Bucket File Allowed Users   ${body}     ${first_user}
+    ${body}=    Set Bucket File Allowed Users   ${body}     ${FIRST_USER}
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
     ...    headers=${HEADERS}
@@ -176,7 +176,7 @@ Verify Bucket Restricted creation
     [Documentation]    List all buckets and check is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
 
 
 Delete Bucket Restricted
@@ -210,7 +210,7 @@ Verify Bucket Public creation
     [Documentation]    List all buckets and check is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
 
 Delete Bucket Public
     [Documentation]    Delete a public bucket

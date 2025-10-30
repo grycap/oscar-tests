@@ -10,8 +10,7 @@ Library             JSONLibrary
 
 *** Variables ***
 ${REFRESH_TOKEN}        ${REFRESH_TOKEN}
-${TOKEN_URL}            ${EGI_AAI_URL}
-${TOKEN_ENDPOINT}       /auth/realms/egi/protocol/openid-connect/token
+${TOKEN_URL}            ${AAI_URL}    
 ${CLIENT_ID}            token-portal
 ${SCOPE}                openid%20email%20profile%20voperson_id%20eduperson_entitlement
 
@@ -25,7 +24,7 @@ Check Valid OIDC Token
 
 Get Access Token
     [Documentation]    Retrieve OIDC token using a refresh token
-    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}${TOKEN_ENDPOINT}'    -d
+    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}'    -d
     ...    'grant_type\=refresh_token&refresh_token\=${REFRESH_TOKEN}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
     ...    shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
@@ -55,3 +54,25 @@ Check JWT Expiration
     ${current_time}=    Get Current Date    result_format=epoch
     Log    Current Time: ${current_time}
     Should Be True    ${expiry_time} > ${current_time}    Token is expired
+
+
+Checks Valids OIDC Token
+    [Documentation]    Get the access token
+    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}'    -d
+    ...    'grant_type\=refresh_token&refresh_token\=${REFRESH_TOKEN}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
+    ...    shell=True    stdout=True    stderr=True
+    ${json_output}=    Convert String To Json    ${result.stdout}
+    ${token}=    Get Value From Json    ${json_output}    $.access_token
+    VAR    ${token}=    ${token}[0]
+    Check JWT Expiration    ${token}
+    VAR    &{HEADERS}=    Authorization=Bearer ${token}    Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}'    -d
+    ...    'grant_type\=refresh_token&refresh_token\=${REFRESH_TOKEN_SECOND_USER}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
+    ...    shell=True    stdout=True    stderr=True
+    ${json_output}=    Convert String To Json    ${result.stdout}
+    ${token2}=    Get Value From Json    ${json_output}    $.access_token
+    VAR    ${token2}=    ${token2}[0]
+    Check JWT Expiration    ${token2}
+    VAR    &{HEADERS2}=    Authorization=Bearer ${token2}    Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
