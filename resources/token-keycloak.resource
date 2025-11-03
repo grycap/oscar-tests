@@ -31,6 +31,13 @@ Set Refresh Token
     ${json_output}=    Convert String To Json    ${result.stdout}
     ${refresh_token}=    Get Value From Json    ${json_output}    $.refresh_token
     VAR     ${REFRESH_TOKEN}=       ${refresh_token}[0]
+    ${access_token}=    Get Value From Json    ${json_output}    $.access_token
+    VAR    ${access_token}=    ${access_token}[0]
+    Log    Access Token: ${access_token}
+    VAR    &{HEADERS}=    Authorization=Bearer ${access_token}    Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
+    VAR    &{HEADERS_OSCAR}=    Authorization=Basic ${BASIC_USER}    Content-Type=text/json    Accept=application/json
+    ...    scope=SUITE
     ${user_info}=    GET    url=${USERINFO_URL}    headers=${HEADERS}
     ${json_output}=    Convert String To Json    ${user_info.content}
     ${user_id}=    Get Value From Json    ${json_output}    $.sub
