@@ -9,7 +9,8 @@ Library             JSONLibrary
 
 
 *** Variables ***
-${TOKEN_ENDPOINT}       ${AAI_URL}
+${TOKEN_URL}            ${AAI_URL}/protocol/openid-connect/token    
+${USERINFO_URL}         ${AAI_URL}/protocol/openid-connect/userinfo 
 ${CLIENT_ID}            ${CLIENT_ID}
 ${SCOPE}                ${SCOPE}
 ${KEYCLOAK_USERNAME}    ${KEYCLOAK_USERNAME}
@@ -24,17 +25,22 @@ Check Valid OIDC Token
 
 Set Refresh Token 
     [Documentation]    Get the refresh token
-    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_ENDPOINT}'   -d
+    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_URL}'   -d
     ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME}&password\=${KEYCLOAK_PASSWORD}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
     ...     shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
     ${refresh_token}=    Get Value From Json    ${json_output}    $.refresh_token
     VAR     ${REFRESH_TOKEN}=       ${refresh_token}[0]
+    ${user_info}=    GET    url=${USERINFO_URL}    headers=${HEADERS}
+    ${json_output}=    Convert String To Json    ${user_info.content}
+    ${user_id}=    Get Value From Json    ${json_output}    $.sub
+    Set Global Variable    ${USER}    ${user_id}[0]
+    Set Global Variable    ${USER_SHORT_ID}    ${USER}[0:10]
     Set Global Variable    ${REFRESH_TOKEN}
 
 Get Access Token
     [Documentation]    Retrieve OIDC token using a refresh token
-    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_ENDPOINT}'   -d
+    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_URL}'   -d
     ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME}&password\=${KEYCLOAK_PASSWORD}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
     ...     shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
@@ -45,6 +51,11 @@ Get Access Token
     ...    scope=SUITE
     VAR    &{HEADERS_OSCAR}=    Authorization=Basic ${BASIC_USER}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
+    ${user_info}=    GET    url=${USERINFO_URL}    headers=${HEADERS}
+    ${json_output}=    Convert String To Json    ${user_info.content}
+    ${user_id}=    Get Value From Json    ${json_output}    $.sub
+    Set Global Variable    ${USER}    ${user_id}[0]
+    Set Global Variable    ${USER_SHORT_ID}    ${USER}[0:10]
     RETURN    ${access_token}
 
 Decode JWT Token
@@ -68,7 +79,7 @@ Check JWT Expiration
 
 Checks Valids OIDC Token
     [Documentation]    Get the access token
-    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_ENDPOINT}'   -d
+    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_URL}'   -d
     ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME}&password\=${KEYCLOAK_PASSWORD}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
     ...     shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
@@ -79,8 +90,12 @@ Checks Valids OIDC Token
     ...    scope=SUITE
     VAR    &{HEADERS_OSCAR}=    Authorization=Basic ${BASIC_USER}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
-
-    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_ENDPOINT}'   -d
+    ${user_info}=    GET    url=${USERINFO_URL}    headers=${HEADERS}
+    ${json_output}=    Convert String To Json    ${user_info.content}
+    ${user_id}=    Get Value From Json    ${json_output}    $.sub
+    Set Global Variable    ${USER}    ${user_id}[0]
+    Set Global Variable    ${USER_SHORT_ID}    ${USER}[0:10]
+    ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_URL}'   -d
     ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME_AUX}&password\=${KEYCLOAK_PASSWORD_AUX}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
     ...     shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
@@ -91,3 +106,8 @@ Checks Valids OIDC Token
     ...    scope=SUITE
     VAR    &{HEADERS_OSCAR}=    Authorization=Basic ${BASIC_USER}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
+    ${user_info}=    GET    url=${USERINFO_URL}    headers=${HEADERS2}
+    ${json_output}=    Convert String To Json    ${user_info.content}
+    ${user_id}=    Get Value From Json    ${json_output}    $.sub
+    Set Global Variable    ${OTHER_USER}    ${user_id}[0]
+    Set Global Variable    ${OTHER_USER_SHORT_ID}    ${OTHER_USER}[0:10]

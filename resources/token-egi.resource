@@ -10,7 +10,8 @@ Library             JSONLibrary
 
 *** Variables ***
 ${REFRESH_TOKEN}        ${REFRESH_TOKEN}
-${TOKEN_URL}            ${AAI_URL}    
+${TOKEN_URL}            ${AAI_URL}/protocol/openid-connect/token    
+${USERINFO_URL}         ${AAI_URL}/protocol/openid-connect/userinfo    
 ${CLIENT_ID}            token-portal
 ${SCOPE}                openid%20email%20profile%20voperson_id%20eduperson_entitlement
 
@@ -35,6 +36,11 @@ Get Access Token
     ...    scope=SUITE
     VAR    &{HEADERS_OSCAR}=    Authorization=Basic ${BASIC_USER}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
+    ${user_info}=    GET    url=${USERINFO_URL}    headers=${HEADERS}
+    ${json_output}=    Convert String To Json    ${user_info.content}
+    ${user_id}=    Get Value From Json    ${json_output}    $.sub
+    Set Global Variable    ${USER}    ${user_id}[0]
+    Set Global Variable    ${USER_SHORT_ID}    ${USER}[0:10]
     RETURN    ${access_token}
 
 Decode JWT Token
@@ -67,8 +73,13 @@ Checks Valids OIDC Token
     Check JWT Expiration    ${token}
     VAR    &{HEADERS}=    Authorization=Bearer ${token}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
+    ${user_info}=    GET    url=${USERINFO_URL}    headers=${HEADERS}
+    ${json_output}=    Convert String To Json    ${user_info.content}
+    ${user_id}=    Get Value From Json    ${json_output}    $.sub
+    Set Global Variable    ${USER}    ${user_id}[0]
+    Set Global Variable    ${USER_SHORT_ID}    ${USER}[0:10]
     ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}'    -d
-    ...    'grant_type\=refresh_token&refresh_token\=${REFRESH_TOKEN_SECOND_USER}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
+    ...    'grant_type\=refresh_token&refresh_token\=${OTHER_REFRESH_TOKEN}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
     ...    shell=True    stdout=True    stderr=True
     ${json_output}=    Convert String To Json    ${result.stdout}
     ${token2}=    Get Value From Json    ${json_output}    $.access_token
@@ -76,3 +87,8 @@ Checks Valids OIDC Token
     Check JWT Expiration    ${token2}
     VAR    &{HEADERS2}=    Authorization=Bearer ${token2}    Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
+    ${user_info}=    GET    url=${USERINFO_URL}    headers=${HEADERS2}
+    ${json_output}=    Convert String To Json    ${user_info.content}
+    ${user_id}=    Get Value From Json    ${json_output}    $.sub
+    Set Global Variable    ${OTHER_USER}    ${user_id}[0]
+    Set Global Variable    ${OTHER_USER_SHORT_ID}    ${OTHER_USER}[0:10]

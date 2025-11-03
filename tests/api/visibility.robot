@@ -26,7 +26,7 @@ OSCAR Create Service
     [Documentation]  Create a new service
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
     ...                     headers=${HEADERS}
@@ -49,8 +49,8 @@ OSCAR Update Service visibility private -> restricted
     [Documentation]  Update a service private -> restricted
     GetService File Update     visibility     restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
-    Append To List      ${users}    ${SECOND_USER}
+    ${users}=       Create List     ${USER}
+    Append To List      ${users}    ${OTHER_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -70,7 +70,7 @@ Verify Visibility of service and check the Bucket is updated to restricted from 
 OSCAR Update Service visibility restricted -> public
     GetService File Update      visibility     public
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -89,7 +89,7 @@ Verify Visibility of service and check the Bucket is updated to public from rest
 OSCAR Update Service visibility public -> private
     Get Service File Update      visibility     private
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -109,7 +109,7 @@ Verify Visibility of service and check the Bucket is updated to private from pub
 OSCAR Update Service private -> public
     Get Service File Update      visibility     public
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -129,7 +129,7 @@ OSCAR Update Service visibility public -> restricted
     [Documentation]  Update a service public -> restricted
     Get Service File Update      visibility     restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -150,7 +150,7 @@ Verify Visibility of service and check the Bucket is updated to restricted from 
 OSCAR Update Service visibility restricted -> private
     Get Service File Update      visibility     private
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -192,7 +192,7 @@ OSCAR Create Service restricted
     [Documentation]  Create a new service
     Get Service File Update      visibility     restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
     ...                     headers=${HEADERS}
@@ -235,7 +235,7 @@ OSCAR Create Service public
     [Documentation]  Create a new service
     Get Service File Update      visibility     public
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
     ...                     headers=${HEADERS}
