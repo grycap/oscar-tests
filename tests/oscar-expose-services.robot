@@ -2,7 +2,7 @@
 Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Basic endpoint coverage
 
 Resource            ${CURDIR}/../resources/files.resource
-Resource            ${CURDIR}/../resources/token.resource
+Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS} 
 
 Suite Setup         Check Valid OIDC Token
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/nginx_service_file.json

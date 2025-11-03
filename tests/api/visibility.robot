@@ -2,9 +2,10 @@
 Documentation     Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
 
 Library           RequestsLibrary
-Resource          ${CURDIR}/../../resources/token.resource
+Resource          ${CURDIR}/../../${AUTHENTICATION_PROCESS} 
 Resource          ${CURDIR}/../../resources/files.resource
 
+Suite Setup       Checks Valids OIDC Token
 Suite Teardown    Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
@@ -14,17 +15,6 @@ ${bucket_name}    robot-test-cowsay
 
 
 *** Test Cases ***
-Check Valid OIDC Token
-    [Documentation]    Get the access token
-    ${token}=    Get Access Token   ${REFRESH_TOKEN}
-    Check JWT Expiration    ${token}
-    VAR    &{HEADERS}=    Authorization=Bearer ${token}    Content-Type=text/json    Accept=application/json
-    ...    scope=SUITE
-    ${token2}=    Get Access Token   ${REFRESH_TOKEN2}
-    Check JWT Expiration    ${token2}
-    VAR    &{HEADERS2}=    Authorization=Bearer ${token2}    Content-Type=text/json    Accept=application/json
-    ...    scope=SUITE
-
 
 OSCAR API Health
     [Documentation]    Check API health
@@ -36,7 +26,7 @@ OSCAR Create Service
     [Documentation]  Create a new service
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
     ...                     headers=${HEADERS}
@@ -48,7 +38,7 @@ OSCAR Create Service
 Verify Visibility of service and check the Bucket is private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -59,8 +49,8 @@ OSCAR Update Service visibility private -> restricted
     [Documentation]  Update a service private -> restricted
     GetService File Update     visibility     restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${first_user}
-    Append To List      ${users}    ${second_user}
+    ${users}=       Create List     ${FIRST_USER}
+    Append To List      ${users}    ${SECOND_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -70,7 +60,7 @@ OSCAR Update Service visibility private -> restricted
 Verify Visibility of service and check the Bucket is updated to restricted from private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -80,7 +70,7 @@ Verify Visibility of service and check the Bucket is updated to restricted from 
 OSCAR Update Service visibility restricted -> public
     GetService File Update      visibility     public
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -90,7 +80,7 @@ OSCAR Update Service visibility restricted -> public
 Verify Visibility of service and check the Bucket is updated to public from restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -99,7 +89,7 @@ Verify Visibility of service and check the Bucket is updated to public from rest
 OSCAR Update Service visibility public -> private
     Get Service File Update      visibility     private
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -109,7 +99,7 @@ OSCAR Update Service visibility public -> private
 Verify Visibility of service and check the Bucket is updated to private from public
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -119,7 +109,7 @@ Verify Visibility of service and check the Bucket is updated to private from pub
 OSCAR Update Service private -> public
     Get Service File Update      visibility     public
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -129,7 +119,7 @@ OSCAR Update Service private -> public
 Verify Visibility of service and check the Bucket is updated to public from private
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -139,7 +129,7 @@ OSCAR Update Service visibility public -> restricted
     [Documentation]  Update a service public -> restricted
     Get Service File Update      visibility     restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -150,7 +140,7 @@ Verify Visibility of service and check the Bucket is updated to restricted from 
     [Documentation]    Buckets 
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -160,7 +150,7 @@ Verify Visibility of service and check the Bucket is updated to restricted from 
 OSCAR Update Service visibility restricted -> private
     Get Service File Update      visibility     private
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -171,7 +161,7 @@ OSCAR Update Service visibility restricted -> private
 Verify Visibility of service and check the Bucket is updated to private from restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"private"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"private"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -202,7 +192,7 @@ OSCAR Create Service restricted
     [Documentation]  Create a new service
     Get Service File Update      visibility     restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
     ...                     headers=${HEADERS}
@@ -214,7 +204,7 @@ OSCAR Create Service restricted
 Verify Visibility of service and check the Bucket is restricted
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"restricted"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"restricted"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -245,7 +235,7 @@ OSCAR Create Service public
     [Documentation]  Create a new service
     Get Service File Update      visibility     public
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${first_user}
+    ${users}=       Create List     ${FIRST_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
     ...                     headers=${HEADERS}
@@ -257,7 +247,7 @@ OSCAR Create Service public
 Verify Visibility of service and check the Bucket is public
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
-    Should Contain    ${response.content}    "bucket_path":"${bucket_name}","visibility":"public"
+    Should Contain    ${response.content}    "bucket_name":"${bucket_name}","visibility":"public"
     ${response}=    Get Services        ${HEADERS}
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
@@ -311,20 +301,6 @@ Prepare Service File
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
     Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
 
-
-Get Access Token
-    [Documentation]    Retrieve OIDC token using a refresh token
-    [Arguments]    ${this_refresh_token}  
-    ${result}=    Run Process    curl    -s    -X    POST    '${TOKEN_URL}${TOKEN_ENDPOINT}'    -d
-    ...    'grant_type\=refresh_token&refresh_token\=${this_refresh_token}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
-    ...    shell=True    stdout=True    stderr=True
-    ${json_output}=    Convert String To Json    ${result.stdout}
-    ${access_token}=    Get Value From Json    ${json_output}    $.access_token
-    VAR    ${access_token}    ${access_token}[0]
-    Log    Access Token: ${access_token}
-    VAR    &{HEADERS2}    Authorization=Bearer ${access_token}   Content-Type=text/json    Accept=application/json
-    ...    scope=SUITE
-    RETURN    ${access_token}
 
 Update File
     [Arguments]    ${content}       ${key}      ${value}

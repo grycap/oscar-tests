@@ -4,7 +4,7 @@ Documentation       Tests for the OSCAR's UI dashboard.
 Library             String
 Library             Browser
 Resource            ${CURDIR}/../resources/files.resource
-Resource            ${CURDIR}/../resources/token.resource
+Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS} 
 
 
 Suite Setup         Prepare Environment
@@ -14,7 +14,6 @@ Test Setup          Reload
 
 *** Variables ***
 ${OSCAR_DASHBOARD}      %{OSCAR_DASHBOARD}
-${EGI_VO}               %{EGI_VO}
 ${BROWSER}              chromium
 
 
