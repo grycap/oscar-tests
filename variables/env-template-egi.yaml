@@ -1,6 +1,6 @@
 ##### EGI Authentication file example
 AUTHENTICATION_PROCESS: resources/token-egi.resource
-AAI_URL: https://aai.egi.eu/auth/realms/egi/
+AAI_URL: https://aai.egi.eu/auth/realms/egi
 AAI_GROUP: <COMPLETE>
 
 #First user
