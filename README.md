@@ -39,8 +39,8 @@ The following information is required about the cluster information:
 The next parameters are required to configure the authentication process:
   - `AUTHENTICATION_PROCESS`: This parameter selects the authentication process between EGI `resources/token-egi.resource` and Keycloak `resources/token-keycloak.resource`. **ALWAYS REQUIRED**.
   - `AAI_URL`: The URL token of the AAI (Authentication and Authorisation Infrastructure) server. **ALWAYS REQUIRED**.
-      - For the EGI production server, use `https://aai.egi.eu/auth/realms/egi/protocol/openid-connect/token`.
-      - For the EGI demo server, use `https://aai-demo.egi.eu/auth/realms/egi/protocol/openid-connect/token`.
+      - For the EGI production server, use `https://aai.egi.eu/auth/realms/egi`.
+      - For the EGI demo server, use `https://aai-demo.egi.eu/auth/realms/egi`.
   - `AAI_GROUP`: The virtual organization used to test the OSCAR cluster. **ALWAYS REQUIRED**.
   - `CLIENT_ID`: Client ID of Keycloak. Only needed in Keycloak.
   - `SCOPE`: Scope of Keycloak. Only needed in Keycloak.
