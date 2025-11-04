@@ -1,0 +1,15 @@
+##### EGI Authentication file example
+AUTHENTICATION_PROCESS: resources/token-egi.resource
+AAI_URL: https://aai.egi.eu/auth/realms/egi/
+AAI_GROUP: <COMPLETE>
+
+#First user
+REFRESH_TOKEN: <>
+
+#Second user for testing
+REFRESH_TOKEN_OTHER_USER: <COMPLETE>
+
+# For testing mounting external buckets
+OSCAR_EXTERNAL: https://<COMPLETE>
+MINIO_EXTERNAL: https://minio.<COMPLETE>
+MINIO_SECRET_KEY: <COMPLETE>

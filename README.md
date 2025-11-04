@@ -43,14 +43,12 @@ The next parameters are required to configure the authentication process:
       - For the EGI demo server, use `https://aai-demo.egi.eu/auth/realms/egi/protocol/openid-connect/token`.
   - `AAI_GROUP`: The virtual organization used to test the OSCAR cluster. **ALWAYS REQUIRED**.
   - `CLIENT_ID`: Client ID of Keycloak. Only needed in Keycloak.
-  - `SCOPE`: Scope of Keycloak.  Only needed in Keycloak.
-  - `FIRST_USER`: User ID. **ALWAYS REQUIRED**.
+  - `SCOPE`: Scope of Keycloak. Only needed in Keycloak.
   - `REFRESH_TOKEN`: The OIDC token used to automate the execution of the test suite. In order to get a Refresh Token, head to the [Check-in Token Portal](https://aai.egi.eu/token/) or [Demo Check-in Token Portal](https://aai-demo.egi.eu/token/), click **Authorise** and then **Create Refresh Token** button to generate a new token. Only used in EGI.
   - `KEYCLOAK_USERNAME` and `KEYCLOAK_PASSWORD`: The user/password Keycloak authentication. Only used in Keycloak.
 
 In case you are testing isolation or visibility, you have to add a second user:
-  - `SECOND_USER`: User ID of the second user. **ALWAYS REQUIRED**.
-  - `REFRESH_TOKEN_SECOND_USER`: The OIDC token of the second user used to automate the execution.
+  - `REFRESH_TOKEN_OTHER_USER`: The OIDC token of the second user used to automate the execution.
   - `KEYCLOAK_USERNAME_AUX` and `KEYCLOAK_PASSWORD_AUX`: The user/password of a second user in Keycloak.
 
 In case you are testing the mount feat using an external OSCAR cluster add,:
@@ -75,8 +73,14 @@ robot -V variables/.env.yaml -d robot_results/ tests/
 
 This executes all the defined tests. You can also execute a single test suite with:
 
+```sh
+robot -V variables/.env-template.yaml -d robot_results/ tests/api/service-lifecycle.robot
 ```
-robot -V variables/.env.yaml -d robot_results/ tests/api/service-lifecycle.robot
+
+Execute test using two credential files by splitting the Authentication process (EGI and Keycloak) from the cluster configuration: 
+
+```sh
+robot -V  [ variables/env-template-egi.yaml | variables/env-template-keycloak.yaml ] -V variables/env-template-cluster.yaml  -d robot_results/ tests/api/service-lifecycle.robot
 ```
 
 If you are testing an OSCAR deployment in localhost, you can override SSL verification via:
