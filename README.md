@@ -48,7 +48,7 @@ The next parameters are required to configure the authentication process:
   - `KEYCLOAK_USERNAME` and `KEYCLOAK_PASSWORD`: The user/password Keycloak authentication. Only used in Keycloak.
 
 In case you are testing isolation or visibility, you have to add a second user:
-  - `REFRESH_TOKEN_OTHER_USER`: The OIDC token of the second user used to automate the execution.
+  - `OTHER_REFRESH_TOKEN`: The OIDC token of the second user used to automate the execution.
   - `KEYCLOAK_USERNAME_AUX` and `KEYCLOAK_PASSWORD_AUX`: The user/password of a second user in Keycloak.
 
 In case you are testing the mount feat using an external OSCAR cluster add,:
