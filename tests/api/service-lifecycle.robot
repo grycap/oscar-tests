@@ -44,14 +44,14 @@ OSCAR System Status
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in local testing as it gives 500 Internal Server Error
     ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/status
     Log    ${response.content}
-    Should Contain    ${response.content}    "numberNodes"
+    Should Contain    ${response.content}    "nodes_count"
 
 OSCAR System Status with OSCAR USER
     [Documentation]    Get system status with OSCAR USER
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in local testing as it gives 500 Internal Server Error
     ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/status
     Log    ${response.content}
-    Should Contain    ${response.content}    "numberNodes"
+    Should Contain    ${response.content}    "nodes_count"
 
 #OSCAR Delete Service If Exists
 #    [Documentation]    Delete the OSCAR service ${SERVICE_NAME} if it exists in the cluster
