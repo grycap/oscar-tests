@@ -8,7 +8,7 @@ Library             yaml
 
 *** Variables ***
 ${OSCAR_ENDPOINT}       ${OSCAR_ENDPOINT}
-${VO}                   ${AAI_VO}
+${VO}                   ${AAI_GROUP}
 ${DATA_DIR}             ${EXECDIR}/data
 ${INVOKE_FILE_NAME}     00-cowsay-invoke-body.json
 ${INVOKE_FILE}          ${DATA_DIR}/${INVOKE_FILE_NAME}
