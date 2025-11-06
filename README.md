@@ -108,7 +108,7 @@ The repository ships with a `Makefile` that auto-discovers the available credent
   ```
 - Launch a test run by combining the desired auth and cluster targets (keep the `auth-` prefix; the `cluster-` prefix is optional):
   ```sh
-  make test auth-keycloak-oscaruser00 sandbox
+  make test auth-<auth-config> <cluster-config>
   ```
   This resolves to:
   ```sh
@@ -119,10 +119,15 @@ The repository ships with a `Makefile` that auto-discovers the available credent
   ```
 - Override the Robot suite (or any Robot options) via the provided make variables:
   ```sh
-  make test auth-keycloak-oscaruser00 sandbox \
+  make test auth-<auth-config> <cluster-config> \
     ROBOT_SUITE=tests/api/isolation.robot \
     ROBOT_OUTPUT_DIR=robot_results/isolation
   ```
+- Run every `.robot` suite automatically:
+  ```sh
+  make test auth-<auth-config> <cluster-config> ROBOT_SUITE=all
+  ```
+  Each suite is executed separately with results stored under `robot_results/<suite-name>/`.
 
 You can see the results of the stress test with:
 ```sh

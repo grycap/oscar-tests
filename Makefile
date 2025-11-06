@@ -37,6 +37,8 @@ ifeq ($(CLUSTER_FILE),)
 endif
 CLUSTER_FILE := $(strip $(CLUSTER_FILE))
 
+SUITE_LIST := $(shell find tests -type f -name '*.robot' | sort)
+
 ROBOT ?= robot
 ROBOT_SUITE ?= tests/api/service-lifecycle.robot
 ROBOT_OUTPUT_DIR ?= robot_results
@@ -65,7 +67,25 @@ endif
 test:
 	@echo "Auth config: $(AUTH_FILE)"
 	@echo "Cluster config: $(CLUSTER_FILE)"
+ifneq ($(ROBOT_SUITE),all)
 	$(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) -d $(ROBOT_OUTPUT_DIR) $(ROBOT_SUITE)
+else
+	@echo "Running all Robot test suites found under tests/."
+	@if [ -z "$(strip $(SUITE_LIST))" ]; then \
+	  echo "No Robot suites (*.robot) found under tests/"; \
+	  exit 1; \
+	fi
+	@set -e; \
+	for suite in $(SUITE_LIST); do \
+	  rel="$${suite#tests/}"; \
+	  dir_suffix="$${rel%.robot}"; \
+	  safe_dir="$${dir_suffix//\//-}"; \
+	  out_dir="$(ROBOT_OUTPUT_DIR)/$${safe_dir}"; \
+	  echo "-> $$suite (output: $$out_dir)"; \
+	  mkdir -p "$$out_dir"; \
+	  $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) -d "$$out_dir" "$$suite"; \
+	done
+endif
 
 help:
 	@echo "Usage:"
@@ -80,6 +100,7 @@ help:
 ifneq ($(and $(AUTH_EXAMPLE),$(CLUSTER_EXAMPLE)),)
 	@echo "Example:"
 	@echo "  make test $(AUTH_EXAMPLE) $(CLUSTER_EXAMPLE_DISPLAY)"
+	@echo "  make test $(AUTH_EXAMPLE) $(CLUSTER_EXAMPLE_DISPLAY) ROBOT_SUITE=all"
 	@echo ""
 endif
 	@echo "Notes:"
