@@ -93,6 +93,37 @@ You can run stress tests with [Locust](https://locust.io) via:
 ```sh
 robot -V variables/.env-cluster.yaml -d robot_results tests/locust/stress-locust.robot
 ````
+
+### 🧰 Using the Makefile Helper
+
+The repository ships with a `Makefile` that auto-discovers the available credentials and cluster configuration files in `variables/`. It provides a guided interface for running the Robot suites.
+
+- Show the built-in help (also runs when you execute `make` without arguments):
+  ```sh
+  make
+  ```
+- List the discovered authentication and cluster targets:
+  ```sh
+  make list
+  ```
+- Launch a test run by combining the desired auth and cluster targets (keep the `auth-` prefix; the `cluster-` prefix is optional):
+  ```sh
+  make test auth-keycloak-oscaruser00 sandbox
+  ```
+  This resolves to:
+  ```sh
+  robot -V variables/.env-auth-keycloak-oscaruser00.yaml \
+        -V variables/.env-cluster-sandbox.yaml \
+        -d robot_results \
+        tests/api/service-lifecycle.robot
+  ```
+- Override the Robot suite (or any Robot options) via the provided make variables:
+  ```sh
+  make test auth-keycloak-oscaruser00 sandbox \
+    ROBOT_SUITE=tests/api/isolation.robot \
+    ROBOT_OUTPUT_DIR=robot_results/isolation
+  ```
+
 You can see the results of the stress test with:
 ```sh
 open "$(ls -t robot_results/locust/*.html | head -1)"    # macOS
