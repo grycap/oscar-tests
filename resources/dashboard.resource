@@ -141,5 +141,5 @@ Normalize Dashboard Route
     IF    ${starts_with_slash}
         ${route}=    Get Substring    ${route}    1
     END
-    ${fragment}=    Catenate    SEPARATOR=    #/ui/    ${route}
+    ${fragment}=    Catenate    SEPARATOR=    \#/ui/    ${route}
     RETURN    ${fragment}
