@@ -77,6 +77,18 @@ This executes all the defined tests. You can also execute a single test suite wi
 robot -V variables/.env-template.yaml -d robot_results/ tests/api/service-lifecycle.robot
 ```
 
+#### Dashboard UI suites
+
+Dashboard-specific UI suites live under `tests/dashboard/`, with one file per panel (e.g., `services.robot`, `buckets.robot`, `notebooks.robot`, `info.robot`). Run them all at once or target a panel:
+
+```sh
+# Run every dashboard panel test
+robot -V variables/.env.yaml -d robot_results/ tests/dashboard
+
+# Execute only the Services panel suite
+robot -V variables/.env.yaml -d robot_results/ tests/dashboard/services.robot
+```
+
 Execute test using two credential files by splitting the Authentication process (EGI and Keycloak) from the cluster configuration: 
 
 ```sh
