@@ -100,6 +100,34 @@ open "$(ls -t robot_results/locust/*.html | head -1)"    # macOS
 xdg-open "$(ls -t robot_results/locust/*.html | head -1)" # Linux
 ```
 
+### 🧪 Local kind Deployment Workflow
+
+Use `tests/deployment/local-kind.robot` to provision an OSCAR cluster on your workstation (via `oscar/deploy/kind-deploy.sh --devel`) and immediately reuse the existing API/service lifecycle suite against it.
+
+1. Install Docker, kind, kubectl, and git, and ensure the deploy script can run locally.
+2. (Optional) Inspect `variables/env-template-kind-local.yaml` to see which variables are populated automatically.
+3. Launch the workflow (it clones the `devel` branch of [grycap/oscar](https://github.com/grycap/oscar) into a temporary folder unless you point it to an existing checkout):
+   ```sh
+   robot tests/deployment/local-kind.robot
+   # or reuse a local OSCAR checkout
+   robot -v OSCAR_PATH:/path/to/oscar tests/deployment/local-kind.robot
+   # keep the cluster around if the suite fails
+   robot -v KEEP_CLUSTER_ON_FAILURE:True tests/deployment/local-kind.robot
+   ```
+
+Behind the scenes the suite:
+- Executes the deploy script and parses the reported cluster/context names, the exposed `http://localhost:8080` endpoint, and the generated OSCAR credentials.
+- Generates `variables/.env-kind-local.yaml` (ignored by Git) that points to `resources/token-local.resource`, sets `LOCAL_TESTING: True`, and stores the Basic auth header derived from the script output.
+- Waits until `http://localhost:8080/health` is reachable, then repeatedly runs the `ready`-tagged subset of the service lifecycle suite until the cluster can successfully create and invoke a service, and only then executes the full `tests/api/service-lifecycle.robot`, storing artifacts under `robot_results/local-kind`.
+- Attempts to delete the temporary kind cluster and removes the generated variable file even if the run fails.
+
+> ℹ️ `resources/token-local.resource` supplies Basic-auth headers so the API tests can run without contacting an external AAI.
+
+If you only need to validate the parsing logic (without bringing up a cluster), use the synthetic fixture test:
+```sh
+robot tests/deployment/local-kind-parsing.robot
+```
+
 ## 📊 Test Reports and Logs
 
 After running the tests, you’ll get detailed logs and reports in the:
