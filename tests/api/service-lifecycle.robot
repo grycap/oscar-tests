@@ -8,15 +8,15 @@ Resource            ${CURDIR}/../../resources/service.resource
 
 
 
-Suite Setup         Run Keywords    Check Valid OIDC Token 
+Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Assign Random Service Name
 
 
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
 *** Variables ***
-${SERVICE_NAME}     robot-test-cowsay
-
+${SERVICE_BASE}     robot-test-cowsay
+${SERVICE_NAME}     ${SERVICE_BASE}
 
 
 *** Test Cases ***
@@ -43,14 +43,14 @@ OSCAR System Status
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in local testing as it gives 500 Internal Server Error
     ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/status
     Log    ${response.content}
-    Should Contain    ${response.content}    "numberNodes"
+    Should Contain    ${response.content}    "nodes_count"
 
 OSCAR System Status with OSCAR USER
     [Documentation]    Get system status with OSCAR USER
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in local testing as it gives 500 Internal Server Error
     ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/status
     Log    ${response.content}
-    Should Contain    ${response.content}    "numberNodes"
+    Should Contain    ${response.content}    "nodes_count"
 
 #OSCAR Delete Service If Exists
 #    [Documentation]    Delete the OSCAR service ${SERVICE_NAME} if it exists in the cluster
@@ -62,12 +62,13 @@ OSCAR System Status with OSCAR USER
 
 OSCAR Create Service
     [Documentation]    Create a new service
-    [Tags]    create
+    [Tags]    create    ready
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json    
     ${response}=    POST With Defaults  url=${OSCAR_ENDPOINT}/system/services   data=${body}
     Log    ${response.content}
-    Sleep   30s
+    ${wait_time}=    Set Variable If    '${LOCAL_TESTING}'=='True'    180s    210s
+    Sleep    ${wait_time}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'  #409 if already exists
 
 OSCAR List Services
@@ -106,6 +107,7 @@ OSCAR Invoke Synchronous Service
 
 OSCAR Invoke Synchronous Service with token
     [Documentation]  Invoke the synchronous service with service token
+    [Tags]    ready
     ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
     Log    ${response.content}
     ${service_token}=      Evaluate      json.loads($response.content)['token']
@@ -114,9 +116,10 @@ OSCAR Invoke Synchronous Service with token
     ...    scope=SUITE
     ${body}=        Get File    ${INVOKE_FILE}
     ${verify}=    Convert To Boolean    ${SSL_VERIFY}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200    data=${body}
-    ...                     headers=${new_headers}   verify=${verify}
-    Should Be Equal As Strings    ${response.status_code}    200    
+    ${retries}=    Set Variable If    '${LOCAL_TESTING}'=='True'    10x    1x
+    ${interval}=   Set Variable If    '${LOCAL_TESTING}'=='True'    30s    0s
+    Run Keyword If    '${LOCAL_TESTING}'=='True'    Wait Until Keyword Succeeds    ${retries}    ${interval}    Invoke Service With Token    ${body}    ${new_headers}    ${verify}
+    ...    ELSE    Invoke Service With Token    ${body}    ${new_headers}    ${verify}
 
 OSCAR Invoke Asynchronous Service
     [Documentation]    Invoke the asynchronous service
@@ -188,6 +191,12 @@ OSCAR Delete Service
 
 *** Keywords ***
 
+Invoke Service With Token
+    [Documentation]    Helper that posts to the synchronous run endpoint and asserts a 200 response.
+    [Arguments]    ${body}    ${headers}    ${verify}
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200
+    ...                     data=${body}    headers=${headers}    verify=${verify}
+    Should Be Equal As Strings    ${response.status_code}    200
 
 #Delete Service Now
 #    ${del_response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}

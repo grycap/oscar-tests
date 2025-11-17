@@ -1,0 +1,11 @@
+# Auto-generated example values for the local kind deployment test.
+# Copy or use these defaults as a base for variables/.env-kind-local.yaml,
+# which is created dynamically by tests/deployment/local-kind.robot.
+AUTHENTICATION_PROCESS: resources/token-local.resource
+OSCAR_ENDPOINT: http://localhost:8080
+OSCAR_METRICS: http://localhost:8080/metrics
+OSCAR_DASHBOARD: https://localhost:444
+BASIC_USER: <base64-oscar-credentials>
+AAI_GROUP: oscar
+LOCAL_TESTING: True
+SSL_VERIFY: False
