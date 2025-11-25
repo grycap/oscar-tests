@@ -19,7 +19,6 @@ ${SERVICE_BASE}     robot-test-cowsay
 ${SERVICE_NAME}     ${SERVICE_BASE}
 
 
-
 *** Test Cases ***
 OSCAR API Health
     [Documentation]    Check API health
@@ -68,7 +67,7 @@ OSCAR Create Service
     ${body}=    Get File    ${DATA_DIR}/service_file.json    
     ${response}=    POST With Defaults  url=${OSCAR_ENDPOINT}/system/services   data=${body}
     Log    ${response.content}
-    ${wait_time}=    Set Variable If    '${LOCAL_TESTING}'=='True'    180s    60s
+    ${wait_time}=    Set Variable If    '${LOCAL_TESTING}'=='True'    180s    210s
     Sleep    ${wait_time}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'  #409 if already exists
 

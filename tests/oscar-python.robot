@@ -24,13 +24,6 @@ Get Cluster Info
     Should Be Equal As Integers    ${response.status_code}    200
     Should Contain    ${response.content}    "version":
 
-List Services
-    [Documentation]    List all services in the OSCAR cluster
-    ${response}=    List Services
-    Log    ${response.content}
-    Should Be Equal As Integers    ${response.status_code}    200
-    Should Contain    ${response.content}    "name":
-
 Get Cluster Config
     [Documentation]    Retrieve the configuration of the OSCAR cluster
     ${response}=    Get Cluster Config
@@ -42,9 +35,16 @@ Create New Service
     [Documentation]    Create a new service with a given FDL file
     Prepare Service File
     ${response}=    Create Service    ${DATA_DIR}/service_file.yaml
-    Sleep    60s
+    Sleep    120s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
+
+List Services
+    [Documentation]    List all services in the OSCAR cluster
+    ${response}=    List Services
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    "name":
 
 Get Service Details
     [Documentation]    Retrieve details about a specific service
@@ -53,15 +53,10 @@ Get Service Details
     Should Be Equal As Integers    ${response.status_code}    200
     Should Contain    ${response.content}    "${SERVICE_NAME}"
 
-Update Existing Service
-    [Documentation]    Update an existing service using a new FDL file
-    ${response}=    Update Service    ${SERVICE_NAME}    ${DATA_DIR}/service_file.yaml
-    Log    ${response.content}
-    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
-
 Run Service Asynchronously
     [Documentation]    Run a service asynchronously with input data
-    ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
+    ${token}=      Get Access Token
+    ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}     ${token}
     Sleep    120s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
@@ -86,6 +81,12 @@ Remove Job
     ${response}=    Remove Job    ${SERVICE_NAME}    ${JOB_NAME}
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    204
+
+Update Existing Service
+    [Documentation]    Update an existing service using a new FDL file
+    ${response}=    Update Service    ${SERVICE_NAME}    ${DATA_DIR}/service_file.yaml
+    Log    ${response.content}
+    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
 Remove All Job
     [Documentation]    Remove all jobs created by the service

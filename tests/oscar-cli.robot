@@ -80,7 +80,7 @@ OSCAR CLI Put File
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
     ...    ${EXECDIR}/data/00-cowsay-invoke-body.json       ${bucket_name}/input/${INVOKE_FILE_NAME}
     ...    stdout=True    stderr=True
-    Sleep    10s
+    Sleep    30s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
