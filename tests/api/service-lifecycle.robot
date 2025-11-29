@@ -169,7 +169,7 @@ OSCAR Invoke Asynchronous Service with service token
     ${response}=    POST   url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}      data=${body}
     ...                     headers=${new_headers}    verify=${verify}
     Should Be Equal As Strings    ${response.status_code}    201
-    Wait For Async Job Ready
+    
 
 OSCAR Delete All Jobs
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
