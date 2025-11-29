@@ -67,8 +67,7 @@ OSCAR Create Service
     ${body}=    Get File    ${DATA_DIR}/service_file.json    
     ${response}=    POST With Defaults  url=${OSCAR_ENDPOINT}/system/services   data=${body}
     Log    ${response.content}
-    ${wait_time}=    Set Variable If    '${LOCAL_TESTING}'=='True'    180s    210s
-    Sleep    ${wait_time}
+    Wait For Service Ready
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'  #409 if already exists
 
 OSCAR List Services
@@ -126,8 +125,8 @@ OSCAR Invoke Asynchronous Service
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in favour of the next one which uses the service token
     ${body}=    Get File    ${INVOKE_FILE}
     ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}     data=${body}
-    Sleep    60s
     Should Be Equal As Strings    ${response.status_code}    201
+    Wait For Async Job Ready
 
 OSCAR List Jobs
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
@@ -140,9 +139,7 @@ OSCAR List Jobs
 OSCAR Get Logs
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
     [Documentation]    Get the logs from a job
-    ${get_logs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
-    Log    ${get_logs.content}
-    Should Contain    ${get_logs.content}    Hello
+    Wait For Job Logs
 
 OSCAR Delete Job
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
@@ -172,6 +169,7 @@ OSCAR Invoke Asynchronous Service with service token
     ${response}=    POST   url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}      data=${body}
     ...                     headers=${new_headers}    verify=${verify}
     Should Be Equal As Strings    ${response.status_code}    201
+    Wait For Async Job Ready
 
 OSCAR Delete All Jobs
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
@@ -226,3 +224,45 @@ Prepare Service File
     Set To Dictionary    ${first_output}    path=${SERVICE_NAME}/output
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
     Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+
+Wait For Service Ready
+    [Documentation]    Polls the service endpoint until the service reports a ready state or the timeout expires.
+    ${timeout}=    Set Variable If    '${LOCAL_TESTING}'=='True'    180s    210s
+    ${interval}=   Set Variable    5s
+    Wait Until Keyword Succeeds    ${timeout}    ${interval}    Service Should Be Ready
+
+Service Should Be Ready
+    [Documentation]    Asserts that the service status indicates readiness.
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
+    ${payload}=    Evaluate    json.loads($response.content)    json
+    ${status}=    Evaluate    (lambda d: d.get('status') if not isinstance(d.get('status'), dict) else d['status'].get('state') or d['status'].get('phase') or d['status'].get('condition'))(${payload})    json
+    ${ready}=    Evaluate    str(${status}).lower() in ("ready","running","available","succeeded") or bool(${payload}.get('ready')) or bool(${payload}.get('token'))    json
+    Should Be True    ${ready}    Service not ready yet (status=${status})
+
+Wait For Async Job Ready
+    [Documentation]    Polls the job listing until at least one job for the service is visible.
+    [Arguments]    ${headers}=${HEADERS}
+    ${timeout}=    Set Variable If    '${LOCAL_TESTING}'=='True'    300s    300s
+    ${interval}=   Set Variable    5s
+    Wait Until Keyword Succeeds    ${timeout}    ${interval}    Async Job Should Be Visible    ${headers}
+
+Async Job Should Be Visible
+    [Documentation]    Asserts that the job list for the service is non-empty.
+    [Arguments]    ${headers}=${HEADERS}
+    ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    headers=${headers}
+    ${payload}=    Evaluate    json.loads($response.content)    json
+    ${jobs}=       Get From Dictionary    ${payload}    jobs
+    Log    Jobs response: ${payload}
+    Should Not Be Empty    ${jobs}
+
+Wait For Job Logs
+    [Documentation]    Polls until job logs are available or the timeout is reached.
+    ${timeout}=    Set Variable If    '${LOCAL_TESTING}'=='True'    300s    120s
+    ${interval}=   Set Variable    5s
+    Wait Until Keyword Succeeds    ${timeout}    ${interval}    Job Logs Should Contain Hello
+
+Job Logs Should Contain Hello
+    [Documentation]    Fetches job logs and asserts the expected output.
+    ${get_logs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
+    Log    ${get_logs.content}
+    Should Contain    ${get_logs.content}    Hello
