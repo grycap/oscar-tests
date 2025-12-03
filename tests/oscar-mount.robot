@@ -126,7 +126,7 @@ Prepare Service File
 
     # Update the script value
     ${script_value}=    Catenate
-    ...    \#!/bin/sh\n\nsleep 5\nif [ \"$INPUT_TYPE\" = \"json\" ]\nthen\n
+    ...    \#!/bin/sh\n\nif [ \"$INPUT_TYPE\" = \"json\" ]\nthen\n
     ...    jq '.message' \"$INPUT_FILE_PATH\" -r | /usr/games/cowsay\nelse\n
     ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\n
     ...    cat \"/mnt/${MOUNT_BUCKET_NAME}/${INVOKE_FILE_NAME}\"\nfi\n\

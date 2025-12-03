@@ -81,7 +81,7 @@ OSCAR Create Service Mount - where the bucket ${BUCKET_EXTERNAL} exist and its m
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${body}=  yaml.Safe Load  ${body}
     ${mount} = 	Create Dictionary 	storage_provider=minio.external      path=${BUCKET_EXTERNAL}
-    ${external} = 	Create Dictionary 	endpoint=${MINIO_EXTERNAL}            access_key=${FIRST_USER}
+    ${external} = 	Create Dictionary 	endpoint=${MINIO_EXTERNAL}            access_key=${USER}
     ...     secret_key=${MINIO_SECRET_KEY}            verify=${True}       region=us-east-1
     ${storage} = 	Create Dictionary
     ${minio} = 	Create Dictionary

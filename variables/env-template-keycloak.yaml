@@ -1,0 +1,19 @@
+##### Keycloak Authentication file example
+AUTHENTICATION_PROCESS: resources/token-keycloak.resource
+AAI_URL: https://<KEYCLOAK_HOST>/realms/<REALM>
+AAI_GROUP: <COMPLETE>
+CLIENT_ID: <COMPLETE>
+SCOPE: <COMPLETE>
+
+#First user
+KEYCLOAK_USERNAME: <COMPLETE>
+KEYCLOAK_PASSWORD: <COMPLETE>
+
+#Second user for testing
+KEYCLOAK_USERNAME_AUX: <COMPLETE>
+KEYCLOAK_PASSWORD_AUX: <COMPLETE>
+
+# For testing mounting external buckets
+OSCAR_EXTERNAL: https://<COMPLETE>
+MINIO_EXTERNAL: https://minio.<COMPLETE>
+MINIO_SECRET_KEY: <>

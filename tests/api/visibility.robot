@@ -26,7 +26,7 @@ OSCAR Create Service
     [Documentation]  Create a new service
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
     ...                     headers=${HEADERS}
@@ -44,13 +44,15 @@ Verify Visibility of service and check the Bucket is private
     ${response}=    Get Services        ${HEADERS2}
     ${output} = 	Convert To String 	${response}
     Should Not Match Regexp    ${output}    ${service_name}
+    Verify Asynchronous works       ${HEADERS}
+
 
 OSCAR Update Service visibility private -> restricted
     [Documentation]  Update a service private -> restricted
     GetService File Update     visibility     restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
-    Append To List      ${users}    ${SECOND_USER}
+    ${users}=       Create List     ${USER}
+    Append To List      ${users}    ${OTHER_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -65,12 +67,14 @@ Verify Visibility of service and check the Bucket is updated to restricted from 
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
     Should Contain       ${response}      ${service_name}
+    Verify Asynchronous works       ${HEADERS}
+    Verify Asynchronous works       ${HEADERS2}
 
 
 OSCAR Update Service visibility restricted -> public
     GetService File Update      visibility     public
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -85,11 +89,13 @@ Verify Visibility of service and check the Bucket is updated to public from rest
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
     Should Contain       ${response}      ${service_name}
+    Verify Asynchronous works       ${HEADERS}
+    Verify Asynchronous works       ${HEADERS2}
 
 OSCAR Update Service visibility public -> private
     Get Service File Update      visibility     private
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -105,11 +111,12 @@ Verify Visibility of service and check the Bucket is updated to private from pub
     ${response}=    Get Services        ${HEADERS2}
     ${output} = 	Convert To String 	${response}
     Should Not Match Regexp    ${output}    ${service_name}
+    Verify Asynchronous works       ${HEADERS}
 
 OSCAR Update Service private -> public
     Get Service File Update      visibility     public
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -124,12 +131,14 @@ Verify Visibility of service and check the Bucket is updated to public from priv
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
     Should Contain       ${response}      ${service_name}
+    Verify Asynchronous works       ${HEADERS}
+    Verify Asynchronous works       ${HEADERS2}
 
 OSCAR Update Service visibility public -> restricted
     [Documentation]  Update a service public -> restricted
     Get Service File Update      visibility     restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -146,11 +155,12 @@ Verify Visibility of service and check the Bucket is updated to restricted from 
     ${response}=    Get Services        ${HEADERS2}
     ${output} = 	Convert To String 	${response}
     Should Not Match Regexp    ${output}    ${service_name}
+    Verify Asynchronous works       ${HEADERS}
 
 OSCAR Update Service visibility restricted -> private
     Get Service File Update      visibility     private
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Sleep    20s
@@ -167,6 +177,8 @@ Verify Visibility of service and check the Bucket is updated to private from res
     ${response}=    Get Services        ${HEADERS2}
     ${output} = 	Convert To String 	${response}
     Should Not Match Regexp    ${output}    ${service_name}
+    Verify Asynchronous works       ${HEADERS}
+
 
 OSCAR Delete Service private
     [Documentation]  Delete the created service
@@ -192,7 +204,7 @@ OSCAR Create Service restricted
     [Documentation]  Create a new service
     Get Service File Update      visibility     restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
     ...                     headers=${HEADERS}
@@ -210,6 +222,8 @@ Verify Visibility of service and check the Bucket is restricted
     ${response}=    Get Services        ${HEADERS2}
     ${output} = 	Convert To String 	${response}
     Should Not Match Regexp    ${output}    ${service_name}
+    Verify Asynchronous works       ${HEADERS}
+
 
 OSCAR Delete Service restricted
     [Documentation]  Delete the created service
@@ -235,7 +249,7 @@ OSCAR Create Service public
     [Documentation]  Create a new service
     Get Service File Update      visibility     public
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${users}=       Create List     ${FIRST_USER}
+    ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
     ...                     headers=${HEADERS}
@@ -252,6 +266,8 @@ Verify Visibility of service and check the Bucket is public
     Should Contain       ${response}      ${service_name}
     ${response}=    Get Services        ${HEADERS2}
     Should Contain       ${response}      ${service_name}
+    Verify Asynchronous works       ${HEADERS}
+    Verify Asynchronous works       ${HEADERS2}
 
 
 OSCAR Delete Service public
@@ -320,3 +336,19 @@ Get Services
     [Arguments]    ${header_options} 
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services    expected_status=200    headers=${header_options}
     RETURN      ${response.content}
+
+Verify Asynchronous works
+    [Documentation]    Invoke the asynchronous service
+    [Arguments]    ${header_options}
+    Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in favour of the next one which uses the service token
+    ${body}=    Get File    ${INVOKE_FILE}
+    ${response}=    POST     url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}     data=${body}     headers=${header_options}
+    Sleep    60s
+    Should Be Equal As Strings    ${response.status_code}    201
+    ${list_jobs}=    GET        url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}   headers=${header_options}
+    ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
+    Get Key From Dictionary    ${jobs_dict["jobs"]}
+    Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
+    ${get_logs}=    GET         url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}   headers=${header_options}
+    Log    ${get_logs.content}
+    Should Contain    ${get_logs.content}    Hello
