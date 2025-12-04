@@ -128,7 +128,7 @@ OSCAR Service with Secret List Jobs Again
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
 
 OSCAR Service with Secret Get Logs Again
-    [Documentation]    Get the logs from a job and check for 'another-robot-secret
+    [Documentation]    Get the logs from a job and check for 'another-robot-secret'
     Sleep   30s
     ${response_text}=    Wait Until Keyword Succeeds
     ...    ${MAX_RETRIES}x
