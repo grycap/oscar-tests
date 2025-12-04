@@ -352,3 +352,5 @@ Verify Asynchronous works
     ${get_logs}=    GET         url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}   headers=${header_options}
     Log    ${get_logs.content}
     Should Contain    ${get_logs.content}    Hello
+    ${delete_logs}=    DELETE         url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}   headers=${header_options}
+    Should Be Equal As Strings    ${response.status_code}    201
