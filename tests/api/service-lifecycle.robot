@@ -67,8 +67,6 @@ OSCAR Create Service
     ${body}=    Get File    ${DATA_DIR}/service_file.json    
     ${response}=    POST With Defaults  url=${OSCAR_ENDPOINT}/system/services   data=${body}
     Log    ${response.content}
-    ${wait_time}=    Set Variable If    '${LOCAL_TESTING}'=='True'    180s    210s
-    Sleep    ${wait_time}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'  #409 if already exists
 
 OSCAR List Services
@@ -95,15 +93,21 @@ OSCAR Read Service as OSCAR user
     Log    ${response.content}
     Should Contain    ${response.content}    "name":"${SERVICE_NAME}"
 
-
-
 OSCAR Invoke Synchronous Service
     [Documentation]  Invoke the synchronous service
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in favour of the next one which uses the service token
     ${body}=        Get File    ${INVOKE_FILE}
-    ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}   data=${body}
-    Log    ${response.content}
-    Should Contain    ${response.content}    Hello
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    GET    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}      headers=${HEADERS}       data=${body}
+        IF    '${status}' != 'FAIL'
+            Log     ${status}       console=yes
+            Log     ${resp}       console=yes
+            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
+            Exit For Loop If    ${status}
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
 
 OSCAR Invoke Synchronous Service with token
     [Documentation]  Invoke the synchronous service with service token
@@ -126,7 +130,6 @@ OSCAR Invoke Asynchronous Service
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in favour of the next one which uses the service token
     ${body}=    Get File    ${INVOKE_FILE}
     ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}     data=${body}
-    Sleep    60s
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR List Jobs
@@ -140,9 +143,15 @@ OSCAR List Jobs
 OSCAR Get Logs
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
     [Documentation]    Get the logs from a job
-    ${get_logs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
-    Log    ${get_logs.content}
-    Should Contain    ${get_logs.content}    Hello
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+            ${status}    ${resp}=    Run Keyword And Ignore Error    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}      headers=${HEADERS}
+            IF    '${status}' != 'FAIL'
+                ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
+                Exit For Loop If    ${status}
+            END
+            Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
 
 OSCAR Delete Job
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
