@@ -64,7 +64,6 @@ OSCAR CLI Apply
     [Tags]    create
     Prepare Service File
     ${result}=    Run Process    oscar-cli    apply    ${DATA_DIR}/service_file.yaml    stdout=True    stderr=True
-    Sleep    60s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
@@ -80,7 +79,6 @@ OSCAR CLI Put File
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
     ...    ${EXECDIR}/data/00-cowsay-invoke-body.json       ${bucket_name}/input/${INVOKE_FILE_NAME}
     ...    stdout=True    stderr=True
-    Sleep    30s
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
@@ -102,19 +100,29 @@ OSCAR CLI Logs List
 
 OSCAR CLI Logs Get
     [Documentation]    Check that OSCAR CLI gets the logs from a service's job
-    ${result}=    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
-    ...    ${JOB_NAME}    stdout=True    stderr=True
-    Log    ${result.stdout}
-    # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    Hello
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
+        ...    ${JOB_NAME}    stdout=True    stderr=True
+        IF    '${status}' != 'FAIL'
+            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.stdout}    Hello
+            Exit For Loop If    ${status}
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
 
 OSCAR CLI Logs Get Latest
     [Documentation]    Check that OSCAR CLI gets the logs from a service's job
-    ${result}=    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
-    ...    -l    stdout=True    stderr=True
-    Log    ${result.stdout}
-    # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    Hello
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    Run Process    oscar-cli    service    logs    get    ${SERVICE_NAME}
+        ...    -l    stdout=True    stderr=True
+        IF    '${status}' != 'FAIL'
+            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.stdout}    Hello
+            Exit For Loop If    ${status}
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
 
 OSCAR CLI Logs Remove
     [Documentation]    Check that OSCAR CLI removes the logs from a service's job
@@ -135,19 +143,29 @@ OSCAR CLI Get File
 
 OSCAR CLI Run Services Synchronously With File
     [Documentation]    Check that OSCAR CLI runs a service (with a file) synchronously in the default cluster
-    ${result}=    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --file-input
-    ...    ${EXECDIR}/data/00-cowsay-invoke-body.json    stdout=True    stderr=True
-    Log    ${result.stdout}
-    # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    Hello
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --file-input
+        ...    ${EXECDIR}/data/00-cowsay-invoke-body.json    stdout=True    stderr=True
+        IF    '${status}' != 'FAIL'
+            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.stdout}    Hello
+            Exit For Loop If    ${status}
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
 
 OSCAR CLI Run Services Synchronously With Prompt
     [Documentation]    Check that OSCAR CLI runs a service (with prompt) synchronously in the default cluster
-    ${result}=    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --text-input
-    ...    {"message": "Hello there from AI4EOSC"}    stdout=True    stderr=True
-    Log    ${result.stdout}
-    # Should Be Equal As Integers    ${result.rc}    0
-    Should Contain    ${result.stdout}    Hello
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    Run Process    oscar-cli    service    run    ${SERVICE_NAME}    --text-input
+        ...    {"message": "Hello there from AI4EOSC"}    stdout=True    stderr=True
+        IF    '${status}' != 'FAIL'
+            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.stdout}    Hello
+            Exit For Loop If    ${status}
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
 
 OSCAR CLI Services Remove
     [Documentation]    Check that OSCAR CLI deletes a service

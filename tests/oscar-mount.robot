@@ -81,6 +81,16 @@ OSCAR CLI Put File to input bucket
     Should Be Equal As Integers    ${result.rc}    0
 
 Check the good execution
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}      headers=${HEADERS}
+        IF    '${status}' != 'FAIL'
+            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
+            Exit For Loop If    ${status}
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
+
     ${list_jobs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
     Get Key From Dictionary    ${jobs_dict["jobs"]}

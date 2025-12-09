@@ -100,8 +100,6 @@ OSCAR Invoke Synchronous Service
     FOR    ${i}    IN RANGE    ${MAX_RETRIES}
         ${status}    ${resp}=    Run Keyword And Ignore Error    GET    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}      headers=${HEADERS}       data=${body}
         IF    '${status}' != 'FAIL'
-            Log     ${status}       console=yes
-            Log     ${resp}       console=yes
             ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
             Exit For Loop If    ${status}
         END
