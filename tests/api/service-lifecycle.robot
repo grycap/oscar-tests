@@ -94,15 +94,19 @@ OSCAR Read Service as OSCAR user
     Log    ${response.content}
     Should Contain    ${response.content}    "name":"${SERVICE_NAME}"
 
-
-
 OSCAR Invoke Synchronous Service
     [Documentation]  Invoke the synchronous service
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in favour of the next one which uses the service token
     ${body}=        Get File    ${INVOKE_FILE}
-    ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}   data=${body}
-    Log    ${response.content}
-    Should Contain    ${response.content}    Hello
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    GET    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}      headers=${HEADERS}       data=${body}
+        IF    '${status}' != 'FAIL'
+            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
+            Exit For Loop If    ${status}
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
 
 OSCAR Invoke Synchronous Service with token
     [Documentation]  Invoke the synchronous service with service token

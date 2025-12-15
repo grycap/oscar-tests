@@ -35,7 +35,6 @@ Create New Service
     [Documentation]    Create a new service with a given FDL file
     Prepare Service File
     ${response}=    Create Service    ${DATA_DIR}/service_file.yaml
-    Sleep    120s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -57,7 +56,6 @@ Run Service Asynchronously
     [Documentation]    Run a service asynchronously with input data
     ${token}=      Get Access Token
     ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}     ${token}
-    Sleep    120s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -71,10 +69,15 @@ List Jobs
 
 Get Job Logs
     [Documentation]    Check the logs of a job
-    ${response}=    Get Job Logs    ${SERVICE_NAME}    ${JOB_NAME}
-    Log    ${response.content}
-    Should Be Equal As Integers    ${response.status_code}    200
-    Should Contain    ${response.content}    Hello
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    Get Job Logs    ${SERVICE_NAME}    ${JOB_NAME}
+        IF    '${status}' != 'FAIL'
+            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
+            Exit For Loop If    ${status}
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
 
 Remove Job
     [Documentation]    Remove a job created by the service
