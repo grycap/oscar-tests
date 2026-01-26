@@ -2,6 +2,7 @@
 Assign Random Service Name
     ${service_name}=    Generate Random Service Name    ${SERVICE_BASE}
     Set Suite Variable    ${SERVICE_NAME}    ${service_name}
+    Set Suite Variable    ${BUCKET_NAME}    ${service_name}
 
 Assign Random String
     ${random_string}=    Evaluate    ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))    modules=random,string
