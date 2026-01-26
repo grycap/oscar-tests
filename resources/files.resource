@@ -45,6 +45,12 @@ Load Original Service File
     ${loaded_content}=    yaml.Safe Load    ${yaml_content}
     RETURN    ${loaded_content}
 
+Load Sleep Service File
+    [Documentation]    Load the sleep service file and return its content
+    ${yaml_content}=    Get File    ${SLEEP_SERVICE_FILE}
+    ${loaded_content}=    yaml.Safe Load    ${yaml_content}
+    RETURN    ${loaded_content}
+
 Set Service File VO
     [Documentation]    Set or add the VO for the OSCAR service in the service file
     [Arguments]    ${service_content}

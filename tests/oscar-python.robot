@@ -54,8 +54,8 @@ Get Service Details
 
 Run Service Asynchronously
     [Documentation]    Run a service asynchronously with input data
-    ${token}=      Get Access Token
-    ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}     ${token}
+    ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
+    Sleep    120s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 

@@ -58,9 +58,9 @@ class OscarLibrary:
         return self.client.update_service(service_name, path_to_fdl)
 
     @keyword("Run Service Asynchronously")
-    def run_service_async(self, service_name, input_data="", token=""):
+    def run_service_async(self, service_name, input_data=""):
         # Returns an HTTP response
-        return self.client.run_service(service_name, input=input_data, token=token, async_call=True)
+        return self.client.run_service(service_name, input=input_data,  async_call=True)
 
     @keyword("Remove Service")
     def remove_service(self, service_name):

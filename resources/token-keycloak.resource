@@ -6,6 +6,7 @@ Library             DateTime
 Library             Process
 Library             RequestsLibrary
 Library             JSONLibrary
+Library             String
 
 
 *** Variables ***
