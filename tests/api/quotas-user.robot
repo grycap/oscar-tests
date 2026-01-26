@@ -12,7 +12,7 @@ Library             yaml
 Library             String
 
 
-Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Assign Random Service Name
+Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Assign Random Service Name    AND    Assign Random String
 Suite Teardown      Run Keywords    Restore User Memory Quota    AND    Cleanup Sleep Service
 
 
@@ -29,6 +29,8 @@ ${MEMORY_MAX_MI}                0
 ${ORIG_MEM_MAX_MI}              0
 ${ORIG_CPU_CORES}               0
 ${NEW_CPU_CORES}                0
+${SERVICE_NAME_ROBOT}           robot-oscar-cluster
+${SERVICE_NAME_NGINX}           robot-test-nginx
 
 
 *** Test Cases ***
@@ -48,12 +50,12 @@ Get quotas and plan burst
     Skip If    ${PARALLEL_LIMIT} < 2    Not enough free CPU to validate concurrency (needs at least 2)
     ${job_count}=    Evaluate    ${PARALLEL_LIMIT} + 2
     Set Suite Variable    ${JOB_COUNT}    ${job_count}
-    Log To Console    Job plan -> base parallel limit: ${PARALLEL_LIMIT}, jobs to submit now: ${JOB_COUNT}
+    Log         Job plan -> base parallel limit: ${PARALLEL_LIMIT}, jobs to submit now: ${JOB_COUNT}
     ${mem_res}=    Get From Dictionary    ${quota_json["resources"]}    memory
     ${mem_max}=    Get From Dictionary    ${mem_res}    max
     ${mem_used}=   Get From Dictionary    ${mem_res}    used
     ${max_mib}=    Parse Memory Quantity To Mib    ${mem_max}
-    Log To Console    Current memory quota: max=${mem_max} (${max_mib} Mi), used=${mem_used}
+    Log         Current memory quota: max=${mem_max} (${max_mib} Mi), used=${mem_used}
     Set Suite Variable    ${MEMORY_MAX_MI}    ${max_mib}
     Set Suite Variable    ${ORIG_MEM_MAX_MI}    ${max_mib}
 
@@ -74,7 +76,7 @@ Submit jobs and verify concurrency
     [Documentation]    Launch N+2 async jobs and ensure only N (quota) are running.
     Skip If    ${JOB_COUNT} < 2    No jobs were planned (check quotas)
     ${body}=    Get File    ${INVOKE_FILE}
-    Log To Console    Submitting ${JOB_COUNT} jobs with resources -> cpu=${SERVICE_CPU}, memory=256Mi (service spec)
+    Log         Submitting ${JOB_COUNT} jobs with resources -> cpu=${SERVICE_CPU}, memory=256Mi (service spec)
     FOR    ${i}    IN RANGE    ${JOB_COUNT}
         ${job_resp}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    data=${body}
         Should Be Equal As Strings    ${job_resp.status_code}    201
@@ -93,12 +95,12 @@ Increase CPU quota allows one more job
     ${cpu_res}=    Get From Dictionary    ${quota_json["resources"]}    cpu
     ${cpu_max}=    Get From Dictionary    ${cpu_res}    max
     ${cpu_max_cores}=    Parse CPU Quantity To Float    ${cpu_max}
-    Log To Console    Updated CPU quota: max=${cpu_max} (${cpu_max_cores} cores)
+    Log         Updated CPU quota: max=${cpu_max} (${cpu_max_cores} cores)
     Run Keyword If    ${cpu_max_cores} <= ${ORIG_CPU_CORES}    Fail    CPU quota did not increase (old=${ORIG_CPU_CORES}, new=${cpu_max_cores})
     Set Suite Variable    ${NEW_CPU_CORES}    ${cpu_max_cores}
     ${new_parallel}=    Compute Parallel Limit    ${cpu_max_cores}    ${SERVICE_CPU}
     ${job_count}=    Evaluate    ${new_parallel} + 1
-    Log To Console    Submitting ${job_count} jobs after CPU increase; expect max running >= ${PARALLEL_LIMIT + 1}
+    Log         Submitting ${job_count} jobs after CPU increase; expect max running >= ${PARALLEL_LIMIT + 1}
     Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true
     ${body}=    Get File    ${INVOKE_FILE}
     FOR    ${i}    IN RANGE    ${job_count}
@@ -108,6 +110,121 @@ Increase CPU quota allows one more job
     ${max_running}    ${completed_jobs}=    Track Job Concurrency Until Done    ${SERVICE_NAME}    ${job_count}    ${HEADERS_OSCAR}
     Should Be True    ${max_running} >= ${PARALLEL_LIMIT + 1}    msg=Expected at least one more concurrent job after quota increase
     Should Be Equal As Integers    ${completed_jobs}    ${job_count}
+
+Delete sleep-test service
+    [Documentation]    Delete the sleep-test service with a random name.
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
+    Should Be Equal As Strings    ${response.status_code}    204
+
+Execute Synchronous Calls With Correct Resources
+    [Documentation]    Test synchronous service calls with adequate resources for successful execution
+    [Tags]    sync    correct-resources
+    ${service_name}=    Set Variable    sync-correct-resources-${RANDOM_STRING}
+    Prepare Service File With Correct Resources    ${service_name}
+    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
+    Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
+    ${invoke_body}=    Get File    ${INVOKE_FILE}
+    FOR    ${j}    IN RANGE    ${MAX_RETRIES}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    POST    url=${OSCAR_ENDPOINT}/run/${service_name}      headers=${HEADERS}       data=${invoke_body}
+        IF    '${status}' != 'FAIL'
+            Log     ${status} 
+            Log     ${resp.content}
+            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
+            Exit For Loop If    ${status}
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}
+    Should Be Equal As Strings    ${response.status_code}    204
+
+Execute Synchronous Calls With Insufficient Resources
+    [Documentation]    Test synchronous service calls with inadequate resources expecting failure or timeout
+    [Tags]    sync    insufficient-resources
+    ${service_name}=    Set Variable    sync-insufficient-${RANDOM_STRING}
+    Prepare Service File With Insufficient Resources    ${service_name}
+    ${body}=    Get File    ${DATA_DIR}/service_file.json
+
+    ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
+    Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
+    ${invoke_body}=    Get File    ${INVOKE_FILE}
+    FOR    ${j}    IN RANGE    ${MAX_RETRIES}
+        ${resp}=       POST    url=${OSCAR_ENDPOINT}/run/${service_name}        expected_status=ANY      headers=${HEADERS}       data=${invoke_body}
+        Exit For Loop If    '${resp.status_code}' == '400'
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Log    Exited
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}
+    Should Be Equal As Strings    ${response.status_code}    204
+
+Execute Asynchronous Calls With Correct Resources
+    [Documentation]    Test asynchronous service calls with adequate resources for successful execution
+    [Tags]    async    correct-resources
+    ${service_name}=    Set Variable    async-correct-resources-${RANDOM_STRING}
+    Prepare Service File With Correct Resources    ${service_name}
+    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
+    Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
+    ${invoke_body}=    Get File    ${INVOKE_FILE}
+    ${job_response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${service_name}    data=${invoke_body}
+    Should Be Equal As Strings    ${job_response.status_code}    201
+    FOR    ${j}    IN RANGE    ${MAX_RETRIES}
+        ${list_jobs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}
+        ${job_status}=    Check Job Status    ${list_jobs}
+        Log     ${job_status}
+        Exit For Loop If        '${job_status}' == 'Succeeded'
+        Sleep   ${RETRY_INTERVAL}
+    END
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}
+    Should Be Equal As Strings    ${response.status_code}    204
+
+Execute Asynchronous Calls With Insufficient Resources
+    [Documentation]    Test asynchronous service calls with inadequate resources expecting job queuing or failure
+    [Tags]    async    insufficient-resources
+    ${service_name}=    Set Variable    async-insufficient-${RANDOM_STRING}
+    Prepare Service File With Insufficient Resources    ${service_name}
+    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
+    Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
+    ${invoke_body}=    Get File    ${INVOKE_FILE}
+    ${job_response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${service_name}     data=${invoke_body}
+    Should Be Equal As Strings    ${job_response.status_code}    201
+    FOR    ${j}    IN RANGE    ${MAX_RETRIES}
+        ${list_jobs}=    GET    expected_status=ANY   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}     headers=${HEADERS}
+        ${job_status}=    Check Job Status    ${list_jobs}
+        Exit For Loop If        '${job_status}' == 'Suspended'
+        Sleep   ${RETRY_INTERVAL}
+    END
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}
+    Should Be Equal As Strings    ${response.status_code}    204
+
+Execute Exposed Service With Correct Resources
+    [Documentation]    Test exposed service calls with adequate resources for successful execution
+    [Tags]    exposed    correct-resources
+    ${service_name}=    Set Variable    exposed-correct-${RANDOM_STRING}
+    Prepare Exposed Service With Correct Resources    ${service_name}
+    ${body}=    Get File    ${DATA_DIR}/exposed_service_file.json
+    ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
+    Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
+    FOR    ${j}    IN RANGE    ${MAX_RETRIES}
+        ${response}=    GET     expected_status=ANY     url=${OSCAR_ENDPOINT}/system/services/${service_name}/exposed       headers=${HEADERS}
+        ${contains_nginx}=    Run Keyword And Return Status    Should Contain    ${response.content}    Welcome to nginx
+        Exit For Loop If    ${contains_nginx}
+        Sleep   ${RETRY_INTERVAL}
+    END
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}
+    Should Be Equal As Strings    ${response.status_code}    204
+
+Execute Exposed Service With Insufficient Resources
+    [Documentation]    Test exposed service calls with inadequate resources expecting service unavailable
+    [Tags]    exposed    insufficient-resources
+    ${service_name}=    Set Variable    exposed-insufficient-${RANDOM_STRING}
+    Prepare Exposed Service With Insufficient Resources    ${service_name}
+    ${body}=    Get File    ${DATA_DIR}/exposed_service_file.json
+    ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
+    Should Be True    '${response.status_code}' == '500' 
+    Should Contain    ${response.content}    workload for exposed service '${service_name}' is NOT admitted 
 
 
 *** Keywords ***
@@ -140,12 +257,6 @@ Compute Parallel Limit
     [Arguments]    ${available_cpu}    ${service_cpu}
     ${parallel}=    Evaluate    int(${available_cpu} // ${service_cpu})
     RETURN    ${parallel}
-
-Plan Job Count
-    [Documentation]    Decide how many jobs to launch (two waves) without exceeding 6.
-    [Arguments]    ${parallel_limit}
-    ${desired}=    Evaluate    max(3, min(6, ${parallel_limit} * 2))
-    RETURN    ${desired}
 
 Prepare Sleep Service File
     [Documentation]    Load the sleep-test example, adjust VO/name/paths, and save JSON payload for the API.
@@ -224,55 +335,6 @@ Parse Memory Quantity To Mib
     ${value}=    Evaluate    (lambda q: (lambda m: float(m.group(1)) * {'ki':1/1024,'mi':1,'gi':1024,'ti':1048576}.get((m.group(2) or 'mi').lower(),1))(re.match(r'([0-9.]+)([A-Za-z]+)?', str(q))))('${qstr}')    re
     RETURN    ${value}
 
-Validate Job Does Not Run For Service
-    [Documentation]    Submit one async job and ensure it never reaches Running within retry window.
-    [Arguments]    ${service_name}
-    ${body}=    Get File    ${INVOKE_FILE}
-    ${job_resp}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${service_name}    data=${body}
-    Log    ${job_resp}
-    Should Be Equal As Strings    ${job_resp.status_code}    201
-    ${max_running}=    Set Variable    0
-    ${completed}=     Set Variable    0
-    FOR    ${i}    IN RANGE    6
-        ${logs_resp}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${service_name}
-        ${jobs_json}=    Evaluate    json.loads($logs_resp.content)    json
-        ${jobs_map}=     Get From Dictionary    ${jobs_json}    jobs
-        ${statuses}=     Create List
-        FOR    ${job_name}    ${info}    IN    &{jobs_map}
-            ${status}=    Get From Dictionary    ${info}    status
-            Append To List    ${statuses}    ${status}
-        END
-        ${running_now}=    Count Status Occurrences    ${statuses}    Running
-        ${max_running}=    Evaluate    max(${max_running}, ${running_now})
-        ${completed}=      Count Completed Statuses    ${statuses}
-        Sleep    ${RETRY_INTERVAL}
-    END
-    Should Be Equal As Integers    ${max_running}    0    msg=Over-quota job should not start running
-    Should Be Equal As Integers    ${completed}    0    msg=Over-quota job should not complete
-
-Validate Job Starts For Service
-    [Documentation]    Submit one async job and ensure it starts (Running or finishes) within retries.
-    [Arguments]    ${service_name}
-    ${body}=    Get File    ${INVOKE_FILE}
-    ${job_resp}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${service_name}    data=${body}
-    Should Be Equal As Strings    ${job_resp.status_code}    201
-    ${running}=    Set Variable    0
-    ${completed}=  Set Variable    0
-    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
-        ${logs_resp}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${service_name}    headers=${HEADERS_OSCAR}
-        ${jobs_json}=    Evaluate    json.loads($logs_resp.content)    json
-        ${jobs_map}=     Get From Dictionary    ${jobs_json}    jobs
-        ${statuses}=     Create List
-        FOR    ${job_name}    ${info}    IN    &{jobs_map}
-            ${status}=    Get From Dictionary    ${info}    status
-            Append To List    ${statuses}    ${status}
-        END
-        ${running}=    Count Status Occurrences    ${statuses}    Running
-        ${completed}=  Count Completed Statuses    ${statuses}
-        Exit For Loop If    ${running} > 0 or ${completed} > 0
-        Sleep    ${RETRY_INTERVAL}
-    END
-    Should Be True    ${running} > 0 or ${completed} > 0    msg=Job did not start after quota increase
 
 Update User Memory Quota
     [Documentation]    Update user memory quota (MiB) via admin/basic auth.
@@ -295,8 +357,101 @@ Cleanup Sleep Service
     Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true
     Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
     Run Keyword And Ignore Error    Clean Test Artifacts    ${DATA_DIR}/service_file.json
+    Run Keyword And Ignore Error    Clean Test Artifacts    ${DATA_DIR}/exposed_service_file.json
 
 Restore User Memory Quota
     [Documentation]    Restore memory quota to original value if it was captured.
     Run Keyword If    ${ORIG_MEM_MAX_MI} > 0    Update User Memory Quota    ${ORIG_MEM_MAX_MI}
     Run Keyword If    ${ORIG_CPU_CORES} > 0    Update User CPU Quota    ${ORIG_CPU_CORES}
+
+Prepare Service File With Correct Resources
+    [Documentation]    Prepare service configuration with adequate resources
+    [Arguments]    ${service_name}
+    ${service_content}=    Get File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Set Service File VO    ${service_content}
+    
+    VAR    ${modified_content}=    ${service_content}[functions][oscar][0][robot-oscar-cluster]
+    
+    ${script_value}=    Catenate
+    ...    \#!/bin/sh\n\necho "Hello from ${service_name}"\n\
+    Set To Dictionary    ${modified_content}    script=${script_value}
+    Set To Dictionary    ${modified_content}    name=${service_name}
+    Set To Dictionary    ${modified_content}    cpu=0.5
+    Set To Dictionary    ${modified_content}    memory=256Mi
+    
+    ${input_entries}=    Get From Dictionary    ${modified_content}    input
+    ${first_input}=    Get From List    ${input_entries}    0
+    Set To Dictionary    ${first_input}    path=${service_name}/input
+    
+    ${output_entries}=    Get From Dictionary    ${modified_content}    output
+    ${first_output}=    Get From List    ${output_entries}    0
+    Set To Dictionary    ${first_output}    path=${service_name}/output
+    
+    ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
+    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+
+Prepare Service File With Insufficient Resources
+    [Documentation]    Prepare service configuration with inadequate resources
+    [Arguments]    ${service_name}
+    ${service_content}=    Get File    ${DATA_DIR}/00-cowsay.yaml
+    ${service_content}=    Set Service File VO    ${service_content}
+    
+    VAR    ${modified_content}=    ${service_content}[functions][oscar][0][robot-oscar-cluster]
+    
+    ${script_value}=    Catenate
+    ...    \#!/bin/sh\n\nsleep 30\necho "Hello from ${service_name}"\n\
+    Set To Dictionary    ${modified_content}    script=${script_value}
+    Set To Dictionary    ${modified_content}    name=${service_name}
+    Set To Dictionary    ${modified_content}    cpu=10.0
+    Set To Dictionary    ${modified_content}    memory=32Gi
+    
+    ${input_entries}=    Get From Dictionary    ${modified_content}    input
+    ${first_input}=    Get From List    ${input_entries}    0
+    Set To Dictionary    ${first_input}    path=${service_name}/input
+    
+    ${output_entries}=    Get From Dictionary    ${modified_content}    output
+    ${first_output}=    Get From List    ${output_entries}    0
+    Set To Dictionary    ${first_output}    path=${service_name}/output
+    
+    ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
+    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+
+Prepare Exposed Service With Correct Resources
+    [Documentation]    Prepare exposed service configuration with adequate resources
+    [Arguments]    ${service_name}
+    ${service_content}=    Get File    ${DATA_DIR}/expose_services/nginx_expose.yaml
+    ${service_content}=    Set Service File VO    ${service_content}
+
+    VAR    ${modified_content}=    ${service_content}[functions][oscar][0][oscar-cluster]
+    Set To Dictionary    ${modified_content}    name=${service_name}
+    Set To Dictionary    ${modified_content}    cpu=0.5
+    Set To Dictionary    ${modified_content}    memory=256Mi
+    
+    ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
+    Create File    ${DATA_DIR}/exposed_service_file.json    ${service_content_json}
+
+Prepare Exposed Service With Insufficient Resources
+    [Documentation]    Prepare exposed service configuration with inadequate resources
+    [Arguments]    ${service_name}
+    ${service_content}=    Get File    ${DATA_DIR}/expose_services/nginx_expose.yaml
+    ${service_content}=    Set Service File VO    ${service_content}
+    
+    VAR    ${modified_content}=    ${service_content}[functions][oscar][0][oscar-cluster]
+    Set To Dictionary    ${modified_content}    name=${service_name}
+    Set To Dictionary    ${modified_content}    cpu=10.0
+    Set To Dictionary    ${modified_content}    memory=32Gi
+    
+    ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
+    Create File    ${DATA_DIR}/exposed_service_file.json    ${service_content_json}
+
+Check Job Status
+    [Documentation]    Check Job Succeeded from job creation response
+    [Arguments]    ${response}
+    Run Keyword If    '''${response.content}''' == ''    Fail    Response content is empty despite status ${response.status_code}
+    ${response_json}=    Evaluate    json.loads($response.content)    json
+    ${jobs}=    Get From Dictionary    ${response_json}    jobs
+    ${job_keys}=    Get Dictionary Keys    ${jobs}
+    ${first_job_id}=    Set Variable    ${job_keys[0]}
+    ${job_data}=    Get From Dictionary    ${jobs}    ${first_job_id}
+    ${jobs_status}=    Get From Dictionary    ${job_data}    status
+    RETURN    ${jobs_status}
