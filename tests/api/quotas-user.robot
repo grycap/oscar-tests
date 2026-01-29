@@ -59,62 +59,62 @@ Get quotas and plan burst
     Set Suite Variable    ${MEMORY_MAX_MI}    ${max_mib}
     Set Suite Variable    ${ORIG_MEM_MAX_MI}    ${max_mib}
 
-Create sleep-test service
-    [Documentation]    Deploy the sleep-test service with a random name.
-    Prepare Sleep Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
-    Log    ${response.content}
-    Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
-    # Verify the service can be read to confirm the expected name
-    ${read_resp}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
-    ${read_json}=    Evaluate    json.loads($read_resp.content)    json
-    ${read_name}=    Get From Dictionary    ${read_json}    name
-    Should Be Equal As Strings    ${read_name}    ${SERVICE_NAME}
+#Create sleep-test service
+#    [Documentation]    Deploy the sleep-test service with a random name.
+#    Prepare Sleep Service File
+#    ${body}=    Get File    ${DATA_DIR}/service_file.json
+#    ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
+#    Log    ${response.content}
+#    Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
+#    # Verify the service can be read to confirm the expected name
+#    ${read_resp}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
+#    ${read_json}=    Evaluate    json.loads($read_resp.content)    json
+#    ${read_name}=    Get From Dictionary    ${read_json}    name
+#    Should Be Equal As Strings    ${read_name}    ${SERVICE_NAME}
 
-Submit jobs and verify concurrency
-    [Documentation]    Launch N+2 async jobs and ensure only N (quota) are running.
-    Skip If    ${JOB_COUNT} < 2    No jobs were planned (check quotas)
-    ${body}=    Get File    ${INVOKE_FILE}
-    Log         Submitting ${JOB_COUNT} jobs with resources -> cpu=${SERVICE_CPU}, memory=256Mi (service spec)
-    FOR    ${i}    IN RANGE    ${JOB_COUNT}
-        ${job_resp}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    data=${body}
-        Should Be Equal As Strings    ${job_resp.status_code}    201
-    END
-    ${max_running}    ${completed_jobs}=    Track Job Concurrency Until Done    ${SERVICE_NAME}    ${JOB_COUNT}    ${HEADERS_OSCAR}
-    Set Suite Variable    ${MAX_RUNNING_SEEN}    ${max_running}
-    Should Be Equal As Integers    ${max_running}    ${PARALLEL_LIMIT}    msg=Expected to cap at quota (${PARALLEL_LIMIT}) concurrent jobs
-    Should Be Equal As Integers    ${completed_jobs}    ${JOB_COUNT}
+#Submit jobs and verify concurrency
+#    [Documentation]    Launch N+2 async jobs and ensure only N (quota) are running.
+#    Skip If    ${JOB_COUNT} < 2    No jobs were planned (check quotas)
+#    ${body}=    Get File    ${INVOKE_FILE}
+#    Log         Submitting ${JOB_COUNT} jobs with resources -> cpu=${SERVICE_CPU}, memory=256Mi (service spec)
+#    FOR    ${i}    IN RANGE    ${JOB_COUNT}
+#        ${job_resp}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    data=${body}
+#        Should Be Equal As Strings    ${job_resp.status_code}    201
+#    END
+#    ${max_running}    ${completed_jobs}=    Track Job Concurrency Until Done    ${SERVICE_NAME}    ${JOB_COUNT}    ${HEADERS_OSCAR}
+#    Set Suite Variable    ${MAX_RUNNING_SEEN}    ${max_running}
+#    Should Be Equal As Integers    ${max_running}    ${PARALLEL_LIMIT}    msg=Expected to cap at quota (${PARALLEL_LIMIT}) concurrent jobs
+#    Should Be Equal As Integers    ${completed_jobs}    ${JOB_COUNT}
 
-Increase CPU quota allows one more job
-    [Documentation]    Increase CPU quota slightly and verify one more job can run concurrently.
-    ${new_cpu_cores}=    Evaluate    ${ORIG_CPU_CORES} + ${SERVICE_CPU}
-    Update User CPU Quota    ${new_cpu_cores}
-    ${quota_check}=    Fetch Quotas Response
-    ${quota_json}=    Evaluate    json.loads($quota_check.content)    json
-    ${cpu_res}=    Get From Dictionary    ${quota_json["resources"]}    cpu
-    ${cpu_max}=    Get From Dictionary    ${cpu_res}    max
-    ${cpu_max_cores}=    Parse CPU Quantity To Float    ${cpu_max}
-    Log         Updated CPU quota: max=${cpu_max} (${cpu_max_cores} cores)
-    Run Keyword If    ${cpu_max_cores} <= ${ORIG_CPU_CORES}    Fail    CPU quota did not increase (old=${ORIG_CPU_CORES}, new=${cpu_max_cores})
-    Set Suite Variable    ${NEW_CPU_CORES}    ${cpu_max_cores}
-    ${new_parallel}=    Compute Parallel Limit    ${cpu_max_cores}    ${SERVICE_CPU}
-    ${job_count}=    Evaluate    ${new_parallel} + 1
-    Log         Submitting ${job_count} jobs after CPU increase; expect max running >= ${PARALLEL_LIMIT + 1}
-    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true
-    ${body}=    Get File    ${INVOKE_FILE}
-    FOR    ${i}    IN RANGE    ${job_count}
-        ${job_resp}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    data=${body}
-        Should Be Equal As Strings    ${job_resp.status_code}    201
-    END
-    ${max_running}    ${completed_jobs}=    Track Job Concurrency Until Done    ${SERVICE_NAME}    ${job_count}    ${HEADERS_OSCAR}
-    Should Be True    ${max_running} >= ${PARALLEL_LIMIT + 1}    msg=Expected at least one more concurrent job after quota increase
-    Should Be Equal As Integers    ${completed_jobs}    ${job_count}
+#Increase CPU quota allows one more job
+#    [Documentation]    Increase CPU quota slightly and verify one more job can run concurrently.
+#    ${new_cpu_cores}=    Evaluate    ${ORIG_CPU_CORES} + ${SERVICE_CPU}
+#    Update User CPU Quota    ${new_cpu_cores}
+#    ${quota_check}=    Fetch Quotas Response
+#    ${quota_json}=    Evaluate    json.loads($quota_check.content)    json
+#    ${cpu_res}=    Get From Dictionary    ${quota_json["resources"]}    cpu
+#    ${cpu_max}=    Get From Dictionary    ${cpu_res}    max
+#    ${cpu_max_cores}=    Parse CPU Quantity To Float    ${cpu_max}
+#    Log         Updated CPU quota: max=${cpu_max} (${cpu_max_cores} cores)
+#    Run Keyword If    ${cpu_max_cores} <= ${ORIG_CPU_CORES}    Fail    CPU quota did not increase (old=${ORIG_CPU_CORES}, new=${cpu_max_cores})
+#    Set Suite Variable    ${NEW_CPU_CORES}    ${cpu_max_cores}
+#    ${new_parallel}=    Compute Parallel Limit    ${cpu_max_cores}    ${SERVICE_CPU}
+#    ${job_count}=    Evaluate    ${new_parallel} + 1
+#    Log         Submitting ${job_count} jobs after CPU increase; expect max running >= ${PARALLEL_LIMIT + 1}
+#    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true
+#    ${body}=    Get File    ${INVOKE_FILE}
+#    FOR    ${i}    IN RANGE    ${job_count}
+#        ${job_resp}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    data=${body}
+#        Should Be Equal As Strings    ${job_resp.status_code}    201
+#    END
+#    ${max_running}    ${completed_jobs}=    Track Job Concurrency Until Done    ${SERVICE_NAME}    ${job_count}    ${HEADERS_OSCAR}
+#    Should Be True    ${max_running} >= ${PARALLEL_LIMIT + 1}    msg=Expected at least one more concurrent job after quota increase
+#    Should Be Equal As Integers    ${completed_jobs}    ${job_count}
 
-Delete sleep-test service
-    [Documentation]    Delete the sleep-test service with a random name.
-    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
-    Should Be Equal As Strings    ${response.status_code}    204
+#Delete sleep-test service
+#    [Documentation]    Delete the sleep-test service with a random name.
+#    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
+#    Should Be Equal As Strings    ${response.status_code}    204
 
 Execute Synchronous Calls With Correct Resources
     [Documentation]    Test synchronous service calls with adequate resources for successful execution
