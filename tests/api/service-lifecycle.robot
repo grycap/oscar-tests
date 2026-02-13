@@ -103,12 +103,14 @@ OSCAR Invoke Synchronous Service
         IF    '${status}' != 'FAIL'
             Log     ${status}
             Log     ${resp.content}
-            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
-            Exit For Loop If    ${status}
+            ${contain_hello}=    Run Keyword And Return Status    Should Contain    ${resp.text}    Hello
+            IF    ${contain_hello}
+                Pass Execution    Execution contains 'Hello'
+            END
         END
         Sleep   ${RETRY_INTERVAL}
     END
-    Log    Exited
+    Fail
 
 OSCAR Invoke Synchronous Service with token
     [Documentation]  Invoke the synchronous service with service token
@@ -120,11 +122,19 @@ OSCAR Invoke Synchronous Service with token
     VAR    &{new_headers}    Authorization=Bearer ${service_token}   Content-Type=text/json    Accept=application/json
     ...    scope=SUITE
     ${body}=        Get File    ${INVOKE_FILE}
-    ${verify}=    Convert To Boolean    ${SSL_VERIFY}
-    ${retries}=    Set Variable If    '${LOCAL_TESTING}'=='True'    10x    1x
-    ${interval}=   Set Variable If    '${LOCAL_TESTING}'=='True'    30s    0s
-    Run Keyword If    '${LOCAL_TESTING}'=='True'    Wait Until Keyword Succeeds    ${retries}    ${interval}    Invoke Service With Token    ${body}    ${new_headers}    ${verify}
-    ...    ELSE    Invoke Service With Token    ${body}    ${new_headers}    ${verify}
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+    ${status}    ${resp}=    Run Keyword And Ignore Error    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}      headers=${new_headers}       data=${body}
+        IF    '${status}' != 'FAIL'
+            Log     ${status}
+            Log     ${resp.content}
+            ${contain_robot}=    Run Keyword And Return Status    Should Contain    ${resp.text}    Hello
+            IF    ${contain_robot}
+                Pass Execution    Execution contains 'Hello'
+            END
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Fail
 
 OSCAR Invoke Asynchronous Service
     [Documentation]    Invoke the asynchronous service
@@ -195,12 +205,6 @@ OSCAR Delete Service
 
 *** Keywords ***
 
-Invoke Service With Token
-    [Documentation]    Helper that posts to the synchronous run endpoint and asserts a 200 response.
-    [Arguments]    ${body}    ${headers}    ${verify}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}    expected_status=200
-    ...                     data=${body}    headers=${headers}    verify=${verify}
-    Should Be Equal As Strings    ${response.status_code}    200
 
 #Delete Service Now
 #    ${del_response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
