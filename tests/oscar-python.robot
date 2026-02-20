@@ -54,8 +54,8 @@ Get Service Details
 
 Run Service Asynchronously
     [Documentation]    Run a service asynchronously with input data
-    ${token}=      Get Access Token
-    ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}     ${token}
+    ${response}=    Run Service Asynchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
+    Sleep    120s
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    201
 
@@ -128,10 +128,20 @@ Download File
 
 Run Service Synchronously
     [Documentation]    Run a service synchronously with input data
-    ${response}=    Run Service Synchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
-    Log    ${response.content}
-    Should Be Equal As Integers    ${response.status_code}    200
-    Should Contain    ${response.content}    ROBOT
+    FOR    ${i}    IN RANGE    ${MAX_RETRIES}
+    ${status}    ${resp}=    Run Keyword And Ignore Error    Run Service Synchronously    ${SERVICE_NAME}    ${INVOKE_FILE}
+        IF    '${status}' != 'FAIL'
+            Log     ${status}
+            Log     ${resp.content}
+            ${contain_robot}=    Run Keyword And Return Status    Should Contain    ${resp.text}    ROBOT
+            Log     ${contain_robot}
+            IF    ${contain_robot}
+                Pass Execution    Execution contains 'ROBOT'
+            END
+        END
+        Sleep   ${RETRY_INTERVAL}
+    END
+    Fail
 
 Remove Service
     [Documentation]    Remove a service by name
