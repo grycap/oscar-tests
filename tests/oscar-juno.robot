@@ -19,6 +19,7 @@ ${GENERATED_SERVICE_FILE}   ${DATA_DIR}/juno_service_file.json
 ${JUPYTER_TOKEN}            junoroot
 
 
+*** Test Cases ***
 OSCAR Deploy Juno Exposed Service
     [Documentation]    Create Juno service from FDL and wait until OSCAR reports it as ready.
     Create Private Mount Bucket
