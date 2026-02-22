@@ -1,0 +1,25 @@
+functions:
+  oscar:
+  - oscar-cluster:
+      name: juno
+      memory: 2Gi
+      cpu: "1.0"
+      image: ghcr.io/grycap/juno
+      script: script.sh
+      environment:
+        variables:
+          JHUB_BASE_URL: "/system/services/juno/exposed"
+          JUPYTER_DIRECTORY: "/mnt/home"
+          GRANT_SUDO: "yes"
+          OSCAR_ENDPOINT: ""
+        secrets:
+          JUPYTER_TOKEN: "junoroot"
+      mount:
+        storage_provider: minio.default
+        path: home
+      expose:
+        min_scale: 1
+        max_scale: 2
+        api_port: 8888
+        cpu_threshold: 90
+        rewrite_target: true
