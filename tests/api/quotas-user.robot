@@ -13,7 +13,7 @@ Library             String
 
 
 Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Assign Random Service Name    AND    Assign Random String
-Suite Teardown      Run Keywords    Restore User Memory Quota    AND    Cleanup Sleep Service
+Suite Teardown      Run Keywords    Restore User Memory Quota    AND    Cleanup Quotas Services
 
 
 *** Variables ***
@@ -21,6 +21,7 @@ ${SERVICE_BASE}                 sleep-test
 ${SERVICE_NAME}                 ${SERVICE_BASE}
 ${SLEEP_SERVICE_FILE}           ${DATA_DIR}/sleep-test.yaml
 ${SLEEP_SCRIPT_FILE}            ${DATA_DIR}/sleep-test.sh
+${NGINX_SCRIPT_FILE}            ${DATA_DIR}/expose_services/nginxscript.sh
 ${SERVICE_CPU}                  1.0
 ${PARALLEL_LIMIT}               0
 ${JOB_COUNT}                    0
@@ -31,6 +32,12 @@ ${ORIG_CPU_CORES}               0
 ${NEW_CPU_CORES}                0
 ${SERVICE_NAME_ROBOT}           robot-oscar-cluster
 ${SERVICE_NAME_NGINX}           robot-test-nginx
+${SYNC_READY_TIMEOUT}           120s
+${ASYNC_READY_TIMEOUT}          120s
+${EXPOSED_READY_TIMEOUT}        120s
+${FAST_RETRY_INTERVAL}          5s
+${RUN_REQUEST_TIMEOUT}          12
+${RUN_REJECTION_TIMEOUT}        45
 
 
 *** Test Cases ***
@@ -58,6 +65,7 @@ Get quotas and plan burst
     Log         Current memory quota: max=${mem_max} (${max_mib} Mi), used=${mem_used}
     Set Suite Variable    ${MEMORY_MAX_MI}    ${max_mib}
     Set Suite Variable    ${ORIG_MEM_MAX_MI}    ${max_mib}
+    OSCAR Kueue Config Should Be Enabled
 
 #Create sleep-test service
 #    [Documentation]    Deploy the sleep-test service with a random name.
@@ -124,23 +132,14 @@ Execute Synchronous Calls With Correct Resources
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
+    Wait For Quotas Service Ready    ${service_name}
     ${invoke_body}=    Get File    ${INVOKE_FILE}
-    FOR    ${j}    IN RANGE    ${MAX_RETRIES}
-        ${status}    ${resp}=    Run Keyword And Ignore Error    POST    url=${OSCAR_ENDPOINT}/run/${service_name}      headers=${HEADERS}       data=${invoke_body}
-        IF    '${status}' != 'FAIL'
-            Log     ${status} 
-            Log     ${resp.content}
-            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
-            Exit For Loop If    ${status}
-        END
-        Sleep   ${RETRY_INTERVAL}
-    END
-    Log    Exited
-    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}
+    Wait Until Keyword Succeeds    ${SYNC_READY_TIMEOUT}    ${FAST_RETRY_INTERVAL}    Sync Invocation Should Contain Hello    ${service_name}    ${invoke_body}
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}    expected_status=ANY
     Should Be Equal As Strings    ${response.status_code}    204
 
 Execute Synchronous Calls With Insufficient Resources
-    [Documentation]    Test synchronous service calls with inadequate resources expecting failure or timeout
+    [Documentation]    Validate that synchronous invocation with oversized resources returns a controlled Kueue rejection.
     [Tags]    sync    insufficient-resources
     ${service_name}=    Set Variable    sync-insufficient-${RANDOM_STRING}
     Prepare Service File With Insufficient Resources    ${service_name}
@@ -148,14 +147,11 @@ Execute Synchronous Calls With Insufficient Resources
 
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
+    Service Resources Should Exceed Quotas    ${body}
+    Wait For Quotas Service Ready    ${service_name}
     ${invoke_body}=    Get File    ${INVOKE_FILE}
-    FOR    ${j}    IN RANGE    ${MAX_RETRIES}
-        ${resp}=       POST    url=${OSCAR_ENDPOINT}/run/${service_name}        expected_status=ANY      headers=${HEADERS}       data=${invoke_body}
-        Exit For Loop If    '${resp.status_code}' == '400'
-        Sleep   ${RETRY_INTERVAL}
-    END
-    Log    Exited
-    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}
+    Sync Invocation Should Be Rejected By Kueue    ${service_name}    ${invoke_body}
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}    expected_status=ANY
     Should Be Equal As Strings    ${response.status_code}    204
 
 Execute Asynchronous Calls With Correct Resources
@@ -166,17 +162,12 @@ Execute Asynchronous Calls With Correct Resources
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
+    Wait For Quotas Service Ready    ${service_name}
     ${invoke_body}=    Get File    ${INVOKE_FILE}
     ${job_response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${service_name}    data=${invoke_body}
     Should Be Equal As Strings    ${job_response.status_code}    201
-    FOR    ${j}    IN RANGE    ${MAX_RETRIES}
-        ${list_jobs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}
-        ${job_status}=    Check Job Status    ${list_jobs}
-        Log     ${job_status}
-        Exit For Loop If        '${job_status}' == 'Succeeded'
-        Sleep   ${RETRY_INTERVAL}
-    END
-    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}
+    Wait Until Keyword Succeeds    ${ASYNC_READY_TIMEOUT}    ${FAST_RETRY_INTERVAL}    Async Job Should Have Status    ${service_name}    Succeeded
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}    expected_status=ANY
     Should Be Equal As Strings    ${response.status_code}    204
 
 Execute Asynchronous Calls With Insufficient Resources
@@ -190,13 +181,8 @@ Execute Asynchronous Calls With Insufficient Resources
     ${invoke_body}=    Get File    ${INVOKE_FILE}
     ${job_response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/job/${service_name}     data=${invoke_body}
     Should Be Equal As Strings    ${job_response.status_code}    201
-    FOR    ${j}    IN RANGE    ${MAX_RETRIES}
-        ${list_jobs}=    GET    expected_status=ANY   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}     headers=${HEADERS}
-        ${job_status}=    Check Job Status    ${list_jobs}
-        Exit For Loop If        '${job_status}' == 'Suspended'
-        Sleep   ${RETRY_INTERVAL}
-    END
-    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}
+    Wait Until Keyword Succeeds    60s    ${FAST_RETRY_INTERVAL}    Async Job Should Have Status    ${service_name}    Suspended
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}    expected_status=ANY
     Should Be Equal As Strings    ${response.status_code}    204
 
 Execute Exposed Service With Correct Resources
@@ -207,13 +193,8 @@ Execute Exposed Service With Correct Resources
     ${body}=    Get File    ${DATA_DIR}/exposed_service_file.json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
-    FOR    ${j}    IN RANGE    ${MAX_RETRIES}
-        ${response}=    GET     expected_status=ANY     url=${OSCAR_ENDPOINT}/system/services/${service_name}/exposed       headers=${HEADERS}
-        ${contains_nginx}=    Run Keyword And Return Status    Should Contain    ${response.content}    Welcome to nginx
-        Exit For Loop If    ${contains_nginx}
-        Sleep   ${RETRY_INTERVAL}
-    END
-    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}
+    Wait Until Keyword Succeeds    ${EXPOSED_READY_TIMEOUT}    ${FAST_RETRY_INTERVAL}    Exposed Service Should Contain Nginx    ${service_name}
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}    expected_status=ANY
     Should Be Equal As Strings    ${response.status_code}    204
 
 Execute Exposed Service With Insufficient Resources
@@ -237,6 +218,96 @@ Fetch Quotas Response
     Should Be Equal As Strings    ${resp.status_code}    200
     RETURN    ${resp}
 
+OSCAR Kueue Config Should Be Enabled
+    [Documentation]    Fail fast when this quota suite is executed against a cluster without Kueue enabled.
+    ${resp}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/config
+    ${config}=    Evaluate    json.loads($resp.content)["config"]    json
+    ${enabled}=    Get From Dictionary    ${config}    kueue_enable
+    Should Be True    ${enabled}    Kueue must be enabled in OSCAR to run quotas-user.robot
+
+Wait For Quotas Service Ready
+    [Documentation]    Poll a service until OSCAR reports that it can be invoked.
+    [Arguments]    ${service_name}
+    Wait Until Keyword Succeeds    120s    ${FAST_RETRY_INTERVAL}    Quotas Service Should Be Ready    ${service_name}
+
+Quotas Service Should Be Ready
+    [Documentation]    Assert service readiness for the given service name.
+    [Arguments]    ${service_name}
+    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}    expected_status=200
+    ${payload}=    Evaluate    json.loads($response.content)    json
+    ${status}=    Evaluate    (lambda d: d.get('status') if not isinstance(d.get('status'), dict) else d['status'].get('state') or d['status'].get('phase') or d['status'].get('condition'))(${payload})    json
+    ${ready}=    Evaluate    str(${status}).lower() in ("ready","running","available","succeeded") or bool(${payload}.get('ready')) or bool(${payload}.get('token'))
+    Should Be True    ${ready}    Service ${service_name} not ready yet (status=${status})
+
+Get Invocation Headers
+    [Documentation]    Return headers for direct service invocation, respecting local testing auth.
+    ${headers}=    Run Keyword If    '${LOCAL_TESTING}'=='True'    Set Variable    ${HEADERS_OSCAR}    ELSE    Set Variable    ${HEADERS}
+    RETURN    ${headers}
+
+POST Run With Short Timeout
+    [Documentation]    Invoke /run with a bounded client timeout so readiness failures do not wait for ingress 504.
+    [Arguments]    ${service_name}    ${body}
+    ${response}=    POST Run With Timeout    ${service_name}    ${body}    ${RUN_REQUEST_TIMEOUT}
+    RETURN    ${response}
+
+POST Run With Timeout
+    [Documentation]    Invoke /run with a caller-provided client timeout.
+    [Arguments]    ${service_name}    ${body}    ${timeout}
+    ${headers}=    Get Invocation Headers
+    ${response}=    POST    url=${OSCAR_ENDPOINT}/run/${service_name}    expected_status=ANY    verify=${SSL_VERIFY}    headers=&{headers}    data=${body}    timeout=${timeout}
+    RETURN    ${response}
+
+Sync Invocation Should Contain Hello
+    [Documentation]    Invoke a synchronous service and assert the expected response.
+    [Arguments]    ${service_name}    ${body}
+    ${resp}=    POST Run With Short Timeout    ${service_name}    ${body}
+    Log    Sync response ${service_name}: status=${resp.status_code}, body=${resp.text}
+    Should Be Equal As Strings    ${resp.status_code}    200
+    Should Contain    ${resp.text}    Hello
+
+Sync Invocation Should Be Rejected By Kueue
+    [Documentation]    Invoke an oversized synchronous service and assert the backend rejects it after bounded Kueue admission wait.
+    [Arguments]    ${service_name}    ${body}
+    ${resp}=    POST Run With Timeout    ${service_name}    ${body}    ${RUN_REJECTION_TIMEOUT}
+    Log    Sync rejection response ${service_name}: status=${resp.status_code}, body=${resp.text}
+    Should Be Equal As Strings    ${resp.status_code}    400
+    Should Contain    ${resp.text}    invalid workload
+
+Service Resources Should Exceed Quotas
+    [Documentation]    Assert that an oversized service asks for more CPU or memory than the current user quota.
+    [Arguments]    ${service_body}
+    ${service}=    Evaluate    json.loads($service_body)    json
+    ${quota_resp}=    Fetch Quotas Response
+    ${quota_json}=    Evaluate    json.loads($quota_resp.content)    json
+    ${cpu_res}=    Get From Dictionary    ${quota_json["resources"]}    cpu
+    ${mem_res}=    Get From Dictionary    ${quota_json["resources"]}    memory
+    ${cpu_max}=    Get From Dictionary    ${cpu_res}    max
+    ${mem_max}=    Get From Dictionary    ${mem_res}    max
+    ${quota_cpu}=    Parse CPU Quantity To Float    ${cpu_max}
+    ${quota_mem}=    Parse Memory Quantity To Mib    ${mem_max}
+    ${service_cpu}=    Parse CPU Quantity To Float    ${service["cpu"]}
+    ${service_mem}=    Parse Memory Quantity To Mib    ${service["memory"]}
+    ${exceeds}=    Evaluate    ${service_cpu} > ${quota_cpu} or ${service_mem} > ${quota_mem}
+    Should Be True    ${exceeds}    Service resources cpu=${service_cpu}, memory=${service_mem}Mi do not exceed quota cpu=${quota_cpu}, memory=${quota_mem}Mi
+
+Async Job Should Have Status
+    [Documentation]    Poll /system/logs/{service} until at least one job has the expected status.
+    [Arguments]    ${service_name}    ${expected_status}
+    ${list_jobs}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${service_name}    expected_status=ANY
+    Should Be Equal As Strings    ${list_jobs.status_code}    200
+    ${job_status}=    Check Job Status    ${list_jobs}
+    Log    Async status ${service_name}: ${job_status}
+    Should Be Equal As Strings    ${job_status}    ${expected_status}
+
+Exposed Service Should Contain Nginx
+    [Documentation]    Poll an exposed service endpoint until nginx responds.
+    [Arguments]    ${service_name}
+    ${headers}=    Get Invocation Headers
+    ${response}=    GET    expected_status=ANY    url=${OSCAR_ENDPOINT}/system/services/${service_name}/exposed    verify=${SSL_VERIFY}    headers=&{headers}    timeout=${RUN_REQUEST_TIMEOUT}
+    Log    Exposed response ${service_name}: status=${response.status_code}, body=${response.text}
+    Should Be Equal As Strings    ${response.status_code}    200
+    Should Contain    ${response.text}    Welcome to nginx
+
 Compute Available CPU
     [Documentation]    Compute available CPU as max - used.
     [Arguments]    ${max_cpu}    ${used_cpu}
@@ -246,10 +317,10 @@ Compute Available CPU
     RETURN    ${available}
 
 Parse CPU Quantity To Float
-    [Documentation]    Convert CPU quantities (e.g., 500m, 2) to float cores.
+    [Documentation]    Convert CPU quantities to cores. Quota API numeric values are millicores; service values are cores.
     [Arguments]    ${quantity}
     ${quantity}=    Set Variable If    '${quantity}' == 'None' or '${quantity}' == ''    0    ${quantity}
-    ${value}=    Evaluate    (lambda q: float(q[:-1])/1000 if str(q).endswith('m') else float(q))(${quantity})
+    ${value}=    Evaluate    (lambda q: (lambda s: float(s[:-1]) / 1000 if s.endswith('m') else (float(s) / 1000 if re.fullmatch(r'[0-9]+(\\.[0-9]+)?', s) and float(s) > 100 else float(s)))(str(q)))($quantity)    re
     RETURN    ${value}
 
 Compute Parallel Limit
@@ -329,10 +400,10 @@ Count Completed Statuses
     RETURN    ${count}
 
 Parse Memory Quantity To Mib
-    [Documentation]    Convert memory quantities (e.g., 256Mi, 1Gi) to MiB as float.
+    [Documentation]    Convert memory quantities to MiB. Quota API numeric values are bytes; service values use units.
     [Arguments]    ${quantity}
     ${qstr}=    Set Variable If    '${quantity}' == 'None' or '${quantity}' == ''    0Mi    ${quantity}
-    ${value}=    Evaluate    (lambda q: (lambda m: float(m.group(1)) * {'ki':1/1024,'mi':1,'gi':1024,'ti':1048576}.get((m.group(2) or 'mi').lower(),1))(re.match(r'([0-9.]+)([A-Za-z]+)?', str(q))))('${qstr}')    re
+    ${value}=    Evaluate    (lambda q: (lambda s: float(s) / 1048576 if re.fullmatch(r'[0-9]+(\\.[0-9]+)?', s) and float(s) > 1048576 else (lambda m: float(m.group(1)) * {'ki':1/1024,'mi':1,'gi':1024,'ti':1048576}.get((m.group(2) or 'mi').lower(),1))(re.match(r'([0-9.]+)([A-Za-z]+)?', s)))(str(q)))($qstr)    re
     RETURN    ${value}
 
 
@@ -352,12 +423,24 @@ Update User CPU Quota
     ${resp}=    PUT With Defaults    url=${OSCAR_ENDPOINT}/system/quotas/user/${USER}    data=${payload}    expected_status=200    headers=${HEADERS_OSCAR}
     Log    ${resp.content}
 
-Cleanup Sleep Service
-    [Documentation]    Remove jobs and service if present, and delete temporary files.
+Cleanup Quotas Services
+    [Documentation]    Remove jobs and services created by this suite, and delete temporary files.
     Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true
     Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
+    Run Keyword And Ignore Error    Cleanup Generated Service    sync-correct-resources-${RANDOM_STRING}
+    Run Keyword And Ignore Error    Cleanup Generated Service    sync-insufficient-${RANDOM_STRING}
+    Run Keyword And Ignore Error    Cleanup Generated Service    async-correct-resources-${RANDOM_STRING}
+    Run Keyword And Ignore Error    Cleanup Generated Service    async-insufficient-${RANDOM_STRING}
+    Run Keyword And Ignore Error    Cleanup Generated Service    exposed-correct-${RANDOM_STRING}
+    Run Keyword And Ignore Error    Cleanup Generated Service    exposed-insufficient-${RANDOM_STRING}
     Run Keyword And Ignore Error    Clean Test Artifacts    ${DATA_DIR}/service_file.json
     Run Keyword And Ignore Error    Clean Test Artifacts    ${DATA_DIR}/exposed_service_file.json
+
+Cleanup Generated Service
+    [Documentation]    Delete logs and service for one generated service name.
+    [Arguments]    ${service_name}
+    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${service_name}?all=true    expected_status=ANY
+    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}    expected_status=ANY
 
 Restore User Memory Quota
     [Documentation]    Restore memory quota to original value if it was captured.
@@ -421,6 +504,8 @@ Prepare Exposed Service With Correct Resources
     [Arguments]    ${service_name}
     ${service_content}=    Get File    ${DATA_DIR}/expose_services/nginx_expose.yaml
     ${service_content}=    Set Service File VO    ${service_content}
+    ${script_content}=    Get File    ${NGINX_SCRIPT_FILE}
+    ${service_content}=    Set Service File Script    ${service_content}    ${script_content}
 
     VAR    ${modified_content}=    ${service_content}[functions][oscar][0][oscar-cluster]
     Set To Dictionary    ${modified_content}    name=${service_name}
@@ -435,6 +520,8 @@ Prepare Exposed Service With Insufficient Resources
     [Arguments]    ${service_name}
     ${service_content}=    Get File    ${DATA_DIR}/expose_services/nginx_expose.yaml
     ${service_content}=    Set Service File VO    ${service_content}
+    ${script_content}=    Get File    ${NGINX_SCRIPT_FILE}
+    ${service_content}=    Set Service File Script    ${service_content}    ${script_content}
     
     VAR    ${modified_content}=    ${service_content}[functions][oscar][0][oscar-cluster]
     Set To Dictionary    ${modified_content}    name=${service_name}
