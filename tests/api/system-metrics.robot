@@ -52,7 +52,10 @@ OSCAR System Metrics Explicit Range
 OSCAR System Metrics Sync Invocation
     [Documentation]    Create a service, invoke it synchronously and verify the sync request appears in metrics.
     Ensure Invocation Service Ready
-    Invoke Sync Metrics Service
+    Wait Until Keyword Succeeds
+    ...    ${SERVICE_TIMEOUT}
+    ...    ${SERVICE_RETRY_INTERVAL}
+    ...    Invoke Sync Metrics Service
     Wait Until Keyword Succeeds
     ...    ${METRICS_TIMEOUT}
     ...    ${METRICS_RETRY_INTERVAL}
