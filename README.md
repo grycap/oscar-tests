@@ -101,10 +101,7 @@ If you are testing an OSCAR deployment in localhost, you can override SSL verifi
 robot -V variables/.env-localhost.yaml -v SSL_VERIFY:False -v LOCAL_TESTING:True -d robot_results tests/api/service-lifecycle.robot
 ```
 
-You can run stress tests with [Locust](https://locust.io) via:
-```sh
-robot -V variables/.env-cluster.yaml -d robot_results tests/locust/stress-locust.robot
-````
+Scalability and Locust-based stress tests are documented in [`tests/scalability/README.md`](tests/scalability/README.md). That guide covers how the tests are executed, how quota-aware load plans are computed, which artifacts are produced, and how to open the D3-based static viewer for one or more experiments.
 
 ### 🧰 Using the Makefile Helper
 
@@ -140,13 +137,16 @@ The repository ships with a `Makefile` that auto-discovers the available credent
   make test auth-<auth-config> <cluster-config> ROBOT_SUITE=all
   ```
   Each suite is executed separately with results stored under `robot_results/<suite-name>/`.
-
-You can see the results of the stress test with:
-```sh
-open "$(ls -t robot_results/locust/*.html | head -1)"    # macOS
-# or
-xdg-open "$(ls -t robot_results/locust/*.html | head -1)" # Linux
-```
+- Remove previous scalability artifacts:
+  ```sh
+  make clean-scalability-results
+  ```
+  This deletes `robot_results/scalability`, including experiment JSON files, Locust CSV/HTML reports, and the generated viewer data.
+- Remove all Robot Framework results:
+  ```sh
+  make clean-results
+  ```
+  This deletes the full `robot_results` directory. Both cleanup targets honor `ROBOT_OUTPUT_DIR` if you override it.
 
 ### 🧪 Local kind Deployment Workflow
 

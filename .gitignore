@@ -4,6 +4,9 @@ variables/.env-*
 *.txt
 *.xml
 *.html
+!tests/scalability/viewer/index.html
 browser
 True
 robot_results
+__pycache__/
+*.py[cod]
