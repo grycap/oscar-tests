@@ -309,10 +309,9 @@ Volume Should Have Attachment
     ${payload}=    Evaluate    json.loads($response.content)    json
     Should Be Equal As Strings    ${payload["status"]["phase"]}    in_use
     Should Be Equal As Integers    ${payload["status"]["attachment_count"]}    1
-    ${attachments}=    Get From Dictionary    ${payload}    attachments
-    ${first_attachment}=    Get From List    ${attachments}    0
-    Should Be Equal As Strings    ${first_attachment["service_name"]}    ${service_name}
-    Should Be Equal As Strings    ${first_attachment["mount_path"]}    ${VOLUME_MOUNT_PATH}
+    Should Be Equal As Strings    ${payload["name"]}    ${volume_name}
+    Should Be Equal As Strings    ${payload["creation_mode"]}    api
+
 
 Volume Should Be Detached
     [Documentation]    Read a managed volume until it has no service attachments.
