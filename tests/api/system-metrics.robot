@@ -20,7 +20,7 @@ ${DAY_MAX_SECONDS}              90000
 ${METRICS_TIMEOUT}              180s
 ${METRICS_RETRY_INTERVAL}       10s
 ${SERVICE_TIMEOUT}              210s
-${SERVICE_RETRY_INTERVAL}       5s
+${SERVICE_RETRY_INTERVAL}       10s
 ${INVOCATION_SERVICE_NAME}      ${EMPTY}
 ${EXPOSED_SERVICE_NAME}         ${EMPTY}
 ${INVOCATION_SERVICE_FILE}      ${DATA_DIR}/metrics_invocation_service_file.json
