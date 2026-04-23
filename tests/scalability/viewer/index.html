@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OSCAR Scalability Experiments</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>OSCAR Scalability Experiments</h1>
+      <p>Compare synchronous invocations, asynchronous submissions, and job lifecycle timings.</p>
+    </div>
+    <div class="toolbar">
+      <label for="experimentSelect">Experiment</label>
+      <select id="experimentSelect"></select>
+    </div>
+  </header>
+
+  <main>
+    <section class="summary" id="summary"></section>
+
+    <section>
+      <h2>Platform Baseline</h2>
+      <p id="clusterEndpoint" class="endpoint-line"></p>
+      <div class="baseline-split">
+        <div>
+          <h3>Deployed Service</h3>
+          <div id="serviceCards" class="baseline-grid"></div>
+        </div>
+        <div>
+          <h3>Cluster Status (/system/status)</h3>
+          <div id="clusterResourceCards" class="baseline-grid"></div>
+        </div>
+        <div>
+          <h3>User Quotas (/system/quotas/user)</h3>
+          <div id="quotaCards" class="baseline-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="invocationBaselineSection">
+      <h2>Invocation Baseline</h2>
+      <p class="section-note">Isolated calls measured after the service is reported as ready and before the Locust load steps. This is not a guaranteed node-level cold start; Docker image cache state is not controlled.</p>
+      <div id="invocationBaselineCards" class="baseline-grid"></div>
+      <details class="details-block">
+        <summary>Baseline caveats</summary>
+        <ul id="invocationBaselineCaveats"></ul>
+      </details>
+    </section>
+
+    <section>
+      <h2>Key Findings</h2>
+      <ul id="findings" class="findings"></ul>
+    </section>
+
+    <section>
+      <h2>Latency Reading Guide</h2>
+      <div class="guide-grid">
+        <div class="guide-item">
+          <strong>Sync latency</strong>
+          <span>Full HTTP response time for <code>/run</code>. It includes OSCAR Manager, scheduling, execution, output handling, and the returned response.</span>
+        </div>
+        <div class="guide-item">
+          <strong>Async submit latency</strong>
+          <span>HTTP response time for <code>/job</code>. It measures how long OSCAR takes to accept the job, not how long the job takes to finish.</span>
+        </div>
+        <div class="guide-item">
+          <strong>Async end-to-end</strong>
+          <span>Elapsed time from job submission to final state, collected from OSCAR Manager after the load step.</span>
+        </div>
+        <div class="guide-item">
+          <strong>Async pre-run/run</strong>
+          <span>Pre-run time covers the interval from job creation until OSCAR reports execution start. It may include controller reconciliation, admission, scheduling, image handling, and container startup. Run time approximates the service execution lifecycle.</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Experiment Steps</h2>
+      <div class="table-wrap">
+        <table id="stepsTable">
+          <thead>
+            <tr>
+              <th data-help="Sync invokes POST /run/{service}. Async submits jobs through POST /job/{service}.">Mode</th>
+              <th data-help="Locust concurrent users configured for this run.">Users</th>
+              <th data-help="Completed HTTP requests recorded by Locust.">Requests</th>
+              <th data-help="Failed HTTP requests recorded by Locust.">Failures</th>
+              <th data-help="Failures divided by total requests.">Failure Rate</th>
+              <th data-help="Average request throughput reported by Locust.">Req/s</th>
+              <th data-help="95th percentile of sync invocation latency, or async job submission latency.">P95 Submit/Run</th>
+              <th data-help="Async job completion latency from submission to final state.">P95 End-to-End</th>
+              <th data-help="Async time from job creation until OSCAR reports execution start.">P95 Pre-run</th>
+              <th data-help="Async jobs not completed when the collector queried OSCAR Manager.">Unfinished Jobs</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="chart-grid">
+      <article>
+        <h2>Throughput vs Load</h2>
+        <p class="chart-note">HTTP requests completed per second by Locust.</p>
+        <div id="throughputChart" class="chart"></div>
+      </article>
+      <article>
+        <h2>HTTP Request Latency P95</h2>
+        <p class="chart-note">Sync is full <code>/run</code> response time. Async is only <code>/job</code> submission time.</p>
+        <div id="latencyChart" class="chart"></div>
+      </article>
+      <article>
+        <h2>Async End-to-End P95</h2>
+        <p class="chart-note">Job completion latency from submission to terminal state.</p>
+        <div id="completionChart" class="chart"></div>
+      </article>
+      <article>
+        <h2>HTTP Failure Rate</h2>
+        <p class="chart-note">HTTP failures divided by total Locust requests.</p>
+        <div id="failureChart" class="chart"></div>
+      </article>
+      <article>
+        <h2>Async Pre-run and Run P95</h2>
+        <p class="chart-note">Stacked p95 pre-run and run time for asynchronous jobs.</p>
+        <div id="lifecycleChart" class="chart"></div>
+      </article>
+      <article>
+        <h2>Job Status Composition</h2>
+        <p class="chart-note">Final job states collected after the async settle period.</p>
+        <div id="statusChart" class="chart"></div>
+      </article>
+    </section>
+
+    <section id="reproducibilitySection">
+      <h2>Reproducibility</h2>
+      <p class="section-note">Command captured when the experiment was launched. Token and credential contents are not embedded.</p>
+      <div class="command-block">
+        <h3>Command</h3>
+        <pre id="reproducibilityCommand"></pre>
+      </div>
+      <details class="details-block">
+        <summary>Reproducibility notes</summary>
+        <ul id="reproducibilityNotes"></ul>
+      </details>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="../../../robot_results/scalability/viewer/data/experiments.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

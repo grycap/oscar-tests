@@ -1,5 +1,5 @@
 # Targets that should not be treated as positional arguments.
-RESERVED_GOALS := test help list
+RESERVED_GOALS := test help list clean-results clean-scalability-results
 .DEFAULT_GOAL := help
 
 OTHER_GOALS := $(filter-out $(RESERVED_GOALS),$(MAKECMDGOALS))
@@ -41,6 +41,7 @@ SUITE_LIST := $(shell find tests -type f -name '*.robot' | sort)
 
 ROBOT ?= robot
 ROBOT_SUITE ?= tests/api/service-lifecycle.robot
+ROBOT_ARGS ?=
 ROBOT_OUTPUT_DIR ?= robot_results
 
 AUTH_EXAMPLE := $(firstword $(AUTH_OPTIONS))
@@ -62,13 +63,23 @@ ifeq ($(filter test,$(MAKECMDGOALS)),test)
   endif
 endif
 
-.PHONY: test help list
+.PHONY: test help list clean-results clean-scalability-results
 
 test:
 	@echo "Auth config: $(AUTH_FILE)"
 	@echo "Cluster config: $(CLUSTER_FILE)"
+	@echo "Robot suite: $(ROBOT_SUITE)"
+	@echo "Robot args: $(ROBOT_ARGS)"
 ifneq ($(ROBOT_SUITE),all)
-	$(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) -d $(ROBOT_OUTPUT_DIR) $(ROBOT_SUITE)
+	OSCAR_TEST_AUTH_GOAL="$(AUTH_GOAL)" \
+	OSCAR_TEST_CLUSTER_GOAL="$(CLUSTER_GOAL)" \
+	OSCAR_TEST_AUTH_FILE="$(AUTH_FILE)" \
+	OSCAR_TEST_CLUSTER_FILE="$(CLUSTER_FILE)" \
+	OSCAR_TEST_ROBOT="$(ROBOT)" \
+	OSCAR_TEST_ROBOT_SUITE="$(ROBOT_SUITE)" \
+	OSCAR_TEST_ROBOT_ARGS="$(ROBOT_ARGS)" \
+	OSCAR_TEST_ROBOT_OUTPUT_DIR="$(ROBOT_OUTPUT_DIR)" \
+	$(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d $(ROBOT_OUTPUT_DIR) $(ROBOT_SUITE)
 else
 	@echo "Running all Robot test suites found under tests/."
 	@if [ -z "$(strip $(SUITE_LIST))" ]; then \
@@ -83,13 +94,39 @@ else
 	  out_dir="$(ROBOT_OUTPUT_DIR)/$${safe_dir}"; \
 	  echo "-> $$suite (output: $$out_dir)"; \
 	  mkdir -p "$$out_dir"; \
-	  $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) -d "$$out_dir" "$$suite"; \
+	  OSCAR_TEST_AUTH_GOAL="$(AUTH_GOAL)" \
+	  OSCAR_TEST_CLUSTER_GOAL="$(CLUSTER_GOAL)" \
+	  OSCAR_TEST_AUTH_FILE="$(AUTH_FILE)" \
+	  OSCAR_TEST_CLUSTER_FILE="$(CLUSTER_FILE)" \
+	  OSCAR_TEST_ROBOT="$(ROBOT)" \
+	  OSCAR_TEST_ROBOT_SUITE="$$suite" \
+	  OSCAR_TEST_ROBOT_ARGS="$(ROBOT_ARGS)" \
+	  OSCAR_TEST_ROBOT_OUTPUT_DIR="$$out_dir" \
+	  $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d "$$out_dir" "$$suite"; \
 	done
 endif
+
+clean-results:
+	@if [ -z "$(strip $(ROBOT_OUTPUT_DIR))" ] || [ "$(ROBOT_OUTPUT_DIR)" = "/" ]; then \
+	  echo "Refusing to remove unsafe ROBOT_OUTPUT_DIR='$(ROBOT_OUTPUT_DIR)'"; \
+	  exit 1; \
+	fi
+	@echo "Removing Robot results: $(ROBOT_OUTPUT_DIR)"
+	rm -rf "$(ROBOT_OUTPUT_DIR)"
+
+clean-scalability-results:
+	@if [ -z "$(strip $(ROBOT_OUTPUT_DIR))" ] || [ "$(ROBOT_OUTPUT_DIR)" = "/" ]; then \
+	  echo "Refusing to remove unsafe ROBOT_OUTPUT_DIR='$(ROBOT_OUTPUT_DIR)'"; \
+	  exit 1; \
+	fi
+	@echo "Removing scalability results: $(ROBOT_OUTPUT_DIR)/scalability"
+	rm -rf "$(ROBOT_OUTPUT_DIR)/scalability"
 
 help:
 	@echo "Usage:"
 	@echo "  make test auth-<auth config> <cluster config>"
+	@echo "  make clean-results"
+	@echo "  make clean-scalability-results"
 	@echo ""
 	@echo "Available auth configurations:"
 	@$(if $(AUTH_OPTIONS),printf '  %s\n' $(AUTH_OPTIONS),echo '  (none found)')
@@ -110,7 +147,12 @@ endif
 	@echo "Optional overrides:"
 	@echo "  ROBOT=<robot command> (default: $(ROBOT))"
 	@echo "  ROBOT_SUITE=<suite path> (default: $(ROBOT_SUITE))"
+	@echo "  ROBOT_ARGS=<extra Robot args, e.g. -v NAME:value>"
 	@echo "  ROBOT_OUTPUT_DIR=<dir> (default: $(ROBOT_OUTPUT_DIR))"
+	@echo ""
+	@echo "Cleanup:"
+	@echo "  make clean-results              Remove $(ROBOT_OUTPUT_DIR)"
+	@echo "  make clean-scalability-results  Remove $(ROBOT_OUTPUT_DIR)/scalability"
 
 list:
 	@echo "Available auth configurations:"

@@ -6,13 +6,15 @@ Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/service.resource
 Library             OperatingSystem
 Library             Process
+Library             RequestsLibrary
 
 Suite Setup         Setup Stress Environment
 Suite Teardown      Teardown Stress Environment
 
 
 *** Variables ***
-${LOCUSTFILE}                   ${CURDIR}/oscar_api.py
+${SCALABILITY_SRC_DIR}          ${CURDIR}/src
+${LOCUSTFILE}                   ${SCALABILITY_SRC_DIR}/oscar_api.py
 ${STRESS_SERVICE_BASE}          robot-test-cowsay
 ${STRESS_SERVICE_NAME}          ${STRESS_SERVICE_BASE}
 ${LOCUST_WAIT_MIN}              1
@@ -23,7 +25,7 @@ ${SMOKE_RUN_TIME}               5s
 ${SUSTAINED_USERS}              20
 ${SUSTAINED_SPAWN_RATE}         5
 ${SUSTAINED_RUN_TIME}           1m
-${LOCUST_OUTPUT_DIR}            ${EXECDIR}/robot_results/locust
+${LOCUST_OUTPUT_DIR}            ${EXECDIR}/robot_results/scalability/stress-api
 ${LOCUST_OUTPUT_PREFIX}         ${LOCUST_OUTPUT_DIR}/latest
 
 
@@ -47,8 +49,8 @@ Setup Stress Environment
     Create Directory    ${LOCUST_OUTPUT_DIR}
     ${output_prefix}=    Catenate    SEPARATOR=/    ${LOCUST_OUTPUT_DIR}    ${service_name}
     Set Suite Variable    ${LOCUST_OUTPUT_PREFIX}    ${output_prefix}
+    Check Valid OIDC Token
     ${access_token}=    Get Access Token
-    Check JWT Expiration    ${access_token}
     Set Suite Variable    ${ACCESS_TOKEN}    ${access_token}
     Set Environment Variable    OSCAR_ACCESS_TOKEN    ${access_token}
     Set Environment Variable    OSCAR_SERVICE_NAME    ${STRESS_SERVICE_NAME}
@@ -80,7 +82,9 @@ Ensure Stress Service Exists
     [Documentation]    Create the stress service if it is not already present.
     ${service_url}=    Catenate    SEPARATOR=    ${OSCAR_ENDPOINT}/system/services/    ${STRESS_SERVICE_NAME}
     ${response}=    GET With Defaults    ${service_url}    expected_status=ANY
-    Run Keyword If    '${response.status_code}'=='200'    RETURN
+    IF    '${response.status_code}'=='200'
+        RETURN
+    END
     Prepare Stress Service File
     ${body}=    Get File    ${DATA_DIR}/stress_service.json
     ${create_response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
