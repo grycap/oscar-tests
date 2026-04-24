@@ -1,0 +1,37 @@
+functions:
+  oscar:
+    - oscar-cluster:
+        name: node-red
+        cpu: "1.0"
+        memory: 2Gi
+        image: ghcr.io/grycap/oscar-flows
+        script: |
+          #!/bin/sh
+
+          mkdir -p $NODE_RED_DIRECTORY
+
+          PASSWORD=${PASSWORD:-"admin"}
+          NODE_RED_PWD_HASH=$(echo "$PASSWORD" | node-red admin hash-pw | cut -d' ' -f2)
+
+          node-red --port 1880 --userDir $NODE_RED_DIRECTORY \
+            -D uiHost="::" \
+            -D httpRoot=$NODE_RED_BASE_URL \
+            -D credentialSecret=false \
+            -D contextStorage.default.module=localfilesystem \
+            -D adminAuth="{\"type\":\"credentials\",\"users\":[{\"username\":\"admin\",\"password\":\"$NODE_RED_PWD_HASH\",\"permissions\":\"*\"}]}"
+        alpine: true
+        environment:
+          variables:
+            NODE_RED_BASE_URL: "/system/services/node-red/exposed"
+            NODE_RED_DIRECTORY: "/mnt/node-red"
+          secrets:
+            PASSWORD: "admin"
+        mount:
+          storage_provider: minio.default
+          path: node-red
+        expose:
+          min_scale: 1
+          max_scale: 1
+          api_port: 1880
+          cpu_threshold: 90
+          rewrite_target: true
