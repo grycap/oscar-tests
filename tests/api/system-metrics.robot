@@ -96,6 +96,38 @@ OSCAR System Metrics Invalid Range
     Log    ${response.content}
     Should Contain    ${response.content}    error
 
+OSCAR System Metrics Hidden Service Is Not Visible To Other User
+    [Documentation]    Create a private service with one OIDC user and verify another OIDC user cannot see its metrics.
+    Ensure Auxiliary Metrics Authentication
+    Ensure Invocation Service Ready
+    Wait Until Keyword Succeeds
+    ...    ${SERVICE_TIMEOUT}
+    ...    ${SERVICE_RETRY_INTERVAL}
+    ...    Invoke Sync Metrics Service
+    Wait Until Keyword Succeeds
+    ...    ${METRICS_TIMEOUT}
+    ...    ${METRICS_RETRY_INTERVAL}
+    ...    Service Metric Should Be At Least
+    ...    ${INVOCATION_SERVICE_NAME}
+    ...    requests-sync-per-service
+    ...    1
+    ${end}=    Current Metrics End Timestamp
+    ${response}=    GET With Defaults
+    ...    url=${OSCAR_ENDPOINT}/system/metrics/${INVOCATION_SERVICE_NAME}?metric=requests-sync-per-service&start=${METRICS_TEST_START}&end=${end}
+    ...    expected_status=403
+    ...    headers=${HEADERS2}
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    403
+    ${breakdown}=    Fetch Metrics Breakdown
+    ...    ?start=${METRICS_TEST_START}&end=${end}&group_by=service
+    ...    ${HEADERS2}
+    ${items}=    Get From Dictionary    ${breakdown}    items
+    ${contains_hidden_service}=    Evaluate
+    ...    any(item.get("key") == $INVOCATION_SERVICE_NAME for item in $items)
+    Should Be True
+    ...    not ${contains_hidden_service}
+    ...    msg=Metrics breakdown for the auxiliary user unexpectedly includes ${INVOCATION_SERVICE_NAME}
+
 
 *** Keywords ***
 Initialize Metrics Test Context
@@ -109,6 +141,18 @@ Initialize Metrics Test Context
     ...    datetime
     Set Suite Variable    ${METRICS_TEST_START}    ${start}
     Log    Metrics test range starts at ${METRICS_TEST_START}
+
+Ensure Auxiliary Metrics Authentication
+    [Documentation]    Ensure a second OIDC user is available for visibility checks.
+    Skip If    '${LOCAL_TESTING}'=='True'    Auxiliary OIDC authentication is not available in local testing.
+    ${has_headers2}=    Run Keyword And Return Status    Variable Should Exist    \${HEADERS2}
+    IF    not ${has_headers2}
+        ${has_multi_user_auth}=    Run Keyword And Return Status    Keyword Should Exist    Checks Valids OIDC Token
+        Skip If    not ${has_multi_user_auth}    Auxiliary authentication keyword is not available.
+        Checks Valids OIDC Token
+        ${has_headers2}=    Run Keyword And Return Status    Variable Should Exist    \${HEADERS2}
+        Skip If    not ${has_headers2}    Auxiliary authentication headers are not available.
+    END
 
 Ensure Invocation Service Ready
     [Documentation]    Create the sync/async test service if it is not already available.
@@ -186,6 +230,15 @@ Fetch System Metrics
     ${metrics}=    Evaluate    json.loads($response.content)    json
     Should Be True    isinstance($metrics, dict)    msg=Expected /system/metrics to return a JSON object
     RETURN    ${metrics}
+
+Fetch Metrics Breakdown
+    [Documentation]    Fetch /system/metrics/breakdown and return the decoded JSON body.
+    [Arguments]    ${query}=${EMPTY}    ${headers}=${HEADERS}
+    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/metrics/breakdown${query}    headers=${headers}
+    Log    ${response.content}
+    ${breakdown}=    Evaluate    json.loads($response.content)    json
+    Should Be True    isinstance($breakdown, dict)    msg=Expected /system/metrics/breakdown to return a JSON object
+    RETURN    ${breakdown}
 
 Fetch Service Metric
     [Documentation]    Fetch a single metric for a service within the integration test window.
