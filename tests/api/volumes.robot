@@ -289,7 +289,7 @@ Volume List Should Contain
     [Documentation]    Assert that a volume name is present in a list response.
     [Arguments]    ${response}    ${volume_name}
     ${payload}=    Evaluate    json.loads($response.content)    json
-    ${volumes}=    Set Variable    ${payload}[managed_volume]
+    ${volumes}=    Set Variable    ${payload}
     ${count}=    Get Length    ${volumes}
     Should Be True    ${count} > 0
     ${first_volume}=    Get From List    ${volumes}    0
@@ -301,7 +301,7 @@ Volume List Should Not Contain
     [Documentation]    Assert that a volume name is absent from a list response.
     [Arguments]    ${response}    ${volume_name}
     ${payload}=    Evaluate    json.loads($response.content)    json
-    ${volumes}=    Set Variable    ${payload}[managed_volume]
+    ${volumes}=    Set Variable    ${payload}
     Log         ${volumes}
     ${count}=    Get Length    ${volumes}
     Should Not Contain    ${volumes}    ${volume_name}
