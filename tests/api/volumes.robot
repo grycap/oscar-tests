@@ -281,15 +281,22 @@ Volume List Should Contain
     [Documentation]    Assert that a volume name is present in a list response.
     [Arguments]    ${response}    ${volume_name}
     ${payload}=    Evaluate    json.loads($response.content)    json
-    ${names}=    Evaluate    [item.get("name") for item in $payload]
-    Should Contain    ${names}    ${volume_name}
+    ${volumes}=    Set Variable    ${payload}[managed_volume]
+    ${count}=    Get Length    ${volumes}
+    Should Be True    ${count} > 0
+    ${first_volume}=    Get From List    ${volumes}    0
+    ${volume_name_from_dict}=    Get From Dictionary    ${first_volume}    name
+    Log         ${volume_name_from_dict}
+    Should Contain    ${volume_name_from_dict}    ${volume_name}
 
 Volume List Should Not Contain
     [Documentation]    Assert that a volume name is absent from a list response.
     [Arguments]    ${response}    ${volume_name}
     ${payload}=    Evaluate    json.loads($response.content)    json
-    ${names}=    Evaluate    [item.get("name") for item in $payload]
-    Should Not Contain    ${names}    ${volume_name}
+    ${volumes}=    Set Variable    ${payload}[managed_volume]
+    Log         ${volumes}
+    ${count}=    Get Length    ${volumes}
+    Should Not Contain    ${volumes}    ${volume_name}
 
 Service Should Report Volume
     [Documentation]    Read a service until its volume status is visible.
