@@ -2,6 +2,7 @@
 Documentation       Tests for OSCAR managed volumes through /system/volumes.
 
 Library             RequestsLibrary
+Library             Collections
 Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS}
 Resource            ${CURDIR}/../../resources/files.resource
 
@@ -45,6 +46,13 @@ OSCAR List API Volumes
     ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Volume List Should Contain    ${response}    ${CRUD_VOLUME_NAME}
+
+OSCAR Volume Quotas Match Managed Volumes
+    [Documentation]    /system/quotas must count only OSCAR-managed volumes returned by /system/volumes.
+    ${volumes_response}=    GET    url=${OSCAR_ENDPOINT}/system/volumes    expected_status=200
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
+    ${quotas_response}=    Fetch Volume Quotas Response
+    Assert Volume Quotas Match Managed Volumes    ${quotas_response}    ${volumes_response}
 
 OSCAR Reject Duplicate API Volume
     [Documentation]    Creating a managed volume with the same name in the same namespace must fail.
@@ -281,7 +289,7 @@ Volume List Should Contain
     [Documentation]    Assert that a volume name is present in a list response.
     [Arguments]    ${response}    ${volume_name}
     ${payload}=    Evaluate    json.loads($response.content)    json
-    ${volumes}=    Set Variable    ${payload}[managed_volume]
+    ${volumes}=    Set Variable    ${payload}
     ${count}=    Get Length    ${volumes}
     Should Be True    ${count} > 0
     ${first_volume}=    Get From List    ${volumes}    0
@@ -293,10 +301,60 @@ Volume List Should Not Contain
     [Documentation]    Assert that a volume name is absent from a list response.
     [Arguments]    ${response}    ${volume_name}
     ${payload}=    Evaluate    json.loads($response.content)    json
-    ${volumes}=    Set Variable    ${payload}[managed_volume]
+    ${volumes}=    Set Variable    ${payload}
     Log         ${volumes}
     ${count}=    Get Length    ${volumes}
     Should Not Contain    ${volumes}    ${volume_name}
+
+Fetch Volume Quotas Response
+    [Documentation]    Read user quotas and return the response containing the volumes quota section.
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/quotas/user    expected_status=200
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
+    Log    ${response.content}
+    ${payload}=    Evaluate    json.loads($response.content)    json
+    Dictionary Should Contain Key    ${payload}    volumes
+    RETURN    ${response}
+
+Assert Volume Quotas Match Managed Volumes
+    [Documentation]    Compare the volume quota usage with the managed volumes list.
+    [Arguments]    ${quotas_response}    ${volumes_response}
+    ${quota_payload}=    Evaluate    json.loads($quotas_response.content)    json
+    ${volumes_quota}=    Get From Dictionary    ${quota_payload}    volumes
+    Dictionary Should Contain Key    ${volumes_quota}    disk
+    Dictionary Should Contain Key    ${volumes_quota}    volumes
+    Dictionary Should Contain Key    ${volumes_quota}    max_disk_per_volume
+    Dictionary Should Contain Key    ${volumes_quota}    min_disk_per_volume
+    ${disk_quota}=    Get From Dictionary    ${volumes_quota}    disk
+    ${count_quota}=    Get From Dictionary    ${volumes_quota}    volumes
+    Dictionary Should Contain Key    ${disk_quota}    max
+    Dictionary Should Contain Key    ${disk_quota}    used
+    Dictionary Should Contain Key    ${count_quota}    max
+    Dictionary Should Contain Key    ${count_quota}    used
+    ${managed_volumes}=    Evaluate    json.loads($volumes_response.content)    json
+    ${managed_count}=    Get Length    ${managed_volumes}
+    ${quota_count_used}=    Get From Dictionary    ${count_quota}    used
+    Should Be Equal As Integers    ${quota_count_used}    ${managed_count}
+    ${managed_disk_bytes}=    Sum Managed Volume Storage Bytes    ${managed_volumes}
+    ${quota_disk_used}=    Get From Dictionary    ${disk_quota}    used
+    ${quota_disk_bytes}=    Parse Storage Quantity To Bytes    ${quota_disk_used}
+    Should Be Equal As Integers    ${quota_disk_bytes}    ${managed_disk_bytes}
+
+Sum Managed Volume Storage Bytes
+    [Documentation]    Sum the storage requests reported by /system/volumes.
+    [Arguments]    ${managed_volumes}
+    ${total}=    Set Variable    0
+    FOR    ${volume}    IN    @{managed_volumes}
+        ${size}=    Get From Dictionary    ${volume}    size
+        ${size_bytes}=    Parse Storage Quantity To Bytes    ${size}
+        ${total}=    Evaluate    ${total} + ${size_bytes}
+    END
+    RETURN    ${total}
+
+Parse Storage Quantity To Bytes
+    [Documentation]    Convert Kubernetes storage quantities into bytes for comparisons.
+    [Arguments]    ${quantity}
+    ${bytes}=    Evaluate    (lambda q: (lambda s: 0 if s in ("", "None") else (lambda m: int(float(m.group(1)) * {"": 1, "Ki": 1024, "Mi": 1048576, "Gi": 1073741824, "Ti": 1099511627776, "K": 1000, "M": 1000000, "G": 1000000000, "T": 1000000000000}.get(m.group(2) or "", 1)))(re.match(r"^([0-9.]+)([A-Za-z]*)$", s)))(str(q)))($quantity)    re
+    RETURN    ${bytes}
 
 Service Should Report Volume
     [Documentation]    Read a service until its volume status is visible.
