@@ -289,7 +289,8 @@ Volume List Should Contain
     [Documentation]    Assert that a volume name is present in a list response.
     [Arguments]    ${response}    ${volume_name}
     ${payload}=    Evaluate    json.loads($response.content)    json
-    ${volumes}=    Set Variable    ${payload}
+    ${volumes}=    Run Keyword If    isinstance($payload, list)    Set Variable    ${payload}
+    ...    ELSE    Get From Dictionary    ${payload}    managed_volume
     ${count}=    Get Length    ${volumes}
     Should Be True    ${count} > 0
     ${first_volume}=    Get From List    ${volumes}    0
@@ -301,7 +302,8 @@ Volume List Should Not Contain
     [Documentation]    Assert that a volume name is absent from a list response.
     [Arguments]    ${response}    ${volume_name}
     ${payload}=    Evaluate    json.loads($response.content)    json
-    ${volumes}=    Set Variable    ${payload}
+    ${volumes}=    Run Keyword If    isinstance($payload, list)    Set Variable    ${payload}
+    ...    ELSE    Get From Dictionary    ${payload}    managed_volume
     Log         ${volumes}
     ${count}=    Get Length    ${volumes}
     Should Not Contain    ${volumes}    ${volume_name}
@@ -331,6 +333,8 @@ Assert Volume Quotas Match Managed Volumes
     Dictionary Should Contain Key    ${count_quota}    max
     Dictionary Should Contain Key    ${count_quota}    used
     ${managed_volumes}=    Evaluate    json.loads($volumes_response.content)    json
+    ${managed_volumes}=    Run Keyword If    isinstance($managed_volumes, list)    Set Variable    ${managed_volumes}
+    ...    ELSE    Get From Dictionary    ${managed_volumes}    managed_volume
     ${managed_count}=    Get Length    ${managed_volumes}
     ${quota_count_used}=    Get From Dictionary    ${count_quota}    used
     Should Be Equal As Integers    ${quota_count_used}    ${managed_count}
