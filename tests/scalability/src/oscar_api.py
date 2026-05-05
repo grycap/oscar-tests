@@ -2,6 +2,7 @@
 Locust user definitions for stressing the OSCAR Manager API.
 
 Environment variables consumed:
+    OSCAR_AUTHORIZATION_HEADER -> Full Authorization header for authenticated endpoints.
     OSCAR_ACCESS_TOKEN -> Bearer token used for authenticated endpoints.
     OSCAR_SERVICE_NAME -> Target service name (defaults to robot-test-cowsay).
     LOCUST_WAIT_MIN    -> Minimum wait time between tasks (seconds, default 1).
@@ -16,8 +17,11 @@ from locust import HttpUser, between, task
 
 def _build_headers() -> Dict[str, str]:
     """Build common headers for API requests."""
+    authorization = os.getenv("OSCAR_AUTHORIZATION_HEADER", "").strip()
     access_token = os.getenv("OSCAR_ACCESS_TOKEN", "").strip()
-    if access_token:
+    if authorization:
+        pass
+    elif access_token:
         authorization = f"Bearer {access_token}"
     else:
         # Falling back to basic auth allows running in limited environments.
