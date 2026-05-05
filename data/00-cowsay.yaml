@@ -4,7 +4,7 @@ functions:
       name: robot-test-cowsay
       cpu: '1.0'
       vo: <VO>
-      memory: 1Gi
+      memory: 128Mi
       image: ghcr.io/grycap/cowsay
       script: 00-cowsay-script.sh
       input:
