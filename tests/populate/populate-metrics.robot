@@ -30,11 +30,11 @@ ${POPULATE_SERVICE_CPU}             0.5
 ${POPULATE_SERVICE_MEMORY}          256Mi
 ${POPULATE_EXPOSED_CPU}             0.5
 ${POPULATE_EXPOSED_MEMORY}          256Mi
-${POPULATE_SERVICE_FILE}            ${DATA_DIR}/simple-test.yaml
-${POPULATE_SERVICE_SCRIPT}          ${DATA_DIR}/simple-test-script.sh
+${POPULATE_SERVICE_FILE}            ${DATA_DIR}/00-cowsay.yaml
+${POPULATE_SERVICE_SCRIPT}          ${DATA_DIR}/00-cowsay-script.sh
 ${POPULATE_EXPOSED_SERVICE_FILE}    ${DATA_DIR}/expose_services/nginx_expose.yaml
 ${POPULATE_EXPOSED_SCRIPT}          ${DATA_DIR}/expose_services/nginxscript.sh
-${POPULATE_PAYLOAD_FILE}            ${DATA_DIR}/simple-test-input.payload
+${POPULATE_PAYLOAD_FILE}            ${DATA_DIR}/00-cowsay-invoke-body.json
 ${POPULATE_GENERATED_DIR}           ${DATA_DIR}/populate
 ${POPULATE_EXPOSED_USER_INDEX}      1
 ${POPULATE_SHARED_OWNER_INDEX}      0
@@ -54,7 +54,7 @@ Delete Populate Services If Requested
     Delete Populate Services
 
 Create Populate Services As Multiple Users
-    [Documentation]    Create simple-test and exposed services split between oscaruser00 and oscaruser01.
+    [Documentation]    Create cowsay and exposed services split between oscaruser00 and oscaruser01.
     [Tags]    populate    create
     Skip If    ${POPULATE_DELETE_ONLY}
     FOR    ${index}    IN RANGE    ${POPULATE_SERVICE_COUNT}
@@ -214,11 +214,11 @@ Teardown Populate Metrics Suite
     Remove Populate Generated Files
 
 Prepare Populate Service File
-    [Documentation]    Generate a simple-test service JSON body for one populated service.
+    [Documentation]    Generate a cowsay service JSON body for one populated service.
     [Arguments]    ${index}    ${service_name}
     ${yaml_content}=    Get File    ${POPULATE_SERVICE_FILE}
     ${service_content}=    Set Populate Service File VO    ${yaml_content}
-    ${modified_content}=    Set Variable    ${service_content}[functions][oscar][0][oscar-cluster]
+    ${modified_content}=    Get Populate Service Definition    ${service_content}
     ${script}=    Get File    ${POPULATE_SERVICE_SCRIPT}
     Set To Dictionary    ${modified_content}    script=${script}
     Set To Dictionary    ${modified_content}    name=${service_name}
@@ -240,7 +240,7 @@ Prepare Populate Exposed Service File
     [Arguments]    ${service_name}
     ${yaml_content}=    Get File    ${POPULATE_EXPOSED_SERVICE_FILE}
     ${service_content}=    Set Populate Exposed Service File VO    ${yaml_content}
-    ${modified_content}=    Set Variable    ${service_content}[functions][oscar][0][oscar-cluster]
+    ${modified_content}=    Get Populate Service Definition    ${service_content}
     ${script}=    Get File    ${POPULATE_EXPOSED_SCRIPT}
     Set To Dictionary    ${modified_content}    script=${script}
     Set To Dictionary    ${modified_content}    name=${service_name}
@@ -252,11 +252,11 @@ Prepare Populate Exposed Service File
     Create File    ${service_file}    ${service_content_json}
 
 Prepare Populate Shared Service File
-    [Documentation]    Generate a simple-test service JSON body visible to both users.
+    [Documentation]    Generate a cowsay service JSON body visible to both users.
     [Arguments]    ${service_name}
     ${yaml_content}=    Get File    ${POPULATE_SERVICE_FILE}
     ${service_content}=    Set Populate Service File VO    ${yaml_content}
-    ${modified_content}=    Set Variable    ${service_content}[functions][oscar][0][oscar-cluster]
+    ${modified_content}=    Get Populate Service Definition    ${service_content}
     ${script}=    Get File    ${POPULATE_SERVICE_SCRIPT}
     Set To Dictionary    ${modified_content}    script=${script}
     Set To Dictionary    ${modified_content}    name=${service_name}
@@ -280,15 +280,27 @@ Set Populate Service File VO
     [Documentation]    Load a service YAML string and add the VO field expected by OSCAR.
     [Arguments]    ${service_content}
     ${service_content}=    yaml.Safe Load    ${service_content}
-    Set To Dictionary    ${service_content}[functions][oscar][0][oscar-cluster]    vo=${VO}
+    ${modified_content}=    Get Populate Service Definition    ${service_content}
+    Set To Dictionary    ${modified_content}    vo=${VO}
     RETURN    ${service_content}
 
 Set Populate Exposed Service File VO
     [Documentation]    Load the exposed service YAML string and add the VO field expected by OSCAR.
     [Arguments]    ${service_content}
     ${service_content}=    yaml.Safe Load    ${service_content}
-    Set To Dictionary    ${service_content}[functions][oscar][0][oscar-cluster]    vo=${VO}
+    ${modified_content}=    Get Populate Service Definition    ${service_content}
+    Set To Dictionary    ${modified_content}    vo=${VO}
     RETURN    ${service_content}
+
+Get Populate Service Definition
+    [Documentation]    Return the first OSCAR service definition regardless of its cluster key.
+    [Arguments]    ${service_content}
+    ${oscar_services}=    Get From Dictionary    ${service_content}[functions]    oscar
+    ${first_service_item}=    Get From List    ${oscar_services}    0
+    ${service_key_list}=    Get Dictionary Keys    ${first_service_item}
+    ${service_key}=    Get From List    ${service_key_list}    0
+    ${modified_content}=    Get From Dictionary    ${first_service_item}    ${service_key}
+    RETURN    ${modified_content}
 
 Populate Service Name For Index
     [Documentation]    Return the deterministic service name for an index in this run.
