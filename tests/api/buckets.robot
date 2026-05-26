@@ -6,7 +6,7 @@ Resource          ${CURDIR}/../../${AUTHENTICATION_PROCESS}
 Resource          ${CURDIR}/../../resources/files.resource
 
 Suite Setup       Check Valid OIDC Token
-Suite Teardown    Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
+Suite Teardown    Run Keywords    Cleanup Bucket Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
 
 
 *** Variables ***
@@ -229,6 +229,10 @@ Verify Bucket Public Delete
 
 
 *** Keywords ***
+Cleanup Bucket Resources
+    [Documentation]    Best-effort cleanup of the bucket created by this suite.
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${bucket_name}    expected_status=ANY    headers=${HEADERS}
+
 Get Key From Dictionary
     [Documentation]  Get the key from a dictionary
     [Arguments]    ${dict}

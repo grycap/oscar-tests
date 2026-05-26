@@ -1,5 +1,5 @@
 # Targets that should not be treated as positional arguments.
-RESERVED_GOALS := test help list clean-results clean-scalability-results
+RESERVED_GOALS := test py-test docker-test help list clean-results clean-scalability-results
 .DEFAULT_GOAL := help
 
 OTHER_GOALS := $(filter-out $(RESERVED_GOALS),$(MAKECMDGOALS))
@@ -63,7 +63,7 @@ ifeq ($(filter test,$(MAKECMDGOALS)),test)
   endif
 endif
 
-.PHONY: test help list clean-results clean-scalability-results
+.PHONY: test py-test docker-test help list clean-results clean-scalability-results
 
 test:
 	@echo "Auth config: $(AUTH_FILE)"
@@ -106,6 +106,51 @@ else
 	done
 endif
 
+PYTEST_SUITE ?= tests/python_tests/
+
+py-test:
+	@echo "Auth config: $(AUTH_FILE)"
+	@echo "Cluster config: $(CLUSTER_FILE)"
+	@echo "Python suite: $(PYTEST_SUITE)"
+	PYTHONPATH=tests/python_tests \
+	OSCAR_TEST_AUTH_GOAL="$(AUTH_GOAL)" \
+	OSCAR_TEST_CLUSTER_GOAL="$(CLUSTER_GOAL)" \
+	OSCAR_TEST_AUTH_FILE="$(AUTH_FILE)" \
+	OSCAR_TEST_CLUSTER_FILE="$(CLUSTER_FILE)" \
+	python3 -m pytest $(PYTEST_SUITE) -v --tb=short
+
+docker-test:
+	@echo "Building Docker image..."
+	docker build -t oscar-tests .
+	@echo ""
+	@echo "Running all tests inside the container..."
+	docker run --rm -i \
+	  -v "$(PWD):/workspace" \
+	  -w /workspace \
+	  oscar-tests \
+	  bash -c '\
+	    echo "=== Installing oscar-cli ==="; \
+	    go install github.com/grycap/oscar-cli@latest; \
+	    echo ""; \
+	    echo "=== Installing oscar-python ==="; \
+	    pip install --no-cache-dir oscar-python==1.3.3; \
+	    echo ""; \
+	    $(if $(filter command line,$(origin PYTEST_SUITE)),\
+	      echo "=== Running Python tests ==="; \
+	      PATH=$$PATH:/root/go/bin make py-test $(AUTH_GOAL) $(CLUSTER_GOAL) PYTEST_SUITE="$(PYTEST_SUITE)"; \
+	      echo "exit code: $$?"; \
+	    ,\
+	      echo "=== Skipping Python tests (set PYTEST_SUITE to run) ==="; \
+	    ) \
+	    echo ""; \
+	    $(if $(filter command line,$(origin ROBOT_SUITE)),\
+	      echo "=== Running CLI Robot tests ==="; \
+	      PATH=$$PATH:/root/go/bin make test $(AUTH_GOAL) $(CLUSTER_GOAL) ROBOT_SUITE="$(ROBOT_SUITE)"; \
+	      echo "exit code: $$?"; \
+	    ,\
+	      echo "=== Skipping Robot tests (set ROBOT_SUITE to run) ==="; \
+	    )'
+
 clean-results:
 	@if [ -z "$(strip $(ROBOT_OUTPUT_DIR))" ] || [ "$(ROBOT_OUTPUT_DIR)" = "/" ]; then \
 	  echo "Refusing to remove unsafe ROBOT_OUTPUT_DIR='$(ROBOT_OUTPUT_DIR)'"; \
@@ -138,6 +183,8 @@ ifneq ($(and $(AUTH_EXAMPLE),$(CLUSTER_EXAMPLE)),)
 	@echo "Example:"
 	@echo "  make test $(AUTH_EXAMPLE) $(CLUSTER_EXAMPLE_DISPLAY)"
 	@echo "  make test $(AUTH_EXAMPLE) $(CLUSTER_EXAMPLE_DISPLAY) ROBOT_SUITE=all"
+	@echo "  make py-test $(AUTH_EXAMPLE) $(CLUSTER_EXAMPLE_DISPLAY)"
+	@echo "  make docker-test $(AUTH_EXAMPLE) $(CLUSTER_EXAMPLE_DISPLAY)"
 	@echo ""
 endif
 	@echo "Notes:"
@@ -146,9 +193,10 @@ endif
 	@echo ""
 	@echo "Optional overrides:"
 	@echo "  ROBOT=<robot command> (default: $(ROBOT))"
-	@echo "  ROBOT_SUITE=<suite path> (default: $(ROBOT_SUITE))"
+	@echo "  ROBOT_SUITE=<suite path> (default: $(ROBOT_SUITE), use 'all' for all suites)"
 	@echo "  ROBOT_ARGS=<extra Robot args, e.g. -v NAME:value>"
 	@echo "  ROBOT_OUTPUT_DIR=<dir> (default: $(ROBOT_OUTPUT_DIR))"
+	@echo "  PYTEST_SUITE=<path or pattern> (default: $(PYTEST_SUITE))"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean-results              Remove $(ROBOT_OUTPUT_DIR)"

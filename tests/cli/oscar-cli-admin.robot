@@ -1,18 +1,20 @@
 *** Settings ***
 Documentation       Tests for the OSCAR CLI with username/password authentication against a deployed OSCAR cluster.
 
-Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS} 
-Resource            ${CURDIR}/../resources/files.resource
+Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS} 
+Resource            ${CURDIR}/../../resources/files.resource
+Resource            ${CURDIR}/../../resources/service.resource
 Library             String
 Library             Process
 
-Suite Teardown      Clean Test Artifacts        True    ${DATA_DIR}/00-cowsay-invoke-body-downloaded.json
+Suite Setup         Checks Valids OIDC Token
+Suite Teardown      Clean Test Artifacts            ${DATA_DIR}/00-cowsay-invoke-body-downloaded.json
 ...                     ${DATA_DIR}/service_file.yaml
 
 
 *** Variables ***
-${SERVICE_NAME}     robot-test-cowsay-admin
-${bucket_name}      robot-test-cowsay-admin
+${SERVICE_BASE}     robot-cli-admin
+${VOLUME_NAME}      robot-cli-vol-admin
 
 
 *** Test Cases ***
@@ -21,6 +23,8 @@ Admin Credentials Exist
     IF  not ${exists}
         Set Admin Credentials
     END
+    Assign Random Service Name
+    Set Suite Variable    ${bucket_name}    ${SERVICE_NAME}
 
     
 OSCAR CLI Installed
@@ -57,6 +61,70 @@ OSCAR CLI Cluster List
     Log    ${result.stdout}
     Should Contain    ${result.stdout}    robot-oscar-cluster-admin
 
+OSCAR CLI Health
+    [Documentation]    Check that OSCAR CLI shows health status
+    ${result}=    Run Process    oscar-cli    health    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+    Should Contain    ${result.stdout}    Health:
+
+OSCAR CLI Health JSON
+    [Documentation]    Check that OSCAR CLI shows health status in JSON
+    ${result}=    Run Process    oscar-cli    health    --output    json    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+    Should Contain    ${result.stdout}    status
+
+OSCAR CLI Metrics Summary
+    [Documentation]    Check that OSCAR CLI shows metrics summary
+    ${result}=    Run Process    oscar-cli    metrics    summary    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+    Should Contain    ${result.stdout}    services_count_active
+
+OSCAR CLI Quota Get
+    [Documentation]    Check that OSCAR CLI gets the user quota
+    ${result}=    Run Process    oscar-cli    quota    get      ${USER}    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+
+OSCAR CLI Volume List
+    [Documentation]    Check that OSCAR CLI lists volumes
+    ${result}=    Run Process    oscar-cli    volume    list    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+
+OSCAR CLI Volume Create
+    [Documentation]    Check that OSCAR CLI creates a volume
+    ${result}=    Run Process    oscar-cli    volume    create    ${VOLUME_NAME}    --size    1Gi    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+
+OSCAR CLI Volume Get
+    [Documentation]    Check that OSCAR CLI gets a volume
+    ${result}=    Run Process    oscar-cli    volume    get    ${VOLUME_NAME}    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+    Should Contain    ${result.stdout}    ${VOLUME_NAME}
+
+OSCAR CLI Volume Delete
+    [Documentation]    Check that OSCAR CLI deletes a volume
+    ${result}=    Run Process    oscar-cli    volume    delete    ${VOLUME_NAME}    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+
+OSCAR CLI Metrics Breakdown
+    [Documentation]    Check that OSCAR CLI shows metrics breakdown
+    ${result}=    Run Process    oscar-cli    metrics    breakdown      --group-by      service    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+
+OSCAR CLI Cluster Status
+    [Documentation]    Check that OSCAR CLI shows cluster status
+    ${result}=    Run Process    oscar-cli    cluster    status    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+
 OSCAR CLI Apply
     [Documentation]    Check that OSCAR CLI creates a service in the default cluster
     [Tags]    create
@@ -69,6 +137,25 @@ OSCAR CLI Apply
 OSCAR CLI List Services
     [Documentation]    Check that OSCAR CLI returns a list of services from the default cluster
     ${result}=    Run Process    oscar-cli    service    list    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+
+OSCAR CLI Service Deployment Status
+    [Documentation]    Check that OSCAR CLI shows service deployment status
+    ${result}=    Run Process    oscar-cli    service    deployment    status    ${SERVICE_NAME}    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+    Should Contain    ${result.stdout}    state
+
+OSCAR CLI Service Deployment Logs
+    [Documentation]    Check that OSCAR CLI shows service deployment logs
+    ${result}=    Run Process    oscar-cli    service    deployment    logs    ${SERVICE_NAME}    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+
+OSCAR CLI Metrics Service
+    [Documentation]    Check that OSCAR CLI shows metrics for a service
+    ${result}=    Run Process    oscar-cli    metrics    service    ${SERVICE_NAME}    stdout=True    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
 
@@ -174,13 +261,10 @@ Get Job Name From Logs
 Prepare Service File
     [Documentation]    Prepare the service file
     ${service_content}=    Get File    ${DATA_DIR}/00-cowsay.yaml
-    # Replace cluster name from robot-oscar-cluster to robot-oscar-cluster-admin
     ${service_content}=    Replace String    ${service_content}    robot-oscar-cluster:    robot-oscar-cluster-admin:
-    # Replace service name from robot-test-cowsay to robot-test-cowsay-admin
     ${service_content}=    Replace String    ${service_content}    name: robot-test-cowsay    name: ${SERVICE_NAME}
     ${service_content}=    Replace String    ${service_content}    robot-test-cowsay/input    ${SERVICE_NAME}/input
     ${service_content}=    Replace String    ${service_content}    robot-test-cowsay/output    ${SERVICE_NAME}/output
     ${service_content}=    Set Service File VO    ${service_content}
-    # Convert file content to YAML
     ${output}=    yaml.Dump    ${service_content}
     Create File    ${DATA_DIR}/service_file.yaml    ${output}

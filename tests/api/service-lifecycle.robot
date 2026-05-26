@@ -11,7 +11,7 @@ Resource            ${CURDIR}/../../resources/service.resource
 Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Assign Random Service Name
 
 
-Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
+Suite Teardown      Run Keywords    Cleanup Service Lifecycle Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
 
 
 *** Variables ***
@@ -204,7 +204,10 @@ OSCAR Delete Service
 
 
 *** Keywords ***
-
+Cleanup Service Lifecycle Resources
+    [Documentation]    Best-effort cleanup of service and logs created by this suite.
+    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true    expected_status=ANY
+    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=ANY
 
 #Delete Service Now
 #    ${del_response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}
