@@ -93,6 +93,13 @@ def _decode_basic_auth(b64_str):
 
 @pytest.fixture(scope="session")
 def auth_config():
+    auth_file = os.environ.get("OSCAR_TEST_AUTH_FILE")
+    if auth_file:
+        p = Path(auth_file)
+        if p.exists():
+            return load_yaml_env(p)
+        raise FileNotFoundError(f"Auth file defined in OSCAR_TEST_AUTH_FILE not found: {auth_file}")
+
     auth_goal = os.environ.get("OSCAR_TEST_AUTH_GOAL", "auth-keycloak")
     auth_slug = auth_goal.replace("auth-", "")
     paths = [
@@ -107,6 +114,13 @@ def auth_config():
 
 @pytest.fixture(scope="session")
 def cluster_config():
+    cluster_file = os.environ.get("OSCAR_TEST_CLUSTER_FILE")
+    if cluster_file:
+        p = Path(cluster_file)
+        if p.exists():
+            return load_yaml_env(p)
+        raise FileNotFoundError(f"Cluster file defined in OSCAR_TEST_CLUSTER_FILE not found: {cluster_file}")
+
     cluster_goal = os.environ.get("OSCAR_TEST_CLUSTER_GOAL", "iisas")
     cluster_slug = cluster_goal.replace("cluster-", "")
     paths = [
