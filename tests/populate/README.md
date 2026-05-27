@@ -1,6 +1,6 @@
 # OSCAR Metrics Population Suite
 
-This folder contains a Robot suite that populates a newly deployed OSCAR cluster with several `simple-test` services, one exposed nginx service, and one shared `simple-test` service visible to both test users. It invokes them so sync, async, exposed, and multi-user-per-service metrics counters increase.
+This folder contains a Robot suite that populates a newly deployed OSCAR cluster with several `cowsay` services, one exposed nginx service, and one shared `cowsay` service visible to both test users. It invokes them so sync, async, exposed, and multi-user-per-service metrics counters increase.
 
 The suite creates deterministic service names:
 
@@ -13,7 +13,7 @@ metrics-populate-exposed-<run-id>
 metrics-populate-shared-<run-id>
 ```
 
-Even-numbered `simple-test` services are created and invoked as `oscaruser00`. Odd-numbered `simple-test` services are created and invoked as `oscaruser01`. The exposed nginx service is created and invoked as `oscaruser01` by default. The shared service is created by `oscaruser00` with `visibility=restricted`, includes both users in `allowed_users`, and is invoked by both users.
+Even-numbered `cowsay` services are created and invoked as `oscaruser00`. Odd-numbered `cowsay` services are created and invoked as `oscaruser01`. The exposed nginx service is created and invoked as `oscaruser01` by default. The shared service is created by `oscaruser00` with `visibility=restricted`, includes both users in `allowed_users`, and is invoked by both users.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ You also need to pass the target cluster variables file, as with the rest of the
 
 ## Populate and Leave Services Running
 
-This is the default mode. It creates four `simple-test` services, one exposed nginx service, and one shared service. Each numbered `simple-test` service is invoked twice synchronously and twice asynchronously. The exposed service is invoked twice through `/system/services/{service}/exposed`. The shared service is invoked once synchronously and once asynchronously by each user. Services are left in the cluster.
+This is the default mode. It creates four `cowsay` services, one exposed nginx service, and one shared service. Each numbered `cowsay` service is invoked twice synchronously and twice asynchronously. The exposed service is invoked twice through `/system/services/{service}/exposed`. The shared service is invoked once synchronously and once asynchronously by each user. Services are left in the cluster.
 
 ```bash
 robot \

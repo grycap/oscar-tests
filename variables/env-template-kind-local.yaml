@@ -3,7 +3,6 @@
 # which is created dynamically by tests/deployment/local-kind.robot.
 AUTHENTICATION_PROCESS: resources/token-local.resource
 OSCAR_ENDPOINT: http://localhost:8080
-OSCAR_METRICS: http://localhost:8080/metrics
 OSCAR_DASHBOARD: https://localhost:444
 BASIC_USER: <base64-oscar-credentials>
 AAI_GROUP: oscar
