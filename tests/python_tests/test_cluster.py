@@ -3,7 +3,10 @@ import pytest
 
 class TestCluster:
     def test_installed(self):
+        import shutil
         import subprocess
+        if not shutil.which("oscar-cli"):
+            pytest.skip("oscar-cli not installed")
         result = subprocess.run(["oscar-cli"], capture_output=True, text=True)
         assert result.returncode == 0
 
