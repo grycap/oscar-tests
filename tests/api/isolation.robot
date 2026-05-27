@@ -7,7 +7,7 @@ Resource          ${CURDIR}/../../resources/files.resource
 Resource          ${CURDIR}/../../resources/service.resource
 
 Suite Setup       Run Keywords    Checks Valids OIDC Token    AND    Assign Random Service Name
-Suite Teardown    Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
+Suite Teardown    Run Keywords    Cleanup Isolation Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
 
 
 *** Variables ***
@@ -185,6 +185,11 @@ Verify isolation_level USER Delete
     Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${OTHER_USER_SHORT_ID}","visibility":"private"
 
 *** Keywords ***
+Cleanup Isolation Resources
+    [Documentation]    Best-effort cleanup of services created by this suite.
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true    expected_status=ANY    headers=${HEADERS}
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=ANY    headers=${HEADERS}
+
 Get Key From Dictionary
     [Documentation]  Get the key from a dictionary
     [Arguments]    ${dict}
