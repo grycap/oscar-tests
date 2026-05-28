@@ -86,6 +86,7 @@ OSCAR Enforces MinIO Storage Per Bucket Quota
     ...    ${LARGE_OBJECT_FILE}    ${QUOTA_SERVICE_BUCKET}/input/large.bin    stdout=True    stderr=True
     Log    ${large_result.stdout}
     Log    ${large_result.stderr}
+    Should Be Equal As Integers    ${large_result.rc}    0
     Wait Until Keyword Succeeds    180s    10s    Service Bucket Usage Should Exceed Quota
     Wait Until Keyword Succeeds    240s    15s    MinIO Should Reject Additional Upload
 
@@ -167,7 +168,7 @@ Set CLI Basic Credentials
 Create Quota Test Files
     [Documentation]    Create files below and above the configured 1Mi bucket quota.
     Evaluate    open(r'''${SMALL_OBJECT_FILE}''', 'wb').write(b'0' * 524288)
-    Evaluate    open(r'''${LARGE_OBJECT_FILE}''', 'wb').write(b'0' * 2097152)
+    Evaluate    open(r'''${LARGE_OBJECT_FILE}''', 'wb').write(b'0' * 786432)
     Evaluate    open(r'''${RETRY_OBJECT_FILE}''', 'wb').write(b'0' * 262144)
     File Should Exist    ${SMALL_OBJECT_FILE}
     File Should Exist    ${LARGE_OBJECT_FILE}
