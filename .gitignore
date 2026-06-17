@@ -10,3 +10,8 @@ True
 robot_results
 __pycache__/
 *.py[cod]
+bin/
+include/
+lib/
+pyvenv.cfg
+data

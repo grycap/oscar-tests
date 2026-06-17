@@ -13,10 +13,21 @@ Before running the tests, ensure you have the following tools installed:
 - [oscar-cli](https://github.com/grycap/oscar-cli)
 - [oscar-python](https://github.com/grycap/oscar_python/)
 
-To install the required dependencies:
+### 🐍 Using a Python Virtual Environment
 
+Create and activate a virtual environment before installing the Python dependencies:
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
-pip install -r requirements.txt
+
+When you finish working with the test suite, deactivate the environment:
+
+```sh
+deactivate
 ```
 
 ### 📦 Installing oscar-cli
@@ -32,7 +43,6 @@ Create a `.env.yaml` file according to the template shown in `env-template.yaml`
 
 The following information is required about the cluster information:
   - `OSCAR_ENDPOINT`: The endpoint of the OSCAR cluster (e.g. https://mycluster.oscar.grycap.net) 
-  - `OSCAR_METRICS`: The endpoint of the OSCAR metrics.
   - `OSCAR_DASHBOARD`: The endpoint of the OSCAR UI (dashboard).
   - `BASIC_USER:`: Base64-encoded information of the authentication for the 'oscar' user (echo -n "oscar:password"  | base64)
 

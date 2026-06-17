@@ -286,17 +286,24 @@ Volume Response Should Match
     Run Keyword If    '${lifecycle_policy}' != ''    Should Be Equal As Strings    ${payload["lifecycle_policy"]}    ${lifecycle_policy}
 
 Volume List Should Contain
-    [Documentation]    Assert that a volume name is present in a list response.
+    [Documentation]    Assert that a volume name is present somewhere in the list response.
     [Arguments]    ${response}    ${volume_name}
     ${payload}=    Evaluate    json.loads($response.content)    json
     ${volumes}=    Run Keyword If    isinstance($payload, list)    Set Variable    ${payload}
     ...    ELSE    Get From Dictionary    ${payload}    managed_volume
     ${count}=    Get Length    ${volumes}
     Should Be True    ${count} > 0
-    ${first_volume}=    Get From List    ${volumes}    0
-    ${volume_name_from_dict}=    Get From Dictionary    ${first_volume}    name
-    Log         ${volume_name_from_dict}
-    Should Contain    ${volume_name_from_dict}    ${volume_name}
+    ${found}=    Set Variable    False
+    FOR    ${volume}    IN    @{volumes}
+        ${name}=    Get From Dictionary    ${volume}    name
+        Log    ${name}
+        ${match}=    Run Keyword And Return Status    Should Be Equal As Strings    ${name}    ${volume_name}
+        IF    ${match}
+            ${found}=    Set Variable    True
+            EXIT FOR LOOP
+        END
+    END
+    Should Be True    ${found}
 
 Volume List Should Not Contain
     [Documentation]    Assert that a volume name is absent from a list response.

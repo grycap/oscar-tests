@@ -5,7 +5,7 @@ Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS}
 Resource            ${CURDIR}/../../resources/files.resource
 
 Suite Setup         Check Valid OIDC Token
-Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
+Suite Teardown      Run Keywords    Cleanup Mount Cycle Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
 
 
 *** Variables ***
@@ -241,6 +241,12 @@ Delete Bucket ${MOUNT_BUCKET_NAME_OTHER}. To reset state
 
 
 *** Keywords ***
+Cleanup Mount Cycle Resources
+    [Documentation]    Best-effort cleanup of services and buckets created by this suite.
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=ANY    headers=${HEADERS}
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${MOUNT_BUCKET_NAME_OTHER}    expected_status=ANY    headers=${HEADERS}
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${bucket_name}    expected_status=ANY    headers=${HEADERS}
+
 Prepare Service File
     [Documentation]    Prepare the service file
     ${service_content}=    Get File    ${DATA_DIR}/00-cowsay.yaml

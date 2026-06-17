@@ -89,6 +89,94 @@ class OscarLibrary:
         # Returns an HTTP response
         return self.client.remove_all_jobs(service_name)
 
+    # Health
+
+    @keyword("Health Check")
+    def health_check(self):
+        return self.client.health_check()
+
+    # Deployment
+
+    @keyword("Get Deployment Status")
+    def get_deployment_status(self, service_name):
+        return self.client.get_deployment_status(service_name)
+
+    @keyword("Get Deployment Logs")
+    def get_deployment_logs(self, service_name):
+        return self.client.get_deployment_logs(service_name)
+
+    # Buckets
+
+    @keyword("Create Bucket")
+    def create_bucket(self, bucket_name, visibility="private", allowed_users=None):
+        if allowed_users is None:
+            allowed_users = []
+        return self.client.create_bucket(bucket_name, visibility, allowed_users)
+
+    @keyword("List Buckets")
+    def list_buckets(self):
+        return self.client.list_buckets()
+
+    @keyword("Get Bucket")
+    def get_bucket(self, bucket_name):
+        return self.client.get_bucket(bucket_name)
+
+    @keyword("Delete Bucket")
+    def delete_bucket(self, bucket_name):
+        return self.client.delete_bucket(bucket_name)
+
+    @keyword("Presign Bucket")
+    def presign_bucket(self, bucket_name, object_key, operation="download", expires=0, content_type=""):
+        return self.client.presign_bucket(bucket_name, object_key, operation, expires, content_type)
+
+    # Volumes
+
+    @keyword("List Volumes")
+    def list_volumes(self):
+        return self.client.list_volumes()
+
+    @keyword("Create Volume")
+    def create_volume(self, name, size):
+        return self.client.create_volume(name, size)
+
+    @keyword("Get Volume")
+    def get_volume(self, name):
+        return self.client.get_volume(name)
+
+    @keyword("Delete Volume")
+    def delete_volume(self, name):
+        return self.client.delete_volume(name)
+
+    # Metrics
+
+    @keyword("Get Metrics Summary")
+    def get_metrics_summary(self):
+        return self.client.get_metrics_summary()
+
+    @keyword("Get Metrics Breakdown")
+    def get_metrics_breakdown(self, group_by=None):
+        return self.client.get_metrics_breakdown(group_by)
+
+    @keyword("Get Service Metrics")
+    def get_service_metrics(self, service_name):
+        return self.client.get_service_metrics(service_name)
+
+    # Quotas
+
+    @keyword("Get Own Quota")
+    def get_own_quota(self):
+        return self.client.get_own_quota()
+
+    @keyword("Get User Quota")
+    def get_user_quota(self, user_id):
+        return self.client.get_user_quota(user_id)
+
+    # System Logs
+
+    @keyword("Get System Logs")
+    def get_system_logs(self, timestamps=False, previous=False):
+        return self.client.get_system_logs(timestamps, previous)
+
     # Storage methods
 
     @keyword("Create Storage Client")

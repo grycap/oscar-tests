@@ -2,8 +2,8 @@
 Documentation       Tests for the OSCAR Python library
 
 Library             robot_libs.oscar_lib.OscarLibrary
-Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS} 
-Resource            ${CURDIR}/../resources/files.resource
+Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS} 
+Resource            ${CURDIR}/../../resources/files.resource
 
 Test Setup          Connect To Oscar Cluster
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.yaml
@@ -143,10 +143,122 @@ Run Service Synchronously
     END
     Fail
 
+Get Deployment Status
+    [Documentation]    Get the deployment status of the service
+    ${response}=    Get Deployment Status    ${SERVICE_NAME}
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    state
+
+Get Deployment Logs
+    [Documentation]    Get the deployment logs of the service
+    ${response}=    Get Deployment Logs    ${SERVICE_NAME}
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    entries
+
+Get Service Metrics
+    [Documentation]    Get metrics for a specific service
+    ${response}=    Get Service Metrics    ${SERVICE_NAME}
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+
 Remove Service
     [Documentation]    Remove a service by name
     [Tags]    delete
     ${response}=    Remove Service    ${SERVICE_NAME}
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    204
+
+Health Check
+    [Documentation]    Check the health of the OSCAR cluster
+    ${response}=    Health Check
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Be Equal As Strings    ${response.content}    Ok
+
+Get Metrics Summary
+    [Documentation]    Get the system metrics summary
+    ${response}=    Get Metrics Summary
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    totals
+
+Get Own Quota
+    [Documentation]    Get the quota for the current user
+    ${response}=    Get Own Quota
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+
+Get System Logs
+    [Documentation]    Get the system logs (admin)
+    ${response}=    Get System Logs
+    Log    ${response.content}
+    Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '403'
+
+Get Metrics Breakdown
+    [Documentation]    Get the system metrics breakdown grouped by service
+    ${response}=    Get Metrics Breakdown    group_by=service
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    items
+
+Create Bucket
+    [Documentation]    Create a new private bucket
+    ${response}=    Create Bucket    robot-python-test-bucket    private
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    201
+
+List Buckets
+    [Documentation]    List all buckets
+    ${response}=    List Buckets
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    robot-python-test-bucket
+
+Get Bucket
+    [Documentation]    Get a specific bucket
+    ${response}=    Get Bucket    robot-python-test-bucket
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    robot-python-test-bucket
+
+Presign Bucket
+    [Documentation]    Generate a presigned URL for a bucket
+    ${response}=    Presign Bucket    robot-python-test-bucket    test-file.txt    download
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    url
+
+Delete Bucket
+    [Documentation]    Delete a bucket
+    ${response}=    Delete Bucket    robot-python-test-bucket
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    204
+
+Create Volume
+    [Documentation]    Create a managed volume
+    ${response}=    Create Volume    robot-python-test-vol    1Gi
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    201
+    Should Contain    ${response.content}    robot-python-test-vol
+
+List Volumes
+    [Documentation]    List all managed volumes
+    ${response}=    List Volumes
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+
+Get Volume
+    [Documentation]    Get a specific managed volume
+    ${response}=    Get Volume    robot-python-test-vol
+    Log    ${response.content}
+    Should Be Equal As Integers    ${response.status_code}    200
+    Should Contain    ${response.content}    robot-python-test-vol
+
+Delete Volume
+    [Documentation]    Delete a managed volume
+    ${response}=    Delete Volume    robot-python-test-vol
     Log    ${response.content}
     Should Be Equal As Integers    ${response.status_code}    204
 
