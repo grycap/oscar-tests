@@ -130,10 +130,10 @@ docker-test:
 	  oscar-tests \
 	  bash -c '\
 	    echo "=== Installing oscar-cli ==="; \
-	    go install github.com/grycap/oscar-cli@latest; \
+	    go install github.com/grycap/oscar-cli/v2@v2.1.0; \
 	    echo ""; \
 	    echo "=== Installing oscar-python ==="; \
-	    pip install --no-cache-dir oscar-python==1.3.3; \
+	    pip install --no-cache-dir oscar-python==2.1.0b2; \
 	    echo ""; \
 	    $(if $(filter command line,$(origin PYTEST_SUITE)),\
 	      echo "=== Running Python tests ==="; \
