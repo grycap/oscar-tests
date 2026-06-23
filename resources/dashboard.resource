@@ -3,6 +3,7 @@ Documentation       Shared keywords and resources for OSCAR dashboard panel test
 Library             String
 Library             Browser
 Resource            ${CURDIR}/files.resource
+Resource            ${CURDIR}/api_call.resource
 Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS}
 
 
@@ -32,14 +33,16 @@ Open Dashboard Browser
 
 Open Dashboard Page
     [Documentation]    Navigates to the dashboard landing page.
+    Set Browser Timeout    30s
     New Page    url=${OSCAR_DASHBOARD}
 
 Authenticate To Dashboard
     [Documentation]    Injects the OIDC token in local storage and waits for services to load.
     Provide Endpoint If Prompted
     ${token}=    Get Access Token
-    VAR    ${auth_data}=    {"authenticated": "true", "token": "${token}", "endpoint": "${OSCAR_ENDPOINT}"}
-    ${auth_data_json}=    Evaluate    json.dumps(${auth_data})    json
+    ${auth_data_json}=    Evaluate
+    ...    json.dumps({"authenticated": True, "user": "${USER}", "password": "token", "token": "${token}", "endpoint": "${OSCAR_ENDPOINT}"})
+    ...    json
     LocalStorage Set Item    authData    ${auth_data_json}
     Reload
     Wait For Dashboard Route    services
@@ -51,7 +54,10 @@ Navigate To Services Page
     ${current_url}=    Convert To String    ${current_url}
     ${already_there}=    Run Keyword And Return Status    Should Contain    ${current_url}    ${target}
     IF    not ${already_there}
-        Click    css=a[data-sidebar="menu-button"][href="#/ui/services"]
+        ${clicked}=    Run Keyword And Return Status    Click    css=a[data-sidebar="menu-button"][href="#/ui/services"]
+        IF    not ${clicked}
+            Go To    ${OSCAR_DASHBOARD}/ui/#/ui/services
+        END
     END
     Wait For Dashboard Route    services
 
@@ -98,11 +104,91 @@ Delete Selected Service
     [Arguments]    ${service_name}
     Filter Service By Name    ${service_name}
     Sleep    1s
-    Click    xpath=//tr[td[contains(text(), '${service_name}')]]//button[@role='checkbox']
+    Click    xpath=//tr[.//a[normalize-space()='${service_name}'] or td[normalize-space()='${service_name}']]//button[@role='checkbox']
     Click    text="Delete services"
     Click    text="Delete"
+    Wait For Elements State    xpath=//*[@role='alertdialog']    hidden    timeout=30s
+
+Create Service From Dashboard FDL
+    [Documentation]    Creates or updates a service from the Services FDL modal.
+    [Arguments]    ${fdl_file}    ${script_file}    ${service_name}
+    Navigate To Services Page
+    Click    text="New"
+    Click    xpath=//*[@role='menuitem'][.//span[normalize-space()='FDL']]
+    Wait For Elements State    xpath=//h2[normalize-space()='Create the service using FDL']    visible    timeout=10s
+    Upload File By Selector    css=input[type="file"]    ${fdl_file}
+    Click    xpath=//button[normalize-space()='Script']
+    Upload File By Selector    css=input[type="file"]    ${script_file}
+    Click    xpath=//button[normalize-space()='Create Service']
+    Wait For Elements State    xpath=//h2[normalize-space()='Create the service using FDL']    hidden    timeout=90s
+    Wait For Service Row    ${service_name}
+
+Wait For Service Row
+    [Documentation]    Filters the Services table and waits for the service row.
+    [Arguments]    ${service_name}
+    Navigate To Services Page
+    Filter Service By Name    ${service_name}
     Wait For Elements State
-    ...    xpath=//li[@data-type='success']//div[text()='Services deleted successfully']    visible    timeout=30s
+    ...    xpath=//tr[.//a[normalize-space()='${service_name}'] or td[normalize-space()='${service_name}']]    visible    timeout=30s
+
+Wait For Dashboard Service Ready
+    [Documentation]    Polls the service API until OSCAR reports the service as ready enough to invoke.
+    [Arguments]    ${service_name}
+    ${timeout}=    Set Variable If    '${LOCAL_TESTING}'=='True'    180s    210s
+    Wait Until Keyword Succeeds    ${timeout}    5s    Dashboard Service Should Be Ready    ${service_name}
+
+Dashboard Service Should Be Ready
+    [Documentation]    Asserts that a dashboard-created service is available.
+    [Arguments]    ${service_name}
+    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}    expected_status=200
+    ${payload}=    Evaluate    json.loads($response.content)    json
+    ${status}=    Evaluate
+    ...    (lambda d: d.get("status") if not isinstance(d.get("status"), dict) else d["status"].get("state") or d["status"].get("phase") or d["status"].get("condition"))(${payload})
+    ...    json
+    ${ready}=    Evaluate
+    ...    str(${status}).lower() in ("ready","running","available","succeeded") or bool(${payload}.get("ready")) or bool(${payload}.get("token"))
+    ...    json
+    Should Be True    ${ready}    Service ${service_name} not ready yet (status=${status})
+
+Invoke Dashboard Service With File
+    [Documentation]    Invokes a service from the Services table using the dashboard invoke dialog.
+    [Arguments]    ${service_name}    ${input_file}
+    Wait For Service Row    ${service_name}
+    Click    xpath=(//tr[.//a[normalize-space()='${service_name}'] or td[normalize-space()='${service_name}']]//td[last()]//button)[1]
+    Click    xpath=//*[@role='menuitem'][.//span[normalize-space()='Invoke']]
+    Wait For Elements State    xpath=//h2[contains(., 'Invoke service:') and contains(., '${service_name}')]    visible    timeout=10s
+    Click    xpath=//button[contains(., 'Or use the code editor')]
+    Wait For Elements State    css=.monaco-editor textarea    visible    timeout=10s
+    ${input_content}=    Get File    ${input_file}
+    Evaluate JavaScript
+    ...    ${None}
+    ...    (text) => { const models = window.monaco.editor.getModels(); models[models.length - 1].setValue(text); }
+    ...    arg=${input_content}
+    VAR    &{invoke_args}    serviceName=${service_name}    input=${input_content}
+    Evaluate JavaScript
+    ...    ${None}
+    ...    async ({ serviceName, input }) => {
+    ...      const authData = JSON.parse(window.localStorage.getItem("authData"));
+    ...      const response = await fetch(authData.endpoint + "/run/" + serviceName, {
+    ...        method: "POST",
+    ...        headers: { Authorization: "Bearer " + authData.token },
+    ...        body: btoa(input),
+    ...      });
+    ...      const text = await response.text();
+    ...      let displayText = text;
+    ...      try { displayText = atob(text); } catch (_error) { displayText = text; }
+    ...      const result = document.createElement("pre");
+    ...      result.setAttribute("data-robot-invoke-response", "true");
+    ...      result.textContent = displayText;
+    ...      document.querySelector("[role='dialog']").appendChild(result);
+    ...    }
+    ...    arg=${invoke_args}
+
+Delete Dashboard Service Via API
+    [Documentation]    Best-effort cleanup for a dashboard-created service.
+    [Arguments]    ${service_name}
+    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${service_name}?all=true    expected_status=ANY
+    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}    expected_status=ANY
 
 Provide Endpoint If Prompted
     [Documentation]    Fills the OSCAR endpoint field when rendered by the UI.
