@@ -25,7 +25,10 @@ Run Dashboard Suite Teardown
 
 Open Dashboard Browser
     [Documentation]    Starts a new headless browser instance.
+    ${ssl_verify}=    Convert To Boolean    ${SSL_VERIFY}
+    ${ignore_https_errors}=    Evaluate    not ${ssl_verify}
     New Browser    ${BROWSER}    headless=True
+    New Context    ignoreHTTPSErrors=${ignore_https_errors}
 
 Open Dashboard Page
     [Documentation]    Navigates to the dashboard landing page.
