@@ -2,6 +2,7 @@
 Documentation       Shared keywords and resources for OSCAR dashboard panel tests.
 Library             String
 Library             Browser
+Library             Collections
 Resource            ${CURDIR}/files.resource
 Resource            ${CURDIR}/api_call.resource
 Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS}
@@ -233,16 +234,35 @@ Dashboard Url Should Contain Fragment
     Should Contain    ${current_url}    ${fragment}
 
 Normalize Dashboard Route
-    [Documentation]    Converts a route name into the router hash fragment.
-    [Arguments]    ${route}
-    ${route}=    Convert To String    ${route}
-    ${has_hash}=    Run Keyword And Return Status    Should Start With    ${route}    \#
-    IF    ${has_hash}
-        RETURN    ${route}
-    END
-    ${starts_with_slash}=    Run Keyword And Return Status    Should Start With    ${route}    /
-    IF    ${starts_with_slash}
-        ${route}=    Get Substring    ${route}    1
-    END
-    ${fragment}=    Catenate    SEPARATOR=    \#/ui/    ${route}
-    RETURN    ${fragment}
+      [Documentation]    Converts a route name into the router hash fragment.
+     [Arguments]     ${route}
+     ${route}=    Convert To String     ${route}
+     ${has_hash}=    Run Keyword And Return Status    Should Start With     ${route}     \#
+     IF     ${has_hash}
+         RETURN     ${route}
+     END
+     ${starts_with_slash}=    Run Keyword And Return Status    Should Start With     ${route}     /
+     IF     ${starts_with_slash}
+         ${route}=    Get Substring     ${route}     1
+     END
+     ${fragment}=    Catenate    SEPARATOR=     \#/ui/     ${route}
+     RETURN     ${fragment}
+
+Check Bucket Quota Available
+     [Documentation]    Queries /system/quotas/user and verifies at least one bucket slot is free.
+     Log    Checking bucket quota via /system/quotas/user    INFO
+     ${resp}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/quotas/user    expected_status=ANY
+     Log    Quota response status: ${resp.status_code}    INFO
+     IF    '${resp.status_code}' != '200'
+         Fail    Failed to fetch bucket quotas (status ${resp.status_code}). Cannot verify bucket capacity.
+     END
+     ${payload}=    Evaluate    json.loads($resp.content)    json
+     Dictionary Should Contain Key     ${payload}    minio
+     ${minio}=    Get From Dictionary     ${payload}    minio
+     Dictionary Should Contain Key     ${minio}    buckets
+     ${buckets}=    Get From Dictionary     ${minio}    buckets
+     ${max_buckets}=    Get From Dictionary     ${buckets}    max
+     ${used_buckets}=    Get From Dictionary     ${buckets}    used
+     ${available}    Evaluate    int($max_buckets) - int($used_buckets)
+     Log    Bucket quota: max=${max_buckets}, used=${used_buckets}, available=${available}    INFO
+     Should Be True     ${available} >= 1     Not enough bucket quota available (max=${max_buckets}, used=${used_buckets}). Skipping bucket tests.

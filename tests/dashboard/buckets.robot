@@ -2,7 +2,7 @@
 Documentation       UI regression tests for the Buckets (MinIO) panel.
 Resource              ${CURDIR}/../../resources/dashboard.resource
 
-Suite Setup         Prepare Dashboard Suite
+Suite Setup         Run Keywords    Prepare Dashboard Suite    AND    Check Bucket Quota Available
 Suite Teardown      Run Dashboard Suite Teardown
 
 
