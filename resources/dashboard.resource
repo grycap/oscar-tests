@@ -29,7 +29,7 @@ Open Dashboard Browser
     ${ssl_verify}=    Convert To Boolean    ${SSL_VERIFY}
     ${ignore_https_errors}=    Evaluate    not ${ssl_verify}
     New Browser    ${BROWSER}    headless=True
-    New Context    ignoreHTTPSErrors=${ignore_https_errors}
+    New Context    ignoreHTTPSErrors=${ignore_https_errors}    acceptDownloads=True
 
 Open Dashboard Page
     [Documentation]    Navigates to the dashboard landing page.
@@ -63,14 +63,28 @@ Navigate To Services Page
 
 Navigate To Buckets Page
     [Documentation]    Opens the Buckets (MinIO) panel and waits for it to render.
+    Ensure Dashboard Authenticated
     ${target}=    Normalize Dashboard Route    minio
+    ${detail_target}=    Catenate    SEPARATOR=    ${target}    /
     ${current_url}=    Get URL
     ${current_url}=    Convert To String    ${current_url}
     ${already_there}=    Run Keyword And Return Status    Should Contain    ${current_url}    ${target}
-    IF    not ${already_there}
-        Click    css=a[data-sidebar="menu-button"][href="#/ui/minio"]
+    ${on_detail_page}=    Run Keyword And Return Status    Should Contain    ${current_url}    ${detail_target}
+    IF    not ${already_there} or ${on_detail_page}
+        ${clicked}=    Run Keyword And Return Status    Click    css=a[data-sidebar="menu-button"][href="#/ui/minio"]
+        IF    not ${clicked}
+            Go To    ${OSCAR_DASHBOARD}/ui/#/ui/minio
+        END
     END
     Wait For Dashboard Route    minio
+
+Ensure Dashboard Authenticated
+    [Documentation]    Re-authenticates if the dashboard has returned to the login screen.
+    ${login_visible}=    Run Keyword And Return Status
+    ...    Wait For Elements State    xpath=//button[normalize-space()='Sign in']    visible    timeout=1s
+    IF    ${login_visible}
+        Authenticate To Dashboard
+    END
 
 Navigate To Notebooks Page
     [Documentation]    Opens the Notebooks panel and waits for it to render.
@@ -222,7 +236,7 @@ Normalize Dashboard Route
     [Documentation]    Converts a route name into the router hash fragment.
     [Arguments]    ${route}
     ${route}=    Convert To String    ${route}
-    ${has_hash}=    Run Keyword And Return Status    Should Start With    ${route}    #
+    ${has_hash}=    Run Keyword And Return Status    Should Start With    ${route}    \#
     IF    ${has_hash}
         RETURN    ${route}
     END
