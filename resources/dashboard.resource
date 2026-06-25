@@ -266,3 +266,79 @@ Check Bucket Quota Available
      ${available}    Evaluate    int($max_buckets) - int($used_buckets)
      Log    Bucket quota: max=${max_buckets}, used=${used_buckets}, available=${available}    INFO
      Should Be True     ${available} >= 1     Not enough bucket quota available (max=${max_buckets}, used=${used_buckets}). Skipping bucket tests.
+
+Check Service Deployment Quota Available
+     [Documentation]    Verifies that /system/quotas/user has enough CPU, memory and MinIO bucket quota for a dashboard service deployment.
+     [Arguments]    ${service_cpu}    ${service_memory}    ${required_buckets}=0
+     Log    Checking service deployment quota via /system/quotas/user    INFO
+     ${resp}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/quotas/user    expected_status=ANY
+     Log    Quota response status: ${resp.status_code}    INFO
+     IF    '${resp.status_code}' != '200'
+         Fail    Failed to fetch service quotas (status ${resp.status_code}). Cannot verify service deployment capacity.
+     END
+     ${payload}=    Evaluate    json.loads($resp.content)    json
+     Dictionary Should Contain Key     ${payload}    resources
+     ${resources}=    Get From Dictionary     ${payload}    resources
+     Dictionary Should Contain Key     ${resources}    cpu
+     Dictionary Should Contain Key     ${resources}    memory
+     ${cpu}=    Get From Dictionary     ${resources}    cpu
+     ${memory}=    Get From Dictionary     ${resources}    memory
+     ${cpu_available}=    Compute Available CPU Cores    ${cpu}[max]    ${cpu}[used]
+     ${memory_available}=    Compute Available Memory Mib    ${memory}[max]    ${memory}[used]
+     ${service_cpu_cores}=    Parse CPU Quantity To Cores    ${service_cpu}
+     ${service_memory_mib}=    Parse Memory Quantity To Mib    ${service_memory}
+     Log    Service quota: cpu available=${cpu_available} cores, required=${service_cpu_cores}; memory available=${memory_available} MiB, required=${service_memory_mib} MiB    INFO
+     Should Be True
+     ...    ${cpu_available} >= ${service_cpu_cores}
+     ...    Not enough CPU quota available for service deployment (available=${cpu_available} cores, required=${service_cpu_cores} cores).
+     Should Be True
+     ...    ${memory_available} >= ${service_memory_mib}
+     ...    Not enough memory quota available for service deployment (available=${memory_available} MiB, required=${service_memory_mib} MiB).
+     IF    ${required_buckets} > 0
+         Check MinIO Bucket Quota Slots Available    ${payload}    ${required_buckets}
+     END
+
+Check MinIO Bucket Quota Slots Available
+     [Documentation]    Verifies that a quota payload has the requested number of free MinIO bucket slots.
+     [Arguments]    ${payload}    ${required_buckets}
+     Dictionary Should Contain Key     ${payload}    minio
+     ${minio}=    Get From Dictionary     ${payload}    minio
+     Dictionary Should Contain Key     ${minio}    buckets
+     ${buckets}=    Get From Dictionary     ${minio}    buckets
+     ${max_buckets}=    Get From Dictionary     ${buckets}    max
+     ${used_buckets}=    Get From Dictionary     ${buckets}    used
+     ${available}=    Evaluate    int($max_buckets) - int($used_buckets)
+     Log    Service MinIO bucket quota: max=${max_buckets}, used=${used_buckets}, available=${available}, required=${required_buckets}    INFO
+     Should Be True
+     ...    ${available} >= ${required_buckets}
+     ...    Not enough MinIO bucket quota available for service deployment (available=${available}, required=${required_buckets}, max=${max_buckets}, used=${used_buckets}).
+
+Compute Available CPU Cores
+     [Documentation]    Computes available CPU cores from quota max and used values.
+     [Arguments]    ${max_cpu}    ${used_cpu}
+     ${max_val}=    Parse CPU Quantity To Cores    ${max_cpu}
+     ${used_val}=    Parse CPU Quantity To Cores    ${used_cpu}
+     ${available}=    Evaluate    max(${max_val} - ${used_val}, 0)
+     RETURN    ${available}
+
+Parse CPU Quantity To Cores
+     [Documentation]    Converts CPU quantities to cores. Quota API numeric values are millicores; service values are cores.
+     [Arguments]    ${quantity}
+     ${quantity}=    Set Variable If    '${quantity}' == 'None' or '${quantity}' == ''    0    ${quantity}
+     ${value}=    Evaluate    (lambda q: (lambda s: float(s[:-1]) / 1000 if s.endswith('m') else (float(s) / 1000 if re.fullmatch(r'[0-9]+(\\.[0-9]+)?', s) and float(s) > 100 else float(s)))(str(q)))($quantity)    re
+     RETURN    ${value}
+
+Compute Available Memory Mib
+     [Documentation]    Computes available memory in MiB from quota max and used values.
+     [Arguments]    ${max_memory}    ${used_memory}
+     ${max_val}=    Parse Memory Quantity To Mib    ${max_memory}
+     ${used_val}=    Parse Memory Quantity To Mib    ${used_memory}
+     ${available}=    Evaluate    max(${max_val} - ${used_val}, 0)
+     RETURN    ${available}
+
+Parse Memory Quantity To Mib
+     [Documentation]    Converts memory quantities to MiB. Quota API numeric values are bytes; service values use Kubernetes units.
+     [Arguments]    ${quantity}
+     ${qstr}=    Set Variable If    '${quantity}' == 'None' or '${quantity}' == ''    0Mi    ${quantity}
+     ${value}=    Evaluate    (lambda q: (lambda s: float(s) / 1048576 if re.fullmatch(r'[0-9]+(\\.[0-9]+)?', s) and float(s) > 1048576 else (lambda m: float(m.group(1)) * {'ki':1/1024,'mi':1,'gi':1024,'ti':1048576}.get((m.group(2) or 'mi').lower(),1))(re.match(r'([0-9.]+)([A-Za-z]+)?', s)))(str(q)))($qstr)    re
+     RETURN    ${value}
