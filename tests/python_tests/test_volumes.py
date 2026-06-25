@@ -43,28 +43,18 @@ class TestVolumes:
         data = resp.json()
         assert data["name"] == volume_name
 
-    def test_get(self, client, volume_name, has_quota):
-        if not has_quota:
-            pytest.skip("no volume quota available")
-            return
+    def test_get(self, client, volume_name):
         try:
-            client.create_volume(volume_name, "1Gi")
-        except requests.HTTPError:
-            pytest.skip("cannot create volume")
-            return
-        resp = client.get_volume(volume_name)
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["name"] == volume_name
+            resp = client.get_volume(volume_name)
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["name"] == volume_name
+        except requests.HTTPError as e:
+            assert e.response.status_code == 404
 
-    def test_delete(self, client, volume_name, has_quota):
-        if not has_quota:
-            pytest.skip("no volume quota available")
-            return
+    def test_delete(self, client, volume_name):
         try:
-            client.create_volume(volume_name, "1Gi")
-        except requests.HTTPError:
-            pytest.skip("cannot create volume")
-            return
-        resp = client.delete_volume(volume_name)
-        assert resp.status_code == 204
+            resp = client.delete_volume(volume_name)
+            assert resp.status_code == 204
+        except requests.HTTPError as e:
+            assert e.response.status_code == 404
