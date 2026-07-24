@@ -4,6 +4,7 @@ Documentation       Populate an OSCAR cluster with simple, exposed, and shared s
 Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS}
 Resource            ${CURDIR}/../../resources/api_call.resource
 Resource            ${CURDIR}/../../resources/files.resource
+Resource            ${CURDIR}/../../resources/service.resource
 
 Library             Collections
 Library             OperatingSystem
@@ -362,7 +363,8 @@ Populate Exposed Service Should Respond
     [Documentation]    Assert that the exposed service endpoint is reachable.
     ${service_name}=    Populate Exposed Service Name
     ${headers}=    Populate Headers For Index    ${POPULATE_EXPOSED_USER_INDEX}
-    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}/exposed    headers=${headers}
+    ${url}=    Build Exposed Service URL    ${service_name}
+    ${response}=    GET With Defaults    url=${url}    headers=${headers}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    Welcome to nginx
@@ -392,7 +394,8 @@ Invoke Populate Exposed Service Once
     [Documentation]    Invoke the exposed nginx service once.
     ${service_name}=    Populate Exposed Service Name
     ${headers}=    Populate Headers For Index    ${POPULATE_EXPOSED_USER_INDEX}
-    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}/exposed    headers=${headers}
+    ${url}=    Build Exposed Service URL    ${service_name}
+    ${response}=    GET With Defaults    url=${url}    headers=${headers}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    Welcome to nginx

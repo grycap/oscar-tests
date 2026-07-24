@@ -37,8 +37,7 @@ Create Node-RED Service
     ${first_service}=    Get From List    ${oscar_list}    0
     ${service_def}=    Get From Dictionary    ${first_service}    oscar-cluster
     Set To Dictionary    ${service_def}    name=${SERVICE_NAME}
-    ${node_red_url}=    Set Variable    /system/services/${SERVICE_NAME}/exposed
-    Set To Dictionary    ${service_def}[environment][variables]    NODE_RED_BASE_URL=${node_red_url}
+    Set To Dictionary    ${service_def}[environment][variables]    NODE_RED_BASE_URL=/
     ${bucket_mnt}=    Set Variable    /mnt/${BUCKET_NAME}
     Set To Dictionary    ${service_def}[environment][variables]    NODE_RED_DIRECTORY=${bucket_mnt}
     Set To Dictionary    ${service_def}[mount]    path=${BUCKET_NAME}
@@ -57,11 +56,11 @@ Check Node-RED Service Ready
     END
 
 Verify Node-RED Service Response
-    [Documentation]    Verify the Node-RED service responds correctly at /system/services/{service_name}/exposed/
+    [Documentation]    Verify the Node-RED service responds correctly at its DNS endpoint.
     [Tags]    verify
     ${timeout}=    Set Variable If    '${LOCAL_TESTING}'=='True'    60s    90s
     ${interval}=   Set Variable    5s
-    ${url}=    Set Variable    ${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}/exposed/
+    ${url}=    Build Exposed Service URL    ${SERVICE_NAME}
     Wait Until Keyword Succeeds    ${timeout}    ${interval}    GET With Defaults    url=${url}
 
 

@@ -15,3 +15,12 @@ Generate Random Service Name
     ${suffix}=    Evaluate    ''.join(random.choices(string.ascii_lowercase + string.digits, k=${max_suffix_length}))    modules=random,string
     ${service_name}=    Set Variable    ${base_name}-${suffix}
     RETURN    ${service_name}
+
+Build Exposed Service URL
+    [Documentation]    Build the root DNS URL for an exposed service, preserving endpoint scheme and port.
+    [Arguments]    ${service_name}    ${path}=${EMPTY}
+    ${url}=    Evaluate
+    ...    (lambda u: urllib.parse.urljoin(u._replace(netloc=f"{service_name}.{u.hostname}" + (f":{u.port}" if u.port else ""), path="/", query="", fragment="").geturl(), path.lstrip("/")))(urllib.parse.urlsplit(endpoint))
+    ...    modules=urllib.parse
+    ...    namespace=${{ {"endpoint": $OSCAR_ENDPOINT, "service_name": $service_name, "path": $path} }}
+    RETURN    ${url}
