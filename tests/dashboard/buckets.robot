@@ -103,19 +103,20 @@ Create Bucket From Dashboard
 Open Dashboard Bucket
          [Documentation]    Opens the bucket content view from the bucket list.
          [Arguments]        ${bucket_name}
-    Go To      ${OSCAR_DASHBOARD}/ui/#/ui/minio/${bucket_name}
+    Go To      ${OSCAR_DASHBOARD}/#/ui/minio/${bucket_name}
     Ensure Dashboard Authenticated
     Wait For Dashboard Route    minio/${bucket_name}
 
 Upload File To Dashboard Bucket
-       [Documentation]    Opens the "Upload Options" DropdownMenu, selects "Upload Files" Popover,
+       [Documentation]    Opens the "Upload Options" Popover, selects "Upload Files" Popover,
        ...   uploads a local file via the hidden input#file, clicks Upload, then waits for the file to appear.
        [Arguments]    ${file_path}
-    Open Dashboard Bucket     ${DASHBOARD_BUCKET_NAME}
-       # 1. Click "Upload Options" (DropdownMenuTrigger button) to open the DropdownMenu
-    Wait For Elements State    xpath=//button[.//span[normalize-space()='Upload Options']]    visible    timeout=10s
+       # The caller already navigated to the bucket page; just verify session is valid.
+    Ensure Dashboard Authenticated
+       # 1. Click "Upload Options" (PopoverTrigger button) to open the Upload popover
+    Wait For Elements State    xpath=//button[.//span[normalize-space()='Upload Options']]    visible    timeout=30s
     Click    xpath=//button[.//span[normalize-space()='Upload Options']]
-       # 2. Wait for "Upload Files" button inside the DropdownMenuContent to appear
+       # 2. Wait for "Upload Files" button inside the PopoverContent to appear
     Wait For Elements State    xpath=//button[.//span[normalize-space()='Upload Files']]    visible    timeout=10s
        # 3. Click "Upload Files" (AddFileButton PopoverTrigger)
     Click    xpath=//button[.//span[normalize-space()='Upload Files']]
@@ -149,7 +150,7 @@ Upload File To Dashboard Bucket
 Refresh Bucket Content And Wait For Object
       [Documentation]    Reloads the bucket content route and waits for an object row.
       [Arguments]      ${bucket_name}      ${object_name}
-    Go To      ${OSCAR_DASHBOARD}/ui/#/ui/minio/${bucket_name}
+    Go To      ${OSCAR_DASHBOARD}/#/ui/minio/${bucket_name}
     Ensure Dashboard Authenticated
     Wait For Dashboard Route    minio/${bucket_name}
     Bucket Object Row Should Be Visible      ${object_name}
@@ -207,7 +208,7 @@ Restore Dashboard Blob Download Capture
 Delete Dashboard Bucket Object
       [Documentation]    Deletes an object from a bucket using the bucket content UI.
       [Arguments]      ${bucket_name}      ${object_name}
-    Go To      ${OSCAR_DASHBOARD}/ui/#/ui/minio/${bucket_name}
+    Go To      ${OSCAR_DASHBOARD}/#/ui/minio/${bucket_name}
     Ensure Dashboard Authenticated
     Wait For Dashboard Route    minio/${bucket_name}
       ${object_present}=    Run Keyword And Return Status    Wait For Bucket Object Row      ${object_name}
@@ -243,7 +244,7 @@ Wait For Dashboard Bucket Row
 Dashboard Bucket Row Should Be Visible After Refresh
       [Documentation]    Refreshes the bucket list from the UI and asserts that the bucket row is visible.
       [Arguments]      ${bucket_name}
-    Go To      ${OSCAR_DASHBOARD}/ui/#/ui/minio
+    Go To      ${OSCAR_DASHBOARD}/#/ui/minio
     Wait For Dashboard Route    minio
     Wait For Elements State    css=input[placeholder^="Search buckets by"]    visible    timeout=10s
     Fill Text    css=input[placeholder^="Search buckets by"]      ${bucket_name}

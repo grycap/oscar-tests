@@ -57,7 +57,7 @@ Navigate To Services Page
     IF    not ${already_there}
         ${clicked}=    Run Keyword And Return Status    Click    css=a[data-sidebar="menu-button"][href="#/ui/services"]
         IF    not ${clicked}
-            Go To    ${OSCAR_DASHBOARD}/ui/#/ui/services
+            Go To    ${OSCAR_DASHBOARD}/#/ui/services
         END
     END
     Wait For Dashboard Route    services
@@ -74,7 +74,7 @@ Navigate To Buckets Page
     IF    not ${already_there} or ${on_detail_page}
         ${clicked}=    Run Keyword And Return Status    Click    css=a[data-sidebar="menu-button"][href="#/ui/minio"]
         IF    not ${clicked}
-            Go To    ${OSCAR_DASHBOARD}/ui/#/ui/minio
+            Go To    ${OSCAR_DASHBOARD}/#/ui/minio
         END
     END
     Wait For Dashboard Route    minio
