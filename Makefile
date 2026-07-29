@@ -39,7 +39,7 @@ CLUSTER_FILE := $(strip $(CLUSTER_FILE))
 
 SUITE_LIST := $(shell find tests -type f -name '*.robot' | sort)
 
-ROBOT ?= robot
+ROBOT ?= $(if $(wildcard .venv/bin/robot),.venv/bin/robot,robot)
 ROBOT_SUITE ?= tests/api/service-lifecycle.robot
 ROBOT_ARGS ?=
 ROBOT_OUTPUT_DIR ?= robot_results
