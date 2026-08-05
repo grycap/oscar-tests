@@ -2,6 +2,7 @@
 Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Basic endpoint coverage
 
 Resource            ${CURDIR}/../resources/files.resource
+Resource            ${CURDIR}/../resources/service.resource
 Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS} 
 
 Suite Setup         Check Valid OIDC Token
@@ -55,7 +56,8 @@ Prepare Service File
 
 Check Exposed Service
     [Documentation]    Check if the exposed service is available
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}/exposed    expected_status=200
+    ${url}=    Build Exposed Service URL    ${SERVICE_NAME}
+    ${response}=    GET    url=${url}    expected_status=200
     ...    headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    200
