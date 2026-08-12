@@ -43,6 +43,7 @@ ROBOT ?= $(if $(wildcard .venv/bin/robot),.venv/bin/robot,robot)
 ROBOT_SUITE ?= tests/api/service-lifecycle.robot
 ROBOT_ARGS ?=
 ROBOT_OUTPUT_DIR ?= robot_results
+ROBOT_ENV := $(if $(filter localhost,$(CLUSTER_INPUT)),PYTHONWARNINGS="ignore:Unverified HTTPS request is being made",)
 
 AUTH_EXAMPLE := $(firstword $(AUTH_OPTIONS))
 CLUSTER_EXAMPLE := $(firstword $(CLUSTER_OPTIONS))
@@ -79,7 +80,7 @@ ifneq ($(ROBOT_SUITE),all)
 	OSCAR_TEST_ROBOT_SUITE="$(ROBOT_SUITE)" \
 	OSCAR_TEST_ROBOT_ARGS="$(ROBOT_ARGS)" \
 	OSCAR_TEST_ROBOT_OUTPUT_DIR="$(ROBOT_OUTPUT_DIR)" \
-	$(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d $(ROBOT_OUTPUT_DIR) $(ROBOT_SUITE)
+	$(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d $(ROBOT_OUTPUT_DIR) $(ROBOT_SUITE)
 else
 	@echo "Running all Robot test suites found under tests/."
 	@if [ -z "$(strip $(SUITE_LIST))" ]; then \
@@ -102,7 +103,7 @@ else
 	  OSCAR_TEST_ROBOT_SUITE="$$suite" \
 	  OSCAR_TEST_ROBOT_ARGS="$(ROBOT_ARGS)" \
 	  OSCAR_TEST_ROBOT_OUTPUT_DIR="$$out_dir" \
-	  $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d "$$out_dir" "$$suite"; \
+	  $(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d "$$out_dir" "$$suite"; \
 	done
 endif
 
