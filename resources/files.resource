@@ -195,5 +195,5 @@ Set Service File For Update
 
 Verify Bucket
     [Documentation]    List all buckets
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    headers=${HEADERS}
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    headers=${HEADERS}    verify=${SSL_VERIFY}
     RETURN      ${response}
