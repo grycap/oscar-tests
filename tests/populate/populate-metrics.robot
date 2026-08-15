@@ -27,10 +27,10 @@ ${POPULATE_SHARED_SYNC_INVOCATIONS}     1
 ${POPULATE_SHARED_ASYNC_INVOCATIONS}    1
 ${POPULATE_CLEANUP}                 ${False}
 ${POPULATE_DELETE_ONLY}             ${False}
-${POPULATE_SERVICE_CPU}             0.5
-${POPULATE_SERVICE_MEMORY}          256Mi
-${POPULATE_EXPOSED_CPU}             0.5
-${POPULATE_EXPOSED_MEMORY}          256Mi
+${POPULATE_SERVICE_CPU}             0.1
+${POPULATE_SERVICE_MEMORY}          128Mi
+${POPULATE_EXPOSED_CPU}             0.1
+${POPULATE_EXPOSED_MEMORY}          128Mi
 ${POPULATE_SERVICE_FILE}            ${DATA_DIR}/00-cowsay.yaml
 ${POPULATE_SERVICE_SCRIPT}          ${DATA_DIR}/00-cowsay-script.sh
 ${POPULATE_EXPOSED_SERVICE_FILE}    ${DATA_DIR}/expose_services/nginx_expose.yaml
@@ -206,6 +206,35 @@ Setup Populate Metrics Suite
     Log To Console    OSCAR populate exposed service: ${POPULATE_EXPOSED_PREFIX}-${POPULATE_RUN_ID}
     Log To Console    OSCAR populate shared service: ${POPULATE_SHARED_PREFIX}-${POPULATE_RUN_ID}
     Variable Should Exist    ${HEADERS2}    This suite needs a secondary user. Use variables/.env-auth-keycloak-oscarusers.yaml or another auth file that defines KEYCLOAK_USERNAME_AUX.
+    IF    not ${POPULATE_DELETE_ONLY}
+        Check Populate MinIO Bucket Quotas
+    END
+
+Check Populate MinIO Bucket Quotas
+    [Documentation]    Fail before service creation unless both users have enough free MinIO bucket slots.
+    ${primary_required}=    Evaluate    (int($POPULATE_SERVICE_COUNT) + 1) // 2 + 1
+    ${secondary_required}=    Evaluate    int($POPULATE_SERVICE_COUNT) // 2 + 1
+    Check Populate User MinIO Bucket Quota    primary user    ${HEADERS}    ${primary_required}
+    Check Populate User MinIO Bucket Quota    secondary user    ${HEADERS2}    ${secondary_required}
+
+Check Populate User MinIO Bucket Quota
+    [Documentation]    Verify that one user's quota can accommodate all buckets assigned by this suite.
+    [Arguments]    ${user_label}    ${headers}    ${required_buckets}
+    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/quotas/user    expected_status=ANY    headers=${headers}
+    Should Be Equal As Strings
+    ...    ${response.status_code}
+    ...    200
+    ...    msg=Unable to verify MinIO bucket quota for ${user_label}: GET /system/quotas/user returned ${response.status_code}: ${response.content}
+    ${payload}=    Evaluate    json.loads($response.content)    json
+    Dictionary Should Contain Key    ${payload}    minio
+    ${buckets}=    Get From Dictionary    ${payload}[minio]    buckets
+    ${max_buckets}=    Get From Dictionary    ${buckets}    max
+    ${used_buckets}=    Get From Dictionary    ${buckets}    used
+    ${available_buckets}=    Evaluate    int($max_buckets) - int($used_buckets)
+    Log To Console    OSCAR populate bucket quota for ${user_label}: max=${max_buckets}, used=${used_buckets}, available=${available_buckets}, required=${required_buckets}
+    Should Be True
+    ...    ${available_buckets} >= ${required_buckets}
+    ...    msg=Not enough MinIO bucket quota for ${user_label}: available=${available_buckets}, required=${required_buckets}, max=${max_buckets}, used=${used_buckets}. Delete unused services or buckets, or increase the user's quota.
 
 Teardown Populate Metrics Suite
     [Documentation]    Optionally remove services and always remove generated service JSON files.

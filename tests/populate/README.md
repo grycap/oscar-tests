@@ -25,6 +25,10 @@ variables/.env-auth-keycloak-oscarusers.yaml
 
 You also need to pass the target cluster variables file, as with the rest of the OSCAR tests.
 
+Before creating services, the suite checks `/system/quotas/user` for both users
+and fails during setup if either user lacks the MinIO bucket slots required for
+the complete batch. Delete-only runs skip this check.
+
 ## Populate and Leave Services Running
 
 This is the default mode. It creates four `cowsay` services, one exposed nginx service, and one shared service. Each numbered `cowsay` service is invoked twice synchronously and twice asynchronously. The exposed service is invoked twice through `/system/services/{service}/exposed`. The shared service is invoked once synchronously and once asynchronously by each user. Services are left in the cluster.
