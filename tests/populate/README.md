@@ -29,9 +29,11 @@ Before creating services, the suite checks `/system/quotas/user` for both users
 and fails during setup if either user lacks the MinIO bucket slots required for
 the complete batch. Delete-only runs skip this check.
 
-## Populate and Leave Services Running
+## Populate and Cleanup at the End
 
-This is the default mode. It creates four `cowsay` services, one exposed nginx service, and one shared service. Each numbered `cowsay` service is invoked twice synchronously and twice asynchronously. The exposed service is invoked twice through `/system/services/{service}/exposed`. The shared service is invoked once synchronously and once asynchronously by each user. Services are left in the cluster.
+This is the default mode. It creates four `cowsay` services, one exposed nginx service, and one shared service. Each numbered `cowsay` service is invoked twice synchronously and twice asynchronously. The exposed service is invoked twice through `/system/services/{service}/exposed`. The shared service is invoked once synchronously and once asynchronously by each user.
+
+At suite teardown the suite removes the services created by this run first (`Delete Populate Services`) and then the MinIO buckets left behind (`Delete Populate Buckets`). This keeps the cluster clean and prevents the per-user MinIO bucket quota from filling up across repeated runs.
 
 ```bash
 robot \
@@ -71,18 +73,6 @@ robot \
   tests/populate/populate-metrics.robot
 ```
 
-## Populate and Cleanup at the End
-
-Use this mode to generate metrics activity but remove services before the suite exits.
-
-```bash
-robot \
-  -V variables/.env-auth-keycloak-oscarusers.yaml \
-  -V variables/.env-cluster-<cluster>.yaml \
-  --variable POPULATE_CLEANUP:True \
-  tests/populate/populate-metrics.robot
-```
-
 ## Delete a Previous Batch
 
 Use the same run id and service count used during population.
@@ -95,6 +85,8 @@ robot \
   --variable POPULATE_RUN_ID:demo01 \
   tests/populate/populate-metrics.robot
 ```
+
+Delete-only runs also remove the MinIO buckets left by the original batch through the suite teardown.
 
 If the original run used a non-default service count, include it:
 
@@ -113,7 +105,6 @@ If the original run used a non-default service count, include it:
 | `POPULATE_EXPOSED_INVOCATIONS` | `2` | Exposed endpoint calls for the nginx service. |
 | `POPULATE_SHARED_SYNC_INVOCATIONS` | `1` | Sync calls to the shared service per user. |
 | `POPULATE_SHARED_ASYNC_INVOCATIONS` | `1` | Async calls to the shared service per user. |
-| `POPULATE_CLEANUP` | `False` | Delete services at suite teardown. |
 | `POPULATE_DELETE_ONLY` | `False` | Only delete services for `POPULATE_RUN_ID`. |
 | `POPULATE_SERVICE_PREFIX` | `metrics-populate-simple` | Prefix for generated service names. |
 | `POPULATE_EXPOSED_PREFIX` | `metrics-populate-exposed` | Prefix for the generated exposed service name. |

@@ -237,11 +237,27 @@ Check Populate User MinIO Bucket Quota
     ...    msg=Not enough MinIO bucket quota for ${user_label}: available=${available_buckets}, required=${required_buckets}, max=${max_buckets}, used=${used_buckets}. Delete unused services or buckets, or increase the user's quota.
 
 Teardown Populate Metrics Suite
-    [Documentation]    Optionally remove services and always remove generated service JSON files.
-    IF    ${POPULATE_CLEANUP} and not ${POPULATE_DELETE_ONLY}
-        Delete Populate Services
-    END
+    [Documentation]    Remove the services created by this run first, then their MinIO buckets, plus generated service JSON files.
+    Delete Populate Services
+    Delete Populate Buckets
     Remove Populate Generated Files
+
+Delete Populate Buckets
+    [Documentation]    Remove the MinIO buckets created by this populate run, including buckets left over from a previous batch with the same run id.
+    FOR    ${index}    IN RANGE    ${POPULATE_SERVICE_COUNT}
+        ${service_name}=    Populate Service Name For Index    ${index}
+        ${headers}=    Populate Headers For Index    ${index}
+        ${bucket_response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/buckets/${service_name}    expected_status=ANY    headers=${headers}
+        Log    Delete bucket ${service_name}: ${bucket_response.status_code}
+    END
+    ${exposed_service_name}=    Populate Exposed Service Name
+    ${exposed_headers}=    Populate Headers For Index    ${POPULATE_EXPOSED_USER_INDEX}
+    ${exposed_bucket_response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/buckets/${exposed_service_name}    expected_status=ANY    headers=${exposed_headers}
+    Log    Delete bucket ${exposed_service_name}: ${exposed_bucket_response.status_code}
+    ${shared_service_name}=    Populate Shared Service Name
+    ${shared_owner_headers}=    Populate Headers For Index    ${POPULATE_SHARED_OWNER_INDEX}
+    ${shared_bucket_response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/buckets/${shared_service_name}    expected_status=ANY    headers=${shared_owner_headers}
+    Log    Delete bucket ${shared_service_name}: ${shared_bucket_response.status_code}
 
 Prepare Populate Service File
     [Documentation]    Generate a cowsay service JSON body for one populated service.
