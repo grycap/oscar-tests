@@ -5,6 +5,7 @@ Library             Collections
 Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS}
 Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/api_call.resource
+Resource            ${CURDIR}/../../resources/service.resource
 
 Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Initialize Presign Test Names
 Suite Teardown      Cleanup Presign Test Artifacts
@@ -18,6 +19,9 @@ ${BUCKET_CONFIG_FILE}   ${DATA_DIR}/bucket.json
 OSCAR Create Bucket For Presign
     [Documentation]    Create a bucket to test presigned URL generation.
     ${body}=    Get File    ${BUCKET_CONFIG_FILE}
+    ${payload}=    Evaluate    json.loads($body)    json
+    Set To Dictionary    ${payload}    bucket_name=${bucket_name}
+    ${body}=    Evaluate    json.dumps($payload)    json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/buckets    data=${body}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
@@ -60,9 +64,10 @@ OSCAR Presign Bucket Not Found
 
 *** Keywords ***
 Initialize Presign Test Names
-    [Documentation]    Use the default bucket name from the bucket config file.
+    [Documentation]    Generate an isolated bucket name from the configured base name.
     ${content}=    Get File    ${BUCKET_CONFIG_FILE}
-    ${bucket_name}=    Evaluate    json.loads($content).get("bucket_name", "robot-test")    json
+    ${bucket_base}=    Evaluate    json.loads($content).get("bucket_name", "robot-test")    json
+    ${bucket_name}=    Generate Random Service Name    ${bucket_base}
     Set Suite Variable    ${bucket_name}    ${bucket_name}
 
 Create Presign Payload
