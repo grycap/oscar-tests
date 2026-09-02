@@ -41,8 +41,9 @@ Authenticate To Dashboard
     [Documentation]    Injects the OIDC token in local storage and waits for services to load.
     Provide Endpoint If Prompted
     ${token}=    Get Access Token
+    ${egi_session}=    Decode JWT Token    ${token}
     ${auth_data_json}=    Evaluate
-    ...    json.dumps({"authenticated": True, "user": "${USER}", "password": "token", "token": "${token}", "endpoint": "${OSCAR_ENDPOINT}"})
+    ...    json.dumps({"authenticated": True, "user": "${USER}", "password": "token", "token": "${token}", "endpoint": "${OSCAR_ENDPOINT}", "egiSession": $egi_session})
     ...    json
     LocalStorage Set Item    authData    ${auth_data_json}
     Reload
