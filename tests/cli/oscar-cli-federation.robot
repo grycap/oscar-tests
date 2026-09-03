@@ -109,7 +109,11 @@ OSCAR CLI Federation Get Star After Update
 
 OSCAR CLI Federation Remove Members From Star
     [Documentation]    Remove all federation members from the star service.
-    ${result}=    Run Process    oscar-cli    federation    delete    ${MAIN_SVC}
+    ${result}=    Run Process    oscar-cli    federation    delete    ${MAIN_SVC}   --cluster-id   ${CLUSTER_ID_A}      --service-name   ${WORKER1_SVC}
+    ...    stdout=True    stderr=True
+    Log    ${result.stdout}
+    Should Be Equal As Integers    ${result.rc}    0
+    ${result}=    Run Process    oscar-cli    federation    delete    ${MAIN_SVC}   --cluster-id   ${CLUSTER_ID_B}      --service-name   ${WORKER2_SVC}
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
@@ -170,7 +174,7 @@ OSCAR CLI Federation Get Mesh With Member
 
 OSCAR CLI Federation Remove Members From Mesh
     [Documentation]    Remove all federation members from the mesh service.
-    ${result}=    Run Process    oscar-cli    federation    delete    ${MESH_SVC}
+    ${result}=    Run Process    oscar-cli    federation    delete    ${MESH_SVC}   --cluster-id   ${CLUSTER_ID_B}      --service-name   ${WORKER2_SVC}
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
