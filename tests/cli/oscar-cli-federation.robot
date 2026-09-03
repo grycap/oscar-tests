@@ -212,9 +212,7 @@ Setup Federation CLI Suite
     Set Suite Variable    ${CLUSTER_ID_MAIN}  oscar-primary
     Set Suite Variable    ${NONE}             ${None}
     FOR    ${alias}    IN    robot-oscar-cluster    ${CLUSTER_ID_MAIN}    ${CLUSTER_ID_A}    ${CLUSTER_ID_B}
-        ${result}=    Run Process    oscar-cli    cluster    add    ${alias}    ${OSCAR_ENDPOINT}
-        ...    --oidc-refresh-token    ${REFRESH_TOKEN}    stdout=True    stderr=True
-        Log    ${result.stdout}
+        ${result}=    Add CLI OIDC Cluster    ${alias}
     END
     ${result}=    Run Process    oscar-cli    cluster    default    --set    robot-oscar-cluster
     ...    stdout=True    stderr=True

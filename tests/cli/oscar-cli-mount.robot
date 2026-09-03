@@ -99,9 +99,7 @@ Setup Mount CLI Suite
     IF  not ${exists}
         Set Refresh Token
     END
-    ${result}=    Run Process    oscar-cli    cluster    add    ${CLUSTER_NAME}    ${OSCAR_ENDPOINT}
-    ...    --oidc-refresh-token    ${REFRESH_TOKEN}    stdout=True    stderr=True
-    Log    ${result.stdout}
+    ${result}=    Add CLI OIDC Cluster    ${CLUSTER_NAME}
     Should Contain    ${result.stdout}    successfully
     ${result}=    Run Process    oscar-cli    cluster    default    --set    ${CLUSTER_NAME}
     ...    stdout=True    stderr=True
