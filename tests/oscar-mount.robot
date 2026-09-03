@@ -24,7 +24,7 @@ Refresh Token Exist
 
 OSCAR API Health
     [Documentation]    Check API health
-    ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200
+    ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.content}    Ok
 
@@ -59,7 +59,7 @@ OSCAR Create Service
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
     Sleep    10s
@@ -82,7 +82,7 @@ OSCAR CLI Put File to input bucket
 
 Check the good execution
     FOR    ${i}    IN RANGE    ${MAX_RETRIES}
-        ${status}    ${resp}=    Run Keyword And Ignore Error    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}      headers=${HEADERS}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}      headers=${HEADERS}    verify=${SSL_VERIFY}
         IF    '${status}' != 'FAIL'
             ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
             Exit For Loop If    ${status}
@@ -96,7 +96,7 @@ Check the good execution
     Get Key From Dictionary    ${jobs_dict["jobs"]}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
     ${get_logs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Sleep    5s
     Should Contain    ${get_logs.content}    Hello
 
@@ -104,7 +104,7 @@ OSCAR Delete Service
     [Documentation]    Delete the created service
     [Tags]    delete
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -120,7 +120,7 @@ Delete Bucket ${MOUNT_BUCKET_NAME_RAW}. To reset state
     [Documentation]    Delete a restricted bucket
     [Tags]    Delete    bucket
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${MOUNT_BUCKET_NAME_RAW}   expected_status=204   
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
