@@ -126,6 +126,7 @@ Prepare Service File With Mount
     ${service_content}=    Replace String    ${service_content}    name: robot-test-cowsay    name: ${SERVICE_NAME}
     ${service_content}=    Replace String    ${service_content}    robot-test-cowsay/input    ${SERVICE_NAME}/input
     ${service_content}=    Replace String    ${service_content}    robot-test-cowsay/output    ${SERVICE_NAME}/output
+    ${service_content}=    Replace String    ${service_content}    robot-oscar-cluster    ${CLUSTER_NAME}
     ${service_content}=    Set Service File VO    ${service_content}
     ${output}=    yaml.Dump    ${service_content}
     Create File    ${DATA_DIR}/service_file.yaml    ${output}
