@@ -17,7 +17,7 @@ ${SERVICE_BASE}     robot-test-cowsay
 
 OSCAR API Health
     [Documentation]    Check API health
-    ${response}=    GET  ${OSCAR_ENDPOINT}/health  expected_status=200
+    ${response}=    GET  ${OSCAR_ENDPOINT}/health  expected_status=200    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.content}    Ok
 
@@ -27,7 +27,7 @@ OSCAR Service isolation_level SERVICE Create
     ${body}=    Get File    ${DATA_DIR}/service_file.json
 
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
-    ...                     headers=${HEADERS}
+    ...                     headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
     Sleep    20s
@@ -47,7 +47,7 @@ OSCAR Service isolation_level SERVICE -> USER Update
     ${content}=     Update File     ${body}     isolation_level     USER
     ${users}=       Create List     ${USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}
+    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}    verify=${SSL_VERIFY}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
     Sleep    20s
     
@@ -68,7 +68,7 @@ OSCAR Service isolation_level USER -> USER Update with more users
     ${users}=       Create List     ${USER}
     Append To List      ${users}    ${OTHER_USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}
+    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
     Sleep    20s
@@ -88,7 +88,7 @@ OSCAR Service isolation_level USER -> USER Update with less users
     ${content}=     Update File     ${body}     isolation_level     USER
     ${users}=       Create List     ${USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}
+    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${content2}    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
     Sleep    20s
@@ -106,7 +106,7 @@ Verify isolation_level USER -> USER Update with less users
 OSCAR Update Service isolation_level user -> service
     [Documentation]  Update a service private -> restricted
     ${body}=    Get File    ${DATA_DIR}/service_file.json
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
+    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
     Sleep    20s
@@ -126,7 +126,7 @@ Verify isolation_level USER -> SERVICE Update
 OSCAR Delete Service isolation_level SERVICE
     [Documentation]  Delete the created service
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${service_name}   expected_status=204
-    ...                       headers=${HEADERS}
+    ...                       headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
     Sleep    20s
@@ -149,7 +149,7 @@ OSCAR Service isolation_level USER Create
     ${users}=       Create List     ${USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${content2}
-    ...                     headers=${HEADERS}
+    ...                     headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
     Sleep    20s
@@ -168,7 +168,7 @@ Verify isolation_level SERVICE Creation
 OSCAR Delete Service isolation_level USER
     [Documentation]  Delete the created service
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${service_name}   expected_status=204
-    ...                       headers=${HEADERS}
+    ...                       headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
     Sleep    20s
@@ -187,8 +187,8 @@ Verify isolation_level USER Delete
 *** Keywords ***
 Cleanup Isolation Resources
     [Documentation]    Best-effort cleanup of services created by this suite.
-    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true    expected_status=ANY    headers=${HEADERS}
-    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=ANY    headers=${HEADERS}
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true    expected_status=ANY    headers=${HEADERS}    verify=${SSL_VERIFY}
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=ANY    headers=${HEADERS}    verify=${SSL_VERIFY}
 
 Get Key From Dictionary
     [Documentation]  Get the key from a dictionary
@@ -243,5 +243,5 @@ Update File List
 
 Verify Second Bucket
     [Documentation]    List all buckets
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    headers=${HEADERS2}
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    verify=${SSL_VERIFY}    headers=${HEADERS2}
     RETURN      ${response}
