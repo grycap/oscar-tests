@@ -16,7 +16,7 @@ ${MOUNT_BUCKET_NAME_OTHER}      robot-test-mount
 *** Test Cases ***
 OSCAR API Health
     [Documentation]    Check API health
-    ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200
+    ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.content}    Ok
 
@@ -26,14 +26,14 @@ OSCAR Create Service ${SERVICE_NAME} Mount not Exist
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
 OSCAR Verify Bucket ${bucket_name} and Service ${SERVICE_NAME} exist
     [Documentation]    Read a service
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"robot-test/mount"}
     ${response}=    Verify Bucket
@@ -46,14 +46,14 @@ OSCAR Delete Service ${SERVICE_NAME} 1
     [Documentation]    Delete the created service
     [Tags]    delete
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
 
 OSCAR Verify Bucket ${bucket_name} still exits and the service ${SERVICE_NAME} dont
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=404
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
@@ -64,7 +64,7 @@ Delete Bucket private ${bucket_name} to reset the state
     [Documentation]    Delete a private bucket ${bucket_name}
     [Tags]    Delete    bucket
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${bucket_name}    expected_status=204
-    ...         headers=${HEADERS}
+    ...         headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -76,7 +76,7 @@ Create private Bucket ${MOUNT_BUCKET_NAME_OTHER}
     ${body}= 	Convert JSON To String 	${body}
     Log     ${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Should Be Equal As Strings    ${response.status_code}    201
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
@@ -93,7 +93,7 @@ OSCAR Create Service Mount - where the bucket ${MOUNT_BUCKET_NAME_OTHER} exist a
     ${body}= 	Convert JSON To String 	${body}
     Log    ${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Log    ${response}
     Should Be Equal As Strings    ${response.status_code}    201
@@ -102,7 +102,7 @@ OSCAR Create Service Mount - where the bucket ${MOUNT_BUCKET_NAME_OTHER} exist a
 OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} and Service ${SERVICE_NAME} exist
     [Documentation]    Read a service
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"${MOUNT_BUCKET_NAME_OTHER}"}
     ${response}=    Verify Bucket
@@ -115,16 +115,16 @@ OSCAR Delete Service ${SERVICE_NAME} 2
     [Documentation]    Delete the created service
     [Tags]    delete
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=404
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
 
 
 OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} still exits and the service ${SERVICE_NAME} dont
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=404
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
@@ -136,7 +136,7 @@ OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} still exits and the service ${SER
 Delete Bucket ${MOUNT_BUCKET_NAME_OTHER} to reset the state
     [Tags]    Delete    bucket
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${MOUNT_BUCKET_NAME_OTHER}   expected_status=204   
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -150,7 +150,7 @@ OSCAR Create Service Mount - where the bucket ${MOUNT_BUCKET_NAME_OTHER} not exi
     ${body}= 	Convert JSON To String 	${body}
     Log    ${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Log    ${response}
     Should Be Equal As Strings    ${response.status_code}    201
@@ -159,7 +159,7 @@ OSCAR Create Service Mount - where the bucket ${MOUNT_BUCKET_NAME_OTHER} not exi
 OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} and Service Exist
     [Documentation]    Read a service
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"${MOUNT_BUCKET_NAME_OTHER}"}
     ${response}=    Verify Bucket
@@ -172,16 +172,16 @@ OSCAR Delete Service ${SERVICE_NAME} 3
     [Documentation]    Delete the created service
     [Tags]    delete
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=404
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
 
 
 OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} still exits and the service ${SERVICE_NAME} dont after delete
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=404
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
@@ -192,7 +192,7 @@ Delete Bucket ${MOUNT_BUCKET_NAME_OTHER}
     [Documentation]    Delete a restricted bucket
     [Tags]    Delete    bucket
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${MOUNT_BUCKET_NAME_OTHER}   expected_status=204
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -206,7 +206,7 @@ Create public Bucket ${MOUNT_BUCKET_NAME_OTHER}
     ${body}= 	Convert JSON To String 	${body}
     Log     ${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Should Be Equal As Strings    ${response.status_code}    201
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
@@ -223,7 +223,7 @@ OSCAR Create Service with public Bucket ${MOUNT_BUCKET_NAME_OTHER}. Must answers
     ${body}= 	Convert JSON To String 	${body}
     Log    ${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=500    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Log    ${response}
     Should Be Equal As Strings    ${response.status_code}    500
@@ -234,7 +234,7 @@ Delete Bucket ${MOUNT_BUCKET_NAME_OTHER}. To reset state
     [Documentation]    Delete a restricted bucket
     [Tags]    Delete    bucket
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${MOUNT_BUCKET_NAME_OTHER}   expected_status=204   
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -243,9 +243,9 @@ Delete Bucket ${MOUNT_BUCKET_NAME_OTHER}. To reset state
 *** Keywords ***
 Cleanup Mount Cycle Resources
     [Documentation]    Best-effort cleanup of services and buckets created by this suite.
-    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=ANY    headers=${HEADERS}
-    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${MOUNT_BUCKET_NAME_OTHER}    expected_status=ANY    headers=${HEADERS}
-    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${bucket_name}    expected_status=ANY    headers=${HEADERS}
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=ANY    headers=${HEADERS}    verify=${SSL_VERIFY}
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${MOUNT_BUCKET_NAME_OTHER}    expected_status=ANY    headers=${HEADERS}    verify=${SSL_VERIFY}
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${bucket_name}    expected_status=ANY    headers=${HEADERS}    verify=${SSL_VERIFY}
 
 Prepare Service File
     [Documentation]    Prepare the service file
