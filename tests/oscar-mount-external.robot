@@ -119,7 +119,7 @@ OSCAR CLI List Files
 OSCAR CLI Put File
     [Documentation]    Check that OSCAR CLI puts a file in a service's storage provider
     ${result}=    Run Process    oscar-cli    service        put-file    ${SERVICE_NAME}    minio
-    ...    ${EXECDIR}/data/00-cowsay-invoke-body.json       robot-test/input/${INVOKE_FILE_NAME} 
+    ...    ${EXECDIR}/data/00-cowsay-invoke-body.json       robot-test-cowsay/input/${INVOKE_FILE_NAME} 
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
@@ -131,7 +131,7 @@ OSCAR List Jobs
     ${list_jobs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=200
     ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
-    Get Key From Dictionary    ${jobs_dict}
+    Get Key From Dictionary    ${jobs_dict}[jobs]
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
     Sleep   20s
 
