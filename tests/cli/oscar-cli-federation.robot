@@ -49,7 +49,6 @@ OSCAR CLI Federation Get NonFederated
     ...    stdout=True    stderr=True
     Log    stdout: ${result.stdout}
     Log    stderr: ${result.stderr}
-    # CLI returns 1 when the service has no federation members
     Should Be Equal As Integers    ${result.rc}    0
 
 OSCAR CLI Apply Star Federation Service
@@ -110,12 +109,10 @@ OSCAR CLI Federation Get Star After Update
 
 OSCAR CLI Federation Remove Members From Star
     [Documentation]    Remove all federation members from the star service.
-    Log    delete ${MAIN_SVC} ${CLUSTER_ID_A} ${WORKER1_SVC}
     ${result}=    Run Process    oscar-cli    federation    delete    ${MAIN_SVC}   --cluster-id   ${CLUSTER_ID_A}      --service-name   ${WORKER1_SVC}
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
-    Log    delete ${MAIN_SVC} ${CLUSTER_ID_B} ${WORKER2_SVC}
     ${result}=    Run Process    oscar-cli    federation    delete    ${MAIN_SVC}   --cluster-id   ${CLUSTER_ID_B}      --service-name   ${WORKER2_SVC}
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
@@ -177,7 +174,6 @@ OSCAR CLI Federation Get Mesh With Member
 
 OSCAR CLI Federation Remove Members From Mesh
     [Documentation]    Remove all federation members from the mesh service.
-    Log    delete ${MESH_SVC} ${CLUSTER_ID_B} ${WORKER2_SVC}
     ${result}=    Run Process    oscar-cli    federation    delete    ${MESH_SVC}   --cluster-id   ${CLUSTER_ID_B}      --service-name   ${WORKER2_SVC}
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
@@ -212,9 +208,7 @@ Setup Federation CLI Suite
     Set Suite Variable    ${CLUSTER_ID_MAIN}  oscar-primary
     Set Suite Variable    ${NONE}             ${None}
     FOR    ${alias}    IN    robot-oscar-cluster    ${CLUSTER_ID_MAIN}    ${CLUSTER_ID_A}    ${CLUSTER_ID_B}
-        ${result}=    Run Process    oscar-cli    cluster    add    ${alias}    ${OSCAR_ENDPOINT}
-        ...    --oidc-refresh-token    ${REFRESH_TOKEN}    stdout=True    stderr=True
-        Log    ${result.stdout}
+        ${result}=    Add CLI OIDC Cluster    ${alias}
     END
     ${result}=    Run Process    oscar-cli    cluster    default    --set    robot-oscar-cluster
     ...    stdout=True    stderr=True

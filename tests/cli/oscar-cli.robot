@@ -33,9 +33,7 @@ OSCAR CLI Installed
 OSCAR CLI Cluster Add
     [Documentation]    Check that OSCAR CLI adds a cluster
     [Tags]    create    delete
-    ${result}=    Run Process    oscar-cli    cluster    add    robot-oscar-cluster    ${OSCAR_ENDPOINT}
-    ...    --oidc-refresh-token    ${REFRESH_TOKEN}    stdout=True    stderr=True
-    Log    ${result.stdout}
+    ${result}=    Add CLI OIDC Cluster    robot-oscar-cluster
     # Should Be Equal As Integers    ${result.rc}    0
     Should Contain    ${result.stdout}    successfully
 
