@@ -204,7 +204,7 @@ Execute Exposed Service With Insufficient Resources
     ${body}=    Get File    ${DATA_DIR}/exposed_service_file.json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Should Be True    '${response.status_code}' == '500' 
-    Should Contain    ${response.content}    workload for exposed service '${service_name}' is NOT admitted 
+    Should Contain    ${response.content}    workload for exposed service '${service_name}' was not admitted within
 
 
 *** Keywords ***
