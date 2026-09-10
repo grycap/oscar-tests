@@ -5,4 +5,5 @@ robotframework-requests
 pyyaml
 PyJWT
 oscar-python
+pytest
 locust
