@@ -13,20 +13,14 @@ class TestMount:
 
     @pytest.fixture(scope="class")
     def service_fdl(self, client_options, service_name):
-        return load_service_fdl(service_name, client_options["cluster_id"])
+        return load_service_fdl(service_name, client_options["cluster_id"], client_options["vo"])
 
     @pytest.fixture(scope="class", autouse=True)
     def setup_teardown(self, client, service_fdl, service_name, mount_bucket):
         bucket_created = False
-        try:
-            client.create_bucket(mount_bucket, "private")
-            bucket_created = True
-        except Exception:
-            pass
-        try:
-            client.create_service(service_fdl)
-        except Exception:
-            pass
+        client.create_bucket(mount_bucket, "private")
+        bucket_created = True
+        client.create_service(service_fdl)
         yield
         try:
             client.remove_service(service_name)
