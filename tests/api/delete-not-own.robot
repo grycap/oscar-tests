@@ -44,7 +44,7 @@ OSCAR Delete Bucket As Non-Owner Should Fail
     [Documentation]    Attempt to delete a bucket that belongs to another user and verify it is forbidden
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_NAME}    expected_status=403    headers=${HEADERS2}    verify=${SSL_VERIFY}
     Log    ${response.content}
-    Should Contain    ${response.content}    is not authorised
+    Should Contain    ${response.content}    is not authorized
     Should Be Equal As Strings    ${response.status_code}    403
 
 Verify Bucket Still Exists After Failed Deletion
