@@ -62,6 +62,15 @@ OSCAR List Orchestration Services
     Should Contain    ${response.content}    ${FIRST_SERVICE}
     Should Contain    ${response.content}    ${SECOND_SERVICE}
 
+OSCAR List Orchestration Buckets
+    [Documentation]    Retrieve the buckets created for the orchestration services and check they are tagged with the originating service
+    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/buckets
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    200
+    ${buckets}=    Evaluate    json.loads($response.content)    json
+    Verify Bucket Is Tagged From Service    ${buckets}    ${FIRST_SERVICE}
+    Verify Bucket Is Tagged From Service    ${buckets}    ${SECOND_SERVICE}
+
 OSCAR Read Orchestration Services
     [Documentation]    Read both services and verify the chained input/output paths
     ${service}=    Get Service Payload    ${FIRST_SERVICE}
@@ -92,15 +101,23 @@ OSCAR Invoke Orchestration Pipeline
     Download And Verify Orchestration Output
 
 OSCAR Delete Orchestration Services
-    [Documentation]    Delete the orchestration services
+    [Documentation]    Delete the orchestration services and verify that buckets and their tags are cleaned up
     [Tags]    delete
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in local testing for the time being
     ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${FIRST_SERVICE}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
+    Wait Until Keyword Succeeds    60s    5s    Bucket Should Not Exist    ${FIRST_SERVICE}
+    Wait Until Keyword Succeeds    60s    5s    Bucket Should Not Be Tagged With Service    ${SECOND_SERVICE}    ${FIRST_SERVICE}
+    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/buckets
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    200
+    ${buckets}=    Evaluate    json.loads($response.content)    json
+    Verify Bucket Is Tagged From Service    ${buckets}    ${SECOND_SERVICE}
     ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SECOND_SERVICE}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
+    Wait Until Keyword Succeeds    60s    5s    Bucket Should Not Exist    ${SECOND_SERVICE}
 
 
 *** Keywords ***
@@ -168,6 +185,54 @@ Verify Orchestration Chain
     Should Be Equal As Strings    ${first_input}[path]    ${expected_input}
     Should Be Equal As Strings    ${first_output}[path]    ${expected_output}
 
+Verify Bucket Is Tagged From Service
+    [Documentation]    Assert that a bucket exists and its metadata is tagged with the originating service
+    [Arguments]    ${buckets}    ${service_name}
+    ${bucket}=    Get Bucket From List    ${buckets}    ${service_name}
+    ${metadata}=    Get From Dictionary    ${bucket}    metadata
+    Dictionary Should Contain Key    ${metadata}    from_service
+    ${from_service}=    Get From Dictionary    ${metadata}    from_service
+    ${tags}=    Evaluate    $from_service.split()
+    List Should Contain Value    ${tags}    ${service_name}    Bucket ${service_name} is not tagged with the originating service
+
+Get Bucket From List
+    [Documentation]    Return the bucket dictionary matching a name or fail if it is not present
+    [Arguments]    ${buckets}    ${bucket_name}
+    FOR    ${bucket}    IN    @{buckets}
+        ${name}=    Get From Dictionary    ${bucket}    bucket_name
+        IF    '${name}' == '${bucket_name}'
+            RETURN    ${bucket}
+        END
+    END
+    Fail    Bucket ${bucket_name} not found in the bucket list
+
+List Buckets Payload
+    [Documentation]    Fetch and parse the list of buckets
+    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/buckets
+    Log    ${response.content}
+    Should Be Equal As Strings    ${response.status_code}    200
+    ${payload}=    Evaluate    json.loads($response.content)    json
+    RETURN    ${payload}
+
+Bucket Should Not Exist
+    [Documentation]    Assert that the given bucket is no longer present in the bucket list
+    [Arguments]    ${bucket_name}
+    ${buckets}=    List Buckets Payload
+    ${found}=    Evaluate    any(b.get('bucket_name') == r'''${bucket_name}''' for b in $buckets)
+    Should Be True    not ${found}    Bucket ${bucket_name} still exists
+
+Bucket Should Not Be Tagged With Service
+    [Documentation]    Assert that an existing bucket is tagged with the remaining service but no longer with the removed one
+    [Arguments]    ${bucket_name}    ${removed_service}
+    ${buckets}=    List Buckets Payload
+    ${bucket}=    Get Bucket From List    ${buckets}    ${bucket_name}
+    ${metadata}=    Get From Dictionary    ${bucket}    metadata
+    Dictionary Should Contain Key    ${metadata}    from_service
+    ${from_service}=    Get From Dictionary    ${metadata}    from_service
+    ${tags}=    Evaluate    $from_service.split()
+    List Should Contain Value    ${tags}    ${bucket_name}    Bucket ${bucket_name} is not tagged with the originating service any more
+    List Should Not Contain Value    ${tags}    ${removed_service}    Bucket ${bucket_name} is still tagged with the removed service ${removed_service}
+
 Wait For Service Ready
     [Documentation]    Polls the service endpoint until the service reports a ready state or the timeout expires
     [Arguments]    ${service_name}
@@ -234,7 +299,7 @@ Download And Verify Orchestration Output
     ${output_hash}=    Evaluate    hashlib.md5(open(r'''${OUTPUT_IMAGE}''', 'rb').read()).hexdigest()    modules=hashlib
     Log    Input hash: ${input_hash} - Output hash: ${output_hash}
     Should Not Be Equal As Strings    ${input_hash}    ${output_hash}    Output is identical to the input; the grayify pipeline did not run
-    ${png_ok}=    Evaluate    open(r'''${OUTPUT_IMAGE}''', 'rb').read(8) == b'\x89PNG\r\n\x1a\n'
+    ${png_ok}=    Evaluate    open(r'''${OUTPUT_IMAGE}''', 'rb').read(8) == base64.b64decode('iVBORw0KGgo=')    modules=base64
     Should Be True    ${png_ok}    Output is not a valid PNG file
 
 Cleanup Orchestration Resources
