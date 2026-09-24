@@ -60,6 +60,7 @@ def build_oidc_options(auth_cfg, cluster_cfg):
         "client_id": auth_cfg["CLIENT_ID"],
         "scopes": scope.split(),
         "ssl": cluster_cfg.get("SSL_VERIFY", True),
+        "vo": auth_cfg.get("AAI_GROUP") or cluster_cfg.get("AAI_GROUP", "/oscar-test"),
         "user_sub": sub,
     }
 
@@ -73,6 +74,7 @@ def build_basic_auth_options(auth_cfg, cluster_cfg):
         "user": user,
         "password": password,
         "ssl": cluster_cfg.get("SSL_VERIFY", True),
+        "vo": auth_cfg.get("AAI_GROUP") or cluster_cfg.get("AAI_GROUP", "/oscar-test"),
     }
 
 
@@ -164,7 +166,7 @@ def volume_name():
 
 @pytest.fixture
 def service_fdl(service_name, client_options):
-    return load_service_fdl(service_name, client_options["cluster_id"])
+    return load_service_fdl(service_name, client_options["cluster_id"], client_options["vo"])
 
 
 @pytest.fixture
