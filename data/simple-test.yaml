@@ -8,6 +8,9 @@ functions:
       script: simple-test-script.sh
       allowed_users: []
       log_level: CRITICAL
+      environment:
+        variables:
+          OSCAR_TEST: simple-test
       input:
       - storage_provider: minio.default
         path: simple-test/input
