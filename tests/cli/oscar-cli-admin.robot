@@ -36,9 +36,7 @@ OSCAR CLI Installed
 OSCAR CLI Cluster Add
     [Documentation]    Check that OSCAR CLI adds a cluster with username/password
     [Tags]    create    delete
-    ${result}=    Run Process    oscar-cli    cluster    add    robot-oscar-cluster-admin    ${OSCAR_ENDPOINT}
-    ...     ${OSCAR_USER}       ${OSCAR_PASSWORD}    stdout=True    stderr=True
-    Log    ${result.stdout}
+    ${result}=    Add CLI Basic Cluster    robot-oscar-cluster-admin
     Should Contain    ${result.stdout}    successfully
 
 OSCAR CLI Cluster Default

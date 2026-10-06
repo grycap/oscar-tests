@@ -118,7 +118,7 @@ Remove Federation Member
     ${data}=    Evaluate    json.dumps(${body})    json
     ${headers}=    Create Dictionary    &{HEADERS}
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/federation/${MAIN_SVC}
-    ...    data=${data}    headers=${headers}    expected_status=ANY
+    ...    data=${data}    headers=${headers}    expected_status=ANY    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    200
 
@@ -193,7 +193,7 @@ Remove Mesh Federation Member
     ${data}=    Evaluate    json.dumps(${body})    json
     ${headers}=    Create Dictionary    &{HEADERS}
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/federation/${MESH_SVC}
-    ...    data=${data}    headers=${headers}    expected_status=ANY
+    ...    data=${data}    headers=${headers}    expected_status=ANY    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    200
 

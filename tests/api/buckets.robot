@@ -15,7 +15,7 @@ ${bucket_name}    robot-test
 *** Test Cases ***
 OSCAR API Health
     [Documentation]    Check API health
-    ${response}=    GET  ${OSCAR_ENDPOINT}/health  expected_status=200
+    ${response}=    GET  ${OSCAR_ENDPOINT}/health  expected_status=200    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.content}    Ok
 
@@ -24,7 +24,7 @@ Create Bucket Private
     [Tags]    create    bucket
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -43,7 +43,7 @@ Update Bucket from Private -> to Restricted
     ${body}=    Set Bucket File Allowed Users   ${body}     ${USER}
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -61,7 +61,7 @@ Update Bucket from Restricted -> to Public
     ${body}=    Set Bucket File Visibility      ${body}     public
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -78,7 +78,7 @@ Update Bucket from Public -> to Private
     [Tags]    update    bucket
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -98,7 +98,7 @@ Update Bucket from Private -> to Public
     ${body}=    Set Bucket File Visibility      ${body}     public
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -118,7 +118,7 @@ Update Bucket from Public -> to Restricted
     ${body}=    Set Bucket File Allowed Users   ${body}     ${USER}
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -134,7 +134,7 @@ Update Bucket from Restricted -> to Private
     [Tags]    update    bucket
     ${body}=    Get File    ${DATA_DIR}/bucket.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=204    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -148,7 +148,7 @@ Delete Bucket Private
     [Documentation]    Delete a private bucket
     [Tags]    Delete    bucket
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${bucket_name}    expected_status=204   
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -168,7 +168,7 @@ Create Bucket Restricted
     ${body}=    Set Bucket File Allowed Users   ${body}     ${USER}
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -183,7 +183,7 @@ Delete Bucket Restricted
     [Documentation]    Delete a restricted bucket
     [Tags]    Delete    bucket
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${bucket_name}    expected_status=204   
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -202,7 +202,7 @@ Create Bucket Public
     ${body}=    Set Bucket File Visibility      ${body}     public
     ${body}= 	Convert JSON To String 	${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -216,7 +216,7 @@ Delete Bucket Public
     [Documentation]    Delete a public bucket
     [Tags]    Delete    bucket
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${bucket_name}    expected_status=204   
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -231,7 +231,7 @@ Verify Bucket Public Delete
 *** Keywords ***
 Cleanup Bucket Resources
     [Documentation]    Best-effort cleanup of the bucket created by this suite.
-    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${bucket_name}    expected_status=ANY    headers=${HEADERS}
+    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${bucket_name}    expected_status=ANY    headers=${HEADERS}    verify=${SSL_VERIFY}
 
 Get Key From Dictionary
     [Documentation]  Get the key from a dictionary

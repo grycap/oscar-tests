@@ -52,7 +52,7 @@ Prepare Juno Service File
     Set To Dictionary    ${service_spec}    name=${SERVICE_NAME}
     ${environment}=    Get From Dictionary    ${service_spec}    environment
     ${variables}=    Get From Dictionary    ${environment}    variables
-    Set To Dictionary    ${variables}    JHUB_BASE_URL=/system/services/${SERVICE_NAME}/exposed
+    Set To Dictionary    ${variables}    JHUB_BASE_URL=/
     Set To Dictionary    ${variables}    OSCAR_ENDPOINT=${OSCAR_ENDPOINT}
     ${secrets}=    Get From Dictionary    ${environment}    secrets
     ${jupyter_token}=    Set Variable    junoroot-${RANDOM_STRING}
@@ -74,8 +74,9 @@ Create Private Mount Bucket
 
 Check Juno Exposed Endpoint
     [Documentation]    Checks if Jupyter endpoint is reachable and contains expected markers.
+    ${url}=    Build Exposed Service URL    ${SERVICE_NAME}    lab?token=${JUPYTER_TOKEN}
     ${response}=    GET With Defaults
-    ...    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}/exposed/lab?token=${JUPYTER_TOKEN}
+    ...    url=${url}
     ...    expected_status=ANY
     Log    Status: ${response.status_code}
     ${status}=    Convert To Integer    ${response.status_code}
@@ -86,7 +87,7 @@ Check Juno Exposed Endpoint
     ...    Should Match Regexp    ${body_text}    (?is).*(jupyter|jupyterlab|lab).*
     IF    not ${has_jupyter}
         ${location}=    Evaluate    dict($response.headers).get("Location", dict($response.headers).get("location", ""))    json
-        Should Contain    ${location}    /system/services/${SERVICE_NAME}/exposed
+        Should Not Contain    ${location}    /system/services/${SERVICE_NAME}/exposed
     END
 
 Wait For Service Ready

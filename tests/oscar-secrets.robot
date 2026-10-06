@@ -30,7 +30,7 @@ OSCAR Create Service with Secret
     ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
 
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -38,7 +38,7 @@ OSCAR Service with Secret Invoke Asynchronous
     [Documentation]    Invoke the asynchronous service
     ${body}=    Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Sleep    10s 
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -61,7 +61,7 @@ OSCAR Service with Secret Get Logs
 OSCAR Service with Secret Delete Job
     [Documentation]    Delete a job from a service
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -69,7 +69,7 @@ OSCAR Service with Secret Update Service
     [Documentation]    Update a service
     Prepare Service File    another-robot-secret
     ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
+    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Contain    [ '200', '204' ]    '${response.status_code}'
 
@@ -77,7 +77,7 @@ OSCAR Service with Secret Invoke Asynchronous Service
     [Documentation]    Invoke the asynchronous service
     ${body}=    Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Sleep    10s 
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -100,7 +100,7 @@ OSCAR Service with Secret Get Logs Updated
 OSCAR Service with Secret Delete Job Updated
     [Documentation]    Delete a job from a service
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -108,7 +108,7 @@ OSCAR Service with Secret Update Service Again
     [Documentation]    Update a service
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/custom_service_file.json
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
+    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Contain    [ '200', '204' ]    '${response.status_code}'
 
@@ -116,7 +116,7 @@ OSCAR Service with Secret Invoke Asynchronous Service Again
     [Documentation]    Invoke the asynchronous service
     ${body}=    Get File    ${INVOKE_FILE}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Sleep    10s 
     Should Be Equal As Strings    ${response.status_code}    201
 
@@ -140,7 +140,7 @@ OSCAR Service with Secret Delete Service
     [Documentation]    Delete the created service
     [Tags]    delete
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -161,7 +161,7 @@ Get Logs Text
     [Documentation]    Fetch logs and return the text
     ${response}=    GET
     ...    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    Logs response: ${response}
     Should Be Equal As Integers    ${response.status_code}    200
     VAR    ${response_text}=    ${response.text}

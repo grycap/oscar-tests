@@ -2,7 +2,7 @@ functions:
   oscar:
   - robot-oscar-cluster:
       name: robot-test-cowsay
-      cpu: '1.0'
+      cpu: '0.5'
       vo: <VO>
       memory: 128Mi
       image: ghcr.io/grycap/cowsay

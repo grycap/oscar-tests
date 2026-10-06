@@ -8,10 +8,7 @@ class TestQuotas:
         assert resp.status_code == 200
 
     def test_get_service_metrics(self, client, service_fdl, service_name):
-        try:
-            client.create_service(service_fdl)
-        except Exception:
-            pass
+        client.create_service(service_fdl)
         try:
             resp = client.get_service_metrics(service_name)
             assert resp.status_code == 200

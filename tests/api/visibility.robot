@@ -2,9 +2,10 @@
 Documentation     Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
 
 Library           RequestsLibrary
-Resource          ${CURDIR}/../../${AUTHENTICATION_PROCESS} 
-Resource          ${CURDIR}/../../resources/files.resource
-Resource          ${CURDIR}/../../resources/service.resource
+Resource             ${CURDIR}/../../${AUTHENTICATION_PROCESS}
+Resource             ${CURDIR}/../../resources/files.resource
+Resource             ${CURDIR}/../../resources/api_call.resource
+Resource             ${CURDIR}/../../resources/service.resource
 
 Suite Setup       Run Keywords    Checks Valids OIDC Token    AND    Assign Random Service Name
 Suite Teardown    Run Keywords    Cleanup Visibility Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
@@ -19,7 +20,7 @@ ${BUCKET_NAME}      ${SERVICE_NAME}
 
 OSCAR API Health
     [Documentation]    Check API health
-    ${response}=    GET  ${OSCAR_ENDPOINT}/health  expected_status=200
+    ${response}=    GET With Defaults   ${OSCAR_ENDPOINT}/health
     Log    ${response.content}
     Should Be Equal As Strings    ${response.content}    Ok
 
@@ -29,7 +30,7 @@ OSCAR Create Service
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
+    ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/system/services   data=${body}
     ...                     headers=${HEADERS}
     Log    ${response}  
     Log    ${response.content} 
@@ -54,7 +55,7 @@ OSCAR Update Service visibility private -> restricted
     Append To List      ${users}    ${OTHER_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     restricted
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
+    ${response}=    PUT With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -75,7 +76,7 @@ OSCAR Update Service visibility restricted -> public
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     public
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
+    ${response}=    PUT With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -95,7 +96,7 @@ OSCAR Update Service visibility public -> private
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     private
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
+    ${response}=    PUT With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -115,7 +116,7 @@ OSCAR Update Service private -> public
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     public
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
+    ${response}=    PUT With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -136,7 +137,7 @@ OSCAR Update Service visibility public -> restricted
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     restricted
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
+    ${response}=    PUT With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -157,7 +158,7 @@ OSCAR Update Service visibility restricted -> private
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     private
-    ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
+    ${response}=    PUT With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
 
@@ -176,8 +177,8 @@ Verify Visibility of service and check the Bucket is updated to private from res
 
 OSCAR Delete Service private
     [Documentation]  Delete the created service
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${service_name}   expected_status=204
-    ...                       headers=${HEADERS}
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}   expected_status=204
+     ...                       headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -199,7 +200,7 @@ OSCAR Create Service restricted
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     restricted
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
+    ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/system/services   data=${body}
     ...                     headers=${HEADERS}
     Log    ${response}  
     Log    ${response.content} 
@@ -219,8 +220,8 @@ Verify Visibility of service and check the Bucket is restricted
 
 OSCAR Delete Service restricted
     [Documentation]  Delete the created service
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${service_name}   expected_status=204
-    ...                       headers=${HEADERS}
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}   expected_status=204
+     ...                       headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -242,7 +243,7 @@ OSCAR Create Service public
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      visibility     public
     ${body}=    Update File     ${body}      allowed_users     ${users}
-    ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services   expected_status=201    data=${body}
+    ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/system/services   data=${body}
     ...                     headers=${HEADERS}
     Log    ${response}  
     Log    ${response.content} 
@@ -262,8 +263,8 @@ Verify Visibility of service and check the Bucket is public
 
 OSCAR Delete Service public
     [Documentation]  Delete the created service
-    ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${service_name}   expected_status=204
-    ...                       headers=${HEADERS}
+    ${response}=    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${service_name}   expected_status=204
+     ...                       headers=${HEADERS}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -283,9 +284,9 @@ Verify if public Bucket is deleted
 *** Keywords ***
 Cleanup Visibility Resources
     [Documentation]    Best-effort cleanup of services and buckets created by this suite.
-    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true    expected_status=ANY    headers=${HEADERS}
-    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_NAME}    expected_status=ANY    headers=${HEADERS}
-    Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=ANY    headers=${HEADERS}
+    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}?all=true    expected_status=ANY    headers=${HEADERS}
+    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_NAME}    expected_status=ANY    headers=${HEADERS}
+    Run Keyword And Ignore Error    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=ANY    headers=${HEADERS}
 
 Get Key From Dictionary
     [Documentation]  Get the key from a dictionary
@@ -336,29 +337,29 @@ Modify Service File
     RETURN    ${loaded_content}
 
 Get Services
-    [Arguments]    ${header_options} 
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services    expected_status=200    headers=${header_options}
-    RETURN      ${response.content}
+     [Arguments]     ${header_options}
+     ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/services    headers=${header_options}
+    RETURN        ${response.content}
 
 Verify Asynchronous works
     [Documentation]    Invoke the asynchronous service
     [Arguments]    ${header_options}
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in favour of the next one which uses the service token
     ${body}=    Get File    ${INVOKE_FILE}
-    ${response}=    POST     url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}     data=${body}     headers=${header_options}
+    ${response}=    POST With Defaults     url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}     data=${body}     headers=${header_options}
     Should Be Equal As Strings    ${response.status_code}    201
-    ${list_jobs}=    GET        url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}   headers=${header_options}
+    ${list_jobs}=    GET With Defaults        url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}   headers=${header_options}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
     Get Key From Dictionary    ${jobs_dict["jobs"]}
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
     FOR    ${i}    IN RANGE    ${MAX_RETRIES}
-        ${status}    ${resp}=    Run Keyword And Ignore Error    GET         url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}   headers=${header_options}
+        ${status}     ${resp}=    Run Keyword And Ignore Error    GET         url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}   verify=${SSL_VERIFY}   headers=${header_options}
         IF    '${status}' != 'FAIL'
-            ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
+             ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
             Exit For Loop If    ${status}
         END
-        Sleep   ${RETRY_INTERVAL}
+        Sleep    ${RETRY_INTERVAL}
     END
     Log    Exited
-    ${delete_logs}=    DELETE         url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}   headers=${header_options}
+     ${delete_logs}=    DELETE With Defaults         url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}   headers=${header_options}
     Should Be Equal As Strings    ${response.status_code}    201

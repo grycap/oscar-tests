@@ -207,7 +207,8 @@ Invoke Async Metrics Service
 
 Invoke Exposed Metrics Service
     [Documentation]    Invoke the exposed metrics test service.
-    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/services/${EXPOSED_SERVICE_NAME}/exposed
+    ${url}=    Build Exposed Service URL    ${EXPOSED_SERVICE_NAME}
+    ${response}=    GET With Defaults    url=${url}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    Welcome to nginx
@@ -408,7 +409,8 @@ Service Should Be Ready
 
 Exposed Service Should Respond
     [Documentation]    Assert that the exposed service endpoint is reachable.
-    ${response}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/services/${EXPOSED_SERVICE_NAME}/exposed
+    ${url}=    Build Exposed Service URL    ${EXPOSED_SERVICE_NAME}
+    ${response}=    GET With Defaults    url=${url}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.content}    Welcome to nginx

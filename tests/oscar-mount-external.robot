@@ -22,7 +22,7 @@ Refresh Token Exist
 
 OSCAR API Health
     [Documentation]    Check API health
-    ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200
+    ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.content}    Ok
 
@@ -66,7 +66,7 @@ Verify Bucket Private creation
         ${body}= 	Convert JSON To String 	${body}
         Log     ${body}
         ${response}=    POST    url=${OSCAR_EXTERNAL}/system/buckets    expected_status=201    data=${body}
-        ...    headers=${HEADERS}
+        ...    headers=${HEADERS}    verify=${SSL_VERIFY}
         Should Be Equal As Strings    ${response.status_code}    201
         ${response}=    External Verify Bucket
         Should Be Equal As Strings    ${response.status_code}    200
@@ -92,7 +92,7 @@ OSCAR Create Service Mount - where the bucket ${BUCKET_EXTERNAL} exist and its m
     ${body}= 	Convert JSON To String 	${body}
     Log    ${body}
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services      data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Log    ${response}
     Should Be Equal As Strings    ${response.status_code}    201
@@ -119,7 +119,7 @@ OSCAR CLI List Files
 OSCAR CLI Put File
     [Documentation]    Check that OSCAR CLI puts a file in a service's storage provider
     ${result}=    Run Process    oscar-cli    service        put-file    ${SERVICE_NAME}    minio
-    ...    ${EXECDIR}/data/00-cowsay-invoke-body.json       robot-test/input/${INVOKE_FILE_NAME} 
+    ...    ${EXECDIR}/data/00-cowsay-invoke-body.json       robot-test-cowsay/input/${INVOKE_FILE_NAME} 
     ...    stdout=True    stderr=True
     Log    ${result.stdout}
     Should Be Equal As Integers    ${result.rc}    0
@@ -129,16 +129,16 @@ OSCAR CLI Put File
 OSCAR List Jobs
     [Documentation]    List all jobs from a service with their status
     ${list_jobs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
-    Get Key From Dictionary    ${jobs_dict}
+    Get Key From Dictionary    ${jobs_dict}[jobs]
     Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
     Sleep   20s
 
 OSCAR Get Logs
     [Documentation]    Get the logs from a job
     ${get_logs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=200
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${get_logs.content} 
     Should Contain    ${get_logs.content}    Hello
 
@@ -147,18 +147,18 @@ OSCAR Delete Service ${SERVICE_NAME}
     [Documentation]    Delete the created service
     [Tags]    delete
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=404
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
 
 
 Delete Bucket Private
     [Documentation]    Delete a public bucket
     [Tags]    Delete    bucket
     ${response}=    DELETE    url=${OSCAR_EXTERNAL}/system/buckets/${BUCKET_EXTERNAL}     expected_status=204   
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -198,5 +198,5 @@ Prepare Service File
 
 External Verify Bucket
     [Documentation]    List all buckets
-    ${response}=    GET    url=${OSCAR_EXTERNAL}/system/buckets    expected_status=200    headers=${HEADERS}
+    ${response}=    GET    url=${OSCAR_EXTERNAL}/system/buckets    expected_status=200    headers=${HEADERS}    verify=${SSL_VERIFY}
     RETURN      ${response}

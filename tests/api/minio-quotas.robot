@@ -77,7 +77,7 @@ OSCAR Enforces MinIO Storage Per Bucket Quota
     Create MinIO Quota Service
     Wait Until Keyword Succeeds    180s    5s    Service Should Exist    ${QUOTA_SERVICE_NAME}
     Wait Until Keyword Succeeds    60s    5s    Service Bucket Should Have Storage Quota    1Mi
-    ${small_result}=    Run Process    oscar-cli    service    put-file    ${QUOTA_SERVICE_NAME}    minio.default
+    ${small_result}=    Run Process    oscar-cli    service     put-file        ${QUOTA_SERVICE_NAME}       minio.default
     ...    ${SMALL_OBJECT_FILE}    ${QUOTA_SERVICE_BUCKET}/input/small.bin    stdout=True    stderr=True
     Log    ${small_result.stdout}
     Log    ${small_result.stderr}
@@ -181,7 +181,7 @@ Create MinIO Quota Service
     @{inputs}=    Create List    ${input}
     @{outputs}=    Create List    ${output}
     ${body}=    Evaluate
-    ...    json.dumps({"name": $QUOTA_SERVICE_NAME, "cpu": "0.1", "memory": "128Mi", "image": "ghcr.io/grycap/cowsay", "script": "#!/bin/sh\\ncat $INPUT_FILE_PATH\\n", "input": $inputs, "output": $outputs, "vo": $VO, "isolation_level": "SERVICE", "visibility": "private"})
+    ...    json.dumps({"name": $QUOTA_SERVICE_NAME, "cpu": "0.3", "memory": "128Mi", "image": "ghcr.io/grycap/cowsay", "script": "#!/bin/sh\\ncat $INPUT_FILE_PATH\\n", "input": $inputs, "output": $outputs, "vo": $VO, "isolation_level": "SERVICE", "visibility": "private"})
     ...    json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Log    ${response.content}

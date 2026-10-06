@@ -1,11 +1,12 @@
 *** Settings ***
 Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Basic endpoint coverage
 
+Library             String
 Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS} 
 Resource            ${CURDIR}/../resources/files.resource
 Resource            ${CURDIR}/../resources/api_call.resource
 
-Suite Setup         Check Valid OIDC Token
+Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Initialize Test Names
 Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
 
 
@@ -24,7 +25,7 @@ Refresh Token Exist
 
 OSCAR API Health
     [Documentation]    Check API health
-    ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200
+    ${response}=    GET    ${OSCAR_ENDPOINT}/health    expected_status=200    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.content}    Ok
 
@@ -38,9 +39,15 @@ OSCAR CLI Installed
 OSCAR CLI Cluster Add
     [Documentation]    Check that OSCAR CLI adds a cluster
     [Tags]    create    delete
-    ${result}=    Run Process    oscar-cli    cluster    add    robot-oscar-cluster    ${OSCAR_ENDPOINT}
-    ...    --oidc-refresh-token    ${REFRESH_TOKEN}    stdout=True    stderr=True
+    IF    not ${SSL_VERIFY}
+        ${result}=    Run Process    oscar-cli    cluster    add    robot-oscar-cluster    ${OSCAR_ENDPOINT}
+        ...    --oidc-refresh-token    ${REFRESH_TOKEN}    --disable-ssl    stdout=True    stderr=True
+    ELSE
+        ${result}=    Run Process    oscar-cli    cluster    add    robot-oscar-cluster    ${OSCAR_ENDPOINT}
+        ...    --oidc-refresh-token    ${REFRESH_TOKEN}    stdout=True    stderr=True
+    END
     Log    ${result.stdout}
+    Log    ${result.stderr}
     # Should Be Equal As Integers    ${result.rc}    0
     Should Contain    ${result.stdout}    successfully
 
@@ -59,17 +66,16 @@ OSCAR Create Service
     Prepare Service File
     ${body}=    Get File    ${DATA_DIR}/service_file.json
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    201
-    Sleep    10s
+    Wait Until Keyword Succeeds    60s    2s    Mount Bucket Should Exist
 
 OSCAR CLI Put File to mount bucket
     [Documentation]    Check that OSCAR CLI puts a file in a service's storage provider
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
     ...    ${EXECDIR}/data/00-cowsay-invoke-body.json       ${MOUNT_BUCKET_NAME}/${INVOKE_FILE_NAME}
     ...    stdout=True    stderr=True
-    Sleep    10s
     Should Be Equal As Integers    ${result.rc}    0
 
 OSCAR CLI Put File to input bucket
@@ -77,12 +83,11 @@ OSCAR CLI Put File to input bucket
     ${result}=    Run Process    oscar-cli    service    put-file    ${SERVICE_NAME}    minio.default
     ...    ${EXECDIR}/data/00-cowsay.yaml       ${BUCKET_NAME}/input/${INVOKE_FILE_NAME}
     ...    stdout=True    stderr=True
-    Sleep    30s
     Should Be Equal As Integers    ${result.rc}    0
 
 Check the good execution
     FOR    ${i}    IN RANGE    ${MAX_RETRIES}
-        ${status}    ${resp}=    Run Keyword And Ignore Error    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}      headers=${HEADERS}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}      headers=${HEADERS}    verify=${SSL_VERIFY}
         IF    '${status}' != 'FAIL'
             ${status}=    Run Keyword And Return Status    Should Contain    ${resp.content}    Hello
             Exit For Loop If    ${status}
@@ -94,17 +99,17 @@ Check the good execution
     ${list_jobs}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}
     ${jobs_dict}=    Evaluate    dict(${list_jobs.content})
     Get Key From Dictionary    ${jobs_dict["jobs"]}
-    Should Contain    ${JOB_NAME}    ${SERVICE_NAME}-
+    ${job_service_prefix}=    Get Substring    ${SERVICE_NAME}    0    16
+    Should Contain    ${JOB_NAME}    ${job_service_prefix}-
     ${get_logs}=    GET    url=${OSCAR_ENDPOINT}/system/logs/${SERVICE_NAME}/${JOB_NAME}    expected_status=200
-    ...    headers=${HEADERS}
-    Sleep    5s
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Should Contain    ${get_logs.content}    Hello
 
 OSCAR Delete Service
     [Documentation]    Delete the created service
     [Tags]    delete
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=204
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
@@ -120,12 +125,24 @@ Delete Bucket ${MOUNT_BUCKET_NAME_RAW}. To reset state
     [Documentation]    Delete a restricted bucket
     [Tags]    Delete    bucket
     ${response}=    DELETE    url=${OSCAR_ENDPOINT}/system/buckets/${MOUNT_BUCKET_NAME_RAW}   expected_status=204   
-    ...    headers=${HEADERS}
+    ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be Equal As Strings    ${response.status_code}    204
 
 
 *** Keywords ***
+Initialize Test Names
+    [Documentation]    Generate unique service and input/output names for this suite run.
+    ${suffix}=    Generate Random String    8    [LOWER][NUMBERS]
+    Set Suite Variable    ${SERVICE_NAME}    robot-test-cowsay-${suffix}
+    Set Suite Variable    ${BUCKET_NAME}    ${SERVICE_NAME}
+
+Mount Bucket Should Exist
+    [Documentation]    Polls until the service mount bucket has been created.
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets/${MOUNT_BUCKET_NAME_RAW}
+    ...    expected_status=200    headers=${HEADERS}    verify=${SSL_VERIFY}
+    Should Be Equal As Integers    ${response.status_code}    200
+
 Prepare Service File
     [Documentation]    Prepare the service file
     ${service_content}=    Get File    ${DATA_DIR}/00-cowsay.yaml
@@ -140,6 +157,13 @@ Prepare Service File
     ...    jq '.message' \"$INPUT_FILE_PATH\" -r | /usr/games/cowsay\nelse\n
     ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\n
     ...    cat \"/mnt/${MOUNT_BUCKET_NAME}/${INVOKE_FILE_NAME}\"\nfi\n\
+    Set To Dictionary    ${modified_content}    name=${SERVICE_NAME}
+    ${input_entries}=    Get From Dictionary    ${modified_content}    input
+    ${first_input}=    Get From List    ${input_entries}    0
+    Set To Dictionary    ${first_input}    path=${BUCKET_NAME}/input
+    ${output_entries}=    Get From Dictionary    ${modified_content}    output
+    ${first_output}=    Get From List    ${output_entries}    0
+    Set To Dictionary    ${first_output}    path=${BUCKET_NAME}/output
     Set To Dictionary    ${modified_content}    script=${script_value}
     ${mount} = 	Create Dictionary 	storage_provider=minio.default      path=${MOUNT_BUCKET_NAME}
     Set To Dictionary    ${modified_content}    mount=${mount}

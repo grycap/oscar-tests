@@ -126,9 +126,7 @@ Setup Bucket CLI Suite
     [Documentation]    Set up OIDC token, add cluster, and generate random bucket name
     Set Refresh Token
     Checks Valids OIDC Token
-    ${result}=    Run Process    oscar-cli    cluster    add    ${CLUSTER_NAME}    ${OSCAR_ENDPOINT}
-    ...    --oidc-refresh-token    ${REFRESH_TOKEN}    stdout=True    stderr=True
-    Log    ${result.stdout}
+    ${result}=    Add CLI OIDC Cluster    ${CLUSTER_NAME}
     Should Contain    ${result.stdout}    successfully
     ${result}=    Run Process    oscar-cli    cluster    default    --set    ${CLUSTER_NAME}
     ...    stdout=True    stderr=True
