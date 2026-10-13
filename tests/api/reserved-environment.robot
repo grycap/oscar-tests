@@ -21,7 +21,7 @@ ${SERVICE_NAME}     ${SERVICE_BASE}
 
 
 *** Test Cases ***
-OSCAR Create Service with reserver env vars
+OSCAR Create Service with reserved environment variables
     [Documentation]    Create a new service
     [Tags]    create    ready
     Prepare Service File
