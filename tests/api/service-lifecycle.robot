@@ -99,7 +99,7 @@ OSCAR Invoke Synchronous Service
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping in favour of the next one which uses the service token
     ${body}=        Get File    ${INVOKE_FILE}
     FOR    ${i}    IN RANGE    ${MAX_RETRIES}
-        ${status}    ${resp}=    Run Keyword And Ignore Error    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}      headers=${HEADERS}       data=${body}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}      expected_status=ANY    verify=${SSL_VERIFY}    headers=${HEADERS}       data=${body}
         IF    '${status}' != 'FAIL'
             Log     ${status}
             Log     ${resp.content}
@@ -123,7 +123,7 @@ OSCAR Invoke Synchronous Service with token
     ...    scope=SUITE
     ${body}=        Get File    ${INVOKE_FILE}
     FOR    ${i}    IN RANGE    ${MAX_RETRIES}
-    ${status}    ${resp}=    Run Keyword And Ignore Error    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}      headers=${new_headers}       data=${body}
+        ${status}    ${resp}=    Run Keyword And Ignore Error    POST    url=${OSCAR_ENDPOINT}/run/${SERVICE_NAME}      expected_status=ANY    verify=${SSL_VERIFY}    headers=${new_headers}       data=${body}
         IF    '${status}' != 'FAIL'
             Log     ${status}
             Log     ${resp.content}

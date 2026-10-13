@@ -22,6 +22,32 @@ ${SSL_VERIFY}           ${True}
 
 
 *** Keywords ***
+Add CLI OIDC Cluster
+    [Documentation]    Adds a CLI cluster using the suite TLS verification policy.
+    [Arguments]    ${cluster_name}
+    IF    not ${SSL_VERIFY}
+        ${result}=    Run Process    oscar-cli    cluster    add    ${cluster_name}    ${OSCAR_ENDPOINT}
+        ...    --oidc-refresh-token    ${REFRESH_TOKEN}    --disable-ssl    stdout=True    stderr=True
+    ELSE
+        ${result}=    Run Process    oscar-cli    cluster    add    ${cluster_name}    ${OSCAR_ENDPOINT}
+        ...    --oidc-refresh-token    ${REFRESH_TOKEN}    stdout=True    stderr=True
+    END
+    Log    ${result.stdout}
+    RETURN    ${result}
+
+Add CLI Basic Cluster
+    [Documentation]    Adds a CLI cluster using Basic Auth and the suite TLS policy.
+    [Arguments]    ${cluster_name}
+    IF    not ${SSL_VERIFY}
+        ${result}=    Run Process    oscar-cli    cluster    add    ${cluster_name}    ${OSCAR_ENDPOINT}
+        ...    ${OSCAR_USER}    ${OSCAR_PASSWORD}    --disable-ssl    stdout=True    stderr=True
+    ELSE
+        ${result}=    Run Process    oscar-cli    cluster    add    ${cluster_name}    ${OSCAR_ENDPOINT}
+        ...    ${OSCAR_USER}    ${OSCAR_PASSWORD}    stdout=True    stderr=True
+    END
+    Log    ${result.stdout}
+    RETURN    ${result}
+
 Clean Test Artifacts
     [Documentation]    Removes junk files generared in the tests
     [Arguments]    @{files}
@@ -195,5 +221,5 @@ Set Service File For Update
 
 Verify Bucket
     [Documentation]    List all buckets
-    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    headers=${HEADERS}
-    RETURN      ${response}
+    ${response}=    GET    url=${OSCAR_ENDPOINT}/system/buckets    expected_status=200    verify=${SSL_VERIFY}    headers=${HEADERS}
+    RETURN       ${response}

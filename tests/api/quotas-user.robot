@@ -204,7 +204,7 @@ Execute Exposed Service With Insufficient Resources
     ${body}=    Get File    ${DATA_DIR}/exposed_service_file.json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Should Be True    '${response.status_code}' == '500' 
-    Should Contain    ${response.content}    workload for exposed service '${service_name}' is NOT admitted 
+    Should Contain    ${response.content}    workload for exposed service '${service_name}' was not admitted within
 
 
 *** Keywords ***
@@ -301,7 +301,8 @@ Exposed Service Should Contain Nginx
     [Documentation]    Poll an exposed service endpoint until nginx responds.
     [Arguments]    ${service_name}
     ${headers}=    Get Invocation Headers
-    ${response}=    GET    expected_status=ANY    url=${OSCAR_ENDPOINT}/system/services/${service_name}/exposed    verify=${SSL_VERIFY}    headers=&{headers}    timeout=${RUN_REQUEST_TIMEOUT}
+    ${url}=    Build Exposed Service URL    ${service_name}
+    ${response}=    GET    expected_status=ANY    url=${url}    verify=${SSL_VERIFY}    headers=&{headers}    timeout=${RUN_REQUEST_TIMEOUT}
     Log    Exposed response ${service_name}: status=${response.status_code}, body=${response.text}
     Should Be Equal As Strings    ${response.status_code}    200
     Should Contain    ${response.text}    Welcome to nginx

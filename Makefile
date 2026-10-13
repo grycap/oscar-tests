@@ -39,10 +39,11 @@ CLUSTER_FILE := $(strip $(CLUSTER_FILE))
 
 SUITE_LIST := $(shell find tests -type f -name '*.robot' | sort)
 
-ROBOT ?= robot
+ROBOT ?= $(if $(wildcard .venv/bin/robot),.venv/bin/robot,robot)
 ROBOT_SUITE ?= tests/api/service-lifecycle.robot
 ROBOT_ARGS ?=
 ROBOT_OUTPUT_DIR ?= robot_results
+ROBOT_ENV := $(if $(filter localhost,$(CLUSTER_INPUT)),PYTHONWARNINGS="ignore:Unverified HTTPS request is being made",)
 
 AUTH_EXAMPLE := $(firstword $(AUTH_OPTIONS))
 CLUSTER_EXAMPLE := $(firstword $(CLUSTER_OPTIONS))
@@ -79,7 +80,7 @@ ifneq ($(ROBOT_SUITE),all)
 	OSCAR_TEST_ROBOT_SUITE="$(ROBOT_SUITE)" \
 	OSCAR_TEST_ROBOT_ARGS="$(ROBOT_ARGS)" \
 	OSCAR_TEST_ROBOT_OUTPUT_DIR="$(ROBOT_OUTPUT_DIR)" \
-	$(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d $(ROBOT_OUTPUT_DIR) $(ROBOT_SUITE)
+	$(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d $(ROBOT_OUTPUT_DIR) $(ROBOT_SUITE)
 else
 	@echo "Running all Robot test suites found under tests/."
 	@if [ -z "$(strip $(SUITE_LIST))" ]; then \
@@ -102,7 +103,7 @@ else
 	  OSCAR_TEST_ROBOT_SUITE="$$suite" \
 	  OSCAR_TEST_ROBOT_ARGS="$(ROBOT_ARGS)" \
 	  OSCAR_TEST_ROBOT_OUTPUT_DIR="$$out_dir" \
-	  $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d "$$out_dir" "$$suite"; \
+	  $(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d "$$out_dir" "$$suite"; \
 	done
 endif
 
@@ -133,7 +134,7 @@ docker-test:
 	    go install github.com/grycap/oscar-cli/v2@v2.1.0; \
 	    echo ""; \
 	    echo "=== Installing oscar-python ==="; \
-	    pip install --no-cache-dir oscar-python==2.1.0b2; \
+	    pip install --no-cache-dir oscar-python==2.1.0; \
 	    echo ""; \
 	    $(if $(filter command line,$(origin PYTEST_SUITE)),\
 	      echo "=== Running Python tests ==="; \

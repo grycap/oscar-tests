@@ -28,7 +28,7 @@ Set Refresh Token
     [Documentation]    Get the refresh token
     ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_URL}'   -d
     ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME}&password\=${KEYCLOAK_PASSWORD}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
-    ...     shell=True    stdout=True    stderr=True
+    ...     shell=True
     ${json_output}=    Convert String To Json    ${result.stdout}
     ${refresh_token}=    Get Value From Json    ${json_output}    $.refresh_token
     VAR     ${REFRESH_TOKEN}=       ${refresh_token}[0]
@@ -50,7 +50,7 @@ Get Access Token
     [Documentation]    Retrieve OIDC token using a refresh token
     ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_URL}'   -d
     ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME}&password\=${KEYCLOAK_PASSWORD}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
-    ...     shell=True    stdout=True    stderr=True
+    ...     shell=True
     ${json_output}=    Convert String To Json    ${result.stdout}
     ${access_token}=    Get Value From Json    ${json_output}    $.access_token
     VAR    ${access_token}=    ${access_token}[0]
@@ -89,7 +89,7 @@ Checks Valids OIDC Token
     [Documentation]    Get the access token
     ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_URL}'   -d
     ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME}&password\=${KEYCLOAK_PASSWORD}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
-    ...     shell=True    stdout=True    stderr=True
+    ...     shell=True
     ${json_output}=    Convert String To Json    ${result.stdout}
     ${access_token}=    Get Value From Json    ${json_output}    $.access_token
     VAR    ${access_token}=    ${access_token}[0]
@@ -105,7 +105,7 @@ Checks Valids OIDC Token
     Set Global Variable    ${USER_SHORT_ID}    ${USER}[0:10]
     ${result}=    Run Process    curl  -s  -X    POST    '${TOKEN_URL}'   -d
     ...     'grant_type\=password&username\=${KEYCLOAK_USERNAME_AUX}&password\=${KEYCLOAK_PASSWORD_AUX}&client_id\=${CLIENT_ID}&scope\=${SCOPE}'
-    ...     shell=True    stdout=True    stderr=True
+    ...     shell=True
     ${json_output}=    Convert String To Json    ${result.stdout}
     ${access_token}=    Get Value From Json    ${json_output}    $.access_token
     VAR    ${access_token}=    ${access_token}[0]

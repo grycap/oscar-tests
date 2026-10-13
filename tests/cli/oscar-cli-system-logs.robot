@@ -52,9 +52,7 @@ Setup System Logs CLI Suite
         Set Global Variable    ${OSCAR_USER}
         Set Global Variable    ${OSCAR_PASSWORD}
     END
-    ${result}=    Run Process    oscar-cli    cluster    add    ${CLUSTER_NAME}    ${OSCAR_ENDPOINT}
-    ...    ${OSCAR_USER}    ${OSCAR_PASSWORD}    stdout=True    stderr=True
-    Log    ${result.stdout}
+    ${result}=    Add CLI Basic Cluster    ${CLUSTER_NAME}
     Should Contain    ${result.stdout}    successfully
     ${result}=    Run Process    oscar-cli    cluster    default    --set    ${CLUSTER_NAME}
     ...    stdout=True    stderr=True

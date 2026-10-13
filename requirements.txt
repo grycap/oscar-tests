@@ -4,5 +4,6 @@ robotframework-browser
 robotframework-requests
 pyyaml
 PyJWT
-oscar-python
+oscar-python==2.1.0
+pytest
 locust
