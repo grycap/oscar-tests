@@ -2,6 +2,7 @@
 Documentation     Tests for the OSCAR Manager's API of a deployed OSCAR cluster.
 Library           Process
 Library           RequestsLibrary
+Library           ${CURDIR}/../../robot_libs/minio_s3.py
 Resource          ${CURDIR}/../../${AUTHENTICATION_PROCESS} 
 Resource          ${CURDIR}/../../resources/files.resource
 Resource          ${CURDIR}/../../resources/service.resource
@@ -276,40 +277,31 @@ Get MinIO Credentials
     RETURN    ${creds}
 
 Minio Upload Isolation File
-    [Documentation]    Upload a local file to a MinIO bucket with an exact object key (boto3 S3 API, no CLI)
+    [Documentation]    Upload a local file to a MinIO bucket with an exact object key (boto3 S3 API)
     [Arguments]    ${bucket}    ${key}    ${local_file}
     ${creds}=    Get MinIO Credentials
-    ${endpoint}=    Get From Dictionary    ${creds}    endpoint
-    ${access_key}=    Get From Dictionary    ${creds}    access_key
-    ${secret_key}=    Get From Dictionary    ${creds}    secret_key
-    ${region}=    Get From Dictionary    ${creds}    region
     ${verify}=    Convert To Boolean    ${SSL_VERIFY}
-    Evaluate    __import__('boto3').client('s3', endpoint_url=$endpoint, aws_access_key_id=$access_key, aws_secret_access_key=$secret_key, region_name=($region if $region else None), verify=$verify).put_object(Bucket=$bucket, Key=$key, Body=open($local_file, 'rb').read())    boto3
+    ${result}=    Upload Object To MinIO Bucket    ${bucket}    ${key}    ${local_file}
+    ...    ${creds}[endpoint]    ${creds}[access_key]    ${creds}[secret_key]    ${creds}[region]    ${verify}
+    Should Be True    ${result}[ok]    Upload to ${bucket}/${key} failed: ${result}[code] ${result}[message]
 
 Minio List Isolation Keys
     [Documentation]    List object keys under a prefix via MinIO S3 API
     [Arguments]    ${bucket}    ${prefix}
     ${creds}=    Get MinIO Credentials
-    ${endpoint}=    Get From Dictionary    ${creds}    endpoint
-    ${access_key}=    Get From Dictionary    ${creds}    access_key
-    ${secret_key}=    Get From Dictionary    ${creds}    secret_key
-    ${region}=    Get From Dictionary    ${creds}    region
     ${verify}=    Convert To Boolean    ${SSL_VERIFY}
-    ${listing}=    Evaluate    __import__('boto3').client('s3', endpoint_url=$endpoint, aws_access_key_id=$access_key, aws_secret_access_key=$secret_key, region_name=($region if $region else None), verify=$verify).list_objects_v2(Bucket=$bucket, Prefix=$prefix)    boto3
-    Log    ${listing}
-    ${keys}=    Evaluate    [o.get("Key", "") for o in $listing.get("Contents", [])]
+    ${keys}=    List MinIO Object Keys    ${bucket}    ${prefix}
+    ...    ${creds}[endpoint]    ${creds}[access_key]    ${creds}[secret_key]    ${creds}[region]    ${verify}
+    Log    ${keys}
     RETURN    ${keys}
 
 Minio Log Bucket Notification
     [Documentation]    Log MinIO bucket notification configuration (diagnostic, never fails)
     [Arguments]    ${bucket}
     ${creds}=    Get MinIO Credentials
-    ${endpoint}=    Get From Dictionary    ${creds}    endpoint
-    ${access_key}=    Get From Dictionary    ${creds}    access_key
-    ${secret_key}=    Get From Dictionary    ${creds}    secret_key
-    ${region}=    Get From Dictionary    ${creds}    region
     ${verify}=    Convert To Boolean    ${SSL_VERIFY}
-    ${cfg}=    Evaluate    __import__('boto3').client('s3', endpoint_url=$endpoint, aws_access_key_id=$access_key, aws_secret_access_key=$secret_key, region_name=($region if $region else None), verify=$verify).get_bucket_notification_configuration(Bucket=$bucket)    boto3
+    ${cfg}=    Get MinIO Bucket Notification    ${bucket}
+    ...    ${creds}[endpoint]    ${creds}[access_key]    ${creds}[secret_key]    ${creds}[region]    ${verify}
     Log    Notification ${bucket}: ${cfg}
 
 Isolation Job Should Be Visible
