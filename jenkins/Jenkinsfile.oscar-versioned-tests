@@ -1,0 +1,413 @@
+/*
+ * Jenkinsfile.oscar-versioned-tests (minimal)
+ *
+ * 1. Lee OSCAR_ENDPOINT/BASIC_USER de 'ai4eosc-secret-file' y pide
+ *    GET <endpoint>/system/config (fallback a /system/info) para la version.
+ * 2. Resuelve el tag de grycap/oscar-tests (vX.Y.Z -> vX.Y -> vX -> main).
+ * 3. Descarga el .zip del tag con curl y ejecuta las suites con
+ *    runOscarTest (docker.inside + run-tests-in-virtual-screen.sh).
+ *    Los secret files se traen UNA sola vez en el stage 1 (unico
+ *    withCredentials del fichero) y se comparten via stash 'secret-vars':
+ *      env.CLUSTER_VARS_FILE / env.AUTH_VARS_FILE
+ *    (comillas dobles a proposito al construir ROBOT_OPTIONS: la shell no
+ *    re-expande $VAR dentro de otra variable, asi que el literal
+ *    '$CLUSTER_FILE' llegaba tal cual a Robot).
+ *    Ademas, el fichero ai4eosc queda como variable de entorno persistente:
+ *      env.CLUSTER_VARS_FILE (= $WORKSPACE/.cluster-vars.yaml).
+ *
+ * Sin fichero de config, sin fallbacks locales, sin credencial legacy.
+ */
+def runOscarTest(String testId, String testPath, boolean installCli = false, boolean installPython = false) {
+    node('docker') {
+        docker.image('ghcr.io/grycap/oscar-tests:min').inside('--shm-size=1g -u root') {
+            // Unstash ANTES del dir: si no, restaura dentro de
+            // oscar-tests-versioned/oscar-tests-versioned (anidado).
+            unstash 'versioned-tests'
+            // Secret files traidos una sola vez en el stage 1 (stash
+            // 'secret-vars'): aqui solo se restauran, sin withCredentials.
+            unstash 'secret-vars'
+            dir('oscar-tests-versioned') {
+                env.BROWSER = 'chromium'
+                env.ROBOT_TESTS_DIR = "${WORKSPACE}/oscar-tests-versioned/${testPath}"
+                env.ROBOT_REPORTS_DIR = "${WORKSPACE}/results_"
+                env.ROBOT_TEST_RUN_ID = "${testId}"
+
+                if (installCli) {
+                    retry(2) {
+                        sh 'go install github.com/grycap/oscar-cli/v2@v2.1.0'
+                    }
+                    sh 'mv /root/go/bin/oscar-cli /bin'
+                }
+
+            if (installPython) {
+                    retry(2) {
+                        sh 'pip install oscar-python==2.1.0'
+                    }
+                }
+                // Sin withCredentials aqui (solo existe uno en todo el fichero,
+                // en el stage 1): se usan las copias del stash 'secret-vars'
+                // con rutas absolutas de workspace, visibles en el contenedor.
+                env.ROBOT_OPTIONS = "--pythonpath . --variablefile ${WORKSPACE}/.cluster-vars.yaml --variablefile ${WORKSPACE}/.auth-vars.yaml"
+                retry(2) {
+                    if (installPython) {
+                        sh """
+                            OSCAR_TEST_AUTH_FILE=${WORKSPACE}/.auth-vars.yaml \
+                            OSCAR_TEST_CLUSTER_FILE=${WORKSPACE}/.cluster-vars.yaml \
+                            python3 -m pytest ${WORKSPACE}/oscar-tests-versioned/tests/python_tests/ -v --tb=short
+                        """
+                    }else{
+                        sh '/opt/robotframework/bin/run-tests-in-virtual-screen.sh'
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+pipeline {
+    // Etiqueta 'docker': los stages usan docker.image().inside() y necesitan
+    // el socket de Docker (igual que Jenkinsfile.general/.cluster). Con
+    // 'agent any' el stage 4 podia caer en un nodo sin acceso y fallaba con
+    // 'permission denied ... docker.sock'.
+    agent { label 'docker' }
+
+    environment {
+        TESTS_REPO       = 'https://github.com/grycap/oscar-tests.git'
+        ROBOT_SUITE      = 'tests/api/service-lifecycle.robot' // o 'all'
+        ROBOT_OUTPUT_DIR = 'robot_results'
+        TESTS_IMAGE      = 'ghcr.io/grycap/oscar-tests:min'
+        OSCAR_API_PATH   = '/system/config'
+    }
+
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+        timeout(time: 60, unit: 'MINUTES')
+    }
+
+    stages {
+
+        stage('1. Get OSCAR version') {
+            steps {
+                script {
+                    // UNICO withCredentials de todo el fichero: trae ambos secret
+                    // files una sola vez; los demas stages/funciones usan el
+                    // stash 'secret-vars' (sin withCredentials).
+                    withCredentials([file(credentialsId: '<cluster-secret-file>', variable: 'CLUSTER_FILE'),
+                                     file(credentialsId: '<auth-secret-file>', variable: 'AUTH_FILE')]) {
+                        sh """#!/bin/bash
+                            set -e
+                            chmod u+w . 2>/dev/null || sudo chmod u+w . 2>/dev/null || true
+                            rm -f .cluster-vars.yaml .auth-vars.yaml 2>/dev/null \\
+                              || sudo rm -f .cluster-vars.yaml .auth-vars.yaml 2>/dev/null || true
+                            cp "\$CLUSTER_FILE" .cluster-vars.yaml
+                            cp "\$AUTH_FILE" .auth-vars.yaml
+                            chmod 600 .cluster-vars.yaml .auth-vars.yaml || true
+                        """
+                        // Ficheros como variables de entorno persistentes (el binding
+                        // CLUSTER_FILE/AUTH_FILE solo vive dentro del
+                        // withCredentials y apunta a @tmp, no visible en Docker
+                        // ni en otros stages).
+                        env.CLUSTER_VARS_FILE = "${env.WORKSPACE}/.cluster-vars.yaml"
+                        env.AUTH_VARS_FILE = "${env.WORKSPACE}/.auth-vars.yaml"
+                        stash name: 'secret-vars', includes: '.cluster-vars.yaml, .auth-vars.yaml', allowEmpty: false
+
+                        // CPS/sandbox-safe: python imprime 3 lineas en orden fijo
+                        // (endpoint, SSL_VERIFY, flag de BASIC presente) y se leen
+                        // por indice. Sin eachLine, sin regex, sin Map, y sin pasar
+                        // el secreto por Groovy (curl lo lee del fichero en shell).
+                        def vals = sh(
+                            script: """python3 - .cluster-vars.yaml <<'PYEOF'
+import sys
+import yaml
+from pathlib import Path
+data = yaml.safe_load(Path(sys.argv[1]).read_text(encoding='utf-8')) or {}
+print(str(data.get('OSCAR_ENDPOINT') or '').strip().rstrip('/'))
+ssl = data.get('SSL_VERIFY', True)
+if isinstance(ssl, str):
+    ssl = ssl.strip().lower() not in ('false', 'no', '0', 'off', '')
+print(bool(ssl))
+basic = str(data.get('BASIC_USER') or '').strip()
+print('1' if (basic and '<COMPLETE>' not in basic and '<' not in basic) else '0')
+PYEOF""",
+                            returnStdout: true
+                        ).trim()
+
+                        def parts = vals.split('\n')
+                        env.OSCAR_ENDPOINT = parts[0].trim().replaceAll('/+$', '')
+                        def sslFlag = parts.length > 1 ? parts[1].trim() : 'True'
+                        def hasBasic = parts.length > 2 ? parts[2].trim() : '0'
+                        if (!env.OSCAR_ENDPOINT || env.OSCAR_ENDPOINT.contains('<')) {
+                            error("ai4eosc-secret-file sin OSCAR_ENDPOINT valido.")
+                        }
+                        if (hasBasic != '1') {
+                            error("ai4eosc-secret-file sin BASIC_USER valido.")
+                        }
+                        def curlInsecure = (sslFlag == 'False') ? '-k' : ''
+
+                        sh """#!/bin/bash
+                            set -e
+                            ENDPOINT="${env.OSCAR_ENDPOINT}"
+                            BASIC=\$(python3 - .cluster-vars.yaml <<'PYEOF'
+import sys, yaml
+from pathlib import Path
+print(str((yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8")) or {}).get("BASIC_USER", "")).strip())
+PYEOF
+)
+                            curl -s ${curlInsecure} -o oscar_config.json -w "HTTP %{http_code}\\n" \\
+                                -H "Authorization: Basic \$BASIC" \\
+                                --connect-timeout 15 --max-time 60 \\
+                                "\$ENDPOINT${env.OSCAR_API_PATH}" || true
+                            head -c 2000 oscar_config.json; echo ""
+                            if ! grep -q '"version"' oscar_config.json 2>/dev/null; then
+                              echo "Fallback a /system/info"
+                              curl -s ${curlInsecure} -o oscar_info.json -w "HTTP %{http_code}\\n" \\
+                                  -H "Authorization: Basic \$BASIC" \\
+                                  --connect-timeout 15 --max-time 60 \\
+                                  "\$ENDPOINT/system/info" || true
+                              head -c 2000 oscar_info.json; echo ""
+                              [ -s oscar_info.json ] && cp oscar_info.json oscar_config.json || true
+                            fi
+                        """
+
+                        def rawVersion = sh(
+                            script: """python3 - <<'PYEOF'
+import json, re, sys
+try:
+    data = json.load(open("oscar_config.json", encoding="utf-8"))
+except Exception:
+    print("UNKNOWN"); sys.exit(0)
+def pick(o):
+    if isinstance(o, dict):
+        for k in ("version", "oscar_version", "app_version", "Version"):
+            if o.get(k): return str(o[k]).strip()
+        for nest in ("data", "info", "oscar", "cluster", "config"):
+            if isinstance(o.get(nest), dict):
+                r = pick(o[nest])
+                if r: return r
+    return ""
+v = pick(data)
+m = re.search(r"(\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?)", v) if v else None
+print(m.group(1) if m else (v if v else "UNKNOWN"))
+PYEOF""",
+                            returnStdout: true
+                        ).trim()
+
+                        if (!rawVersion || rawVersion == 'UNKNOWN') {
+                            error("Sin version en ${env.OSCAR_ENDPOINT}${env.OSCAR_API_PATH}. Revisa el cluster.")
+                        }
+                        def clean = rawVersion.replaceAll('^[vV]', '').trim()
+                        env.OSCAR_VERSION = clean
+                        env.TESTS_TAG = "v${clean}"
+                        echo "OSCAR_VERSION=${env.OSCAR_VERSION} TESTS_TAG=${env.TESTS_TAG}"
+                    }
+                }
+            }
+        }
+
+        stage('2. Resolve tests tag') {
+            steps {
+                script {
+                    def resolved = sh(
+                        script: """#!/bin/bash
+                            set -e
+                            FULL="${env.TESTS_TAG}"
+                            BASE="\${FULL#v}"
+                            MAJOR="\$(echo "\$BASE" | cut -d. -f1)"
+                            MINOR="\$(echo "\$BASE" | cut -d. -f1-2)"
+                            TAGS="\$(git ls-remote --tags "${env.TESTS_REPO}" 2>/dev/null | awk '{print \$2}' | sed 's|refs/tags/||; s|\\^{}||' | sort -u)"
+                            for cand in "\$FULL" "v\$MINOR" "v\$MAJOR" "main"; do
+                              if echo "\$TAGS" | grep -qx "\$cand"; then echo "\$cand"; exit 0; fi
+                              [ "\$cand" = "main" ] && echo "main" && exit 0
+                            done
+                        """,
+                        returnStdout: true
+                    ).trim()
+                    env.TESTS_REF = resolved ?: 'main'
+                    echo "Tests ref: ${env.TESTS_REF} (OSCAR ${env.OSCAR_VERSION})"
+                }
+            }
+        }
+
+        stage('3. Download versioned tests (.zip)') {
+            steps {
+                sh """#!/bin/bash
+                    set -e
+                    REF="${env.TESTS_REF}"
+                    rm -rf oscar-tests-versioned tests.zip "oscar-tests-\${REF#v}" oscar-tests-main
+                    if [ "\$REF" = "main" ]; then
+                      ZIP_URL="https://github.com/grycap/oscar-tests/archive/refs/heads/main.zip"
+                      TOP_DIR="oscar-tests-main"
+                    else
+                      ZIP_URL="https://github.com/grycap/oscar-tests/archive/refs/tags/\$REF.zip"
+                      TOP_DIR="oscar-tests-\${REF#v}"
+                    fi
+                    echo "Descargando \$ZIP_URL ..."
+                    curl -sSL --retry 2 --connect-timeout 15 --max-time 300 -o tests.zip "\$ZIP_URL"
+                    python3 -m zipfile -e tests.zip .
+                    rm -f tests.zip
+                    mv "\$TOP_DIR" oscar-tests-versioned
+                    ls oscar-tests-versioned
+                """
+                stash name: 'versioned-tests', includes: 'oscar-tests-versioned/**', allowEmpty: false
+            }
+        }
+
+        
+        stage('Run OSCAR service lifecycle tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('lifecycle', 'tests/api/service-lifecycle.robot')
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR Visibility tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('visibility', 'tests/api/visibility.robot')
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR Isolation tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('isolation_level', 'tests/api/isolation.robot')
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR Buckets tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('buckets', 'tests/api/buckets.robot')
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR quotas tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('quotas', 'tests/api/quotas-user.robot')
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR Mount Cycle tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('buckets', 'tests/api/mount_cycle.robot')
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR Metrics tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('buckets', 'tests/api/system-metrics.robot')
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR cli tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('cli', 'tests/cli/oscar-cli.robot', true, false)
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR cli admin tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('cli', 'tests/cli/oscar-cli-admin.robot', true, false)
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR Mount tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('buckets', 'tests/oscar-mount.robot', true, false)
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR expose service tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('expose-services', 'tests/oscar-expose-services.robot')
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR service with secret tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('dashboard', 'tests/oscar-secrets.robot')
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR Flows tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('dashboard', 'tests/oscar-flows.robot')
+                    }
+                }
+            }
+        }
+        stage('Run OSCAR JUNO tests') {
+            steps {
+                catchError(stageResult: 'FAILURE') {
+                    script {
+                        runOscarTest('dashboard', 'tests/oscar-juno.robot')
+                    }
+                }
+            }
+        }
+
+
+        
+    }
+
+    post {
+        unsuccessful {
+            emailext(
+                subject: "OSCAR ${JOB_NAME} pipeline is unstable",
+                body: """
+                    <p>Pipeline <b>${JOB_NAME} #${BUILD_NUMBER}</b> is unstable.</p>
+                    <p>Check the console output for more details: 
+                    <a href="${BUILD_URL}console">${BUILD_URL}console</a></p>
+                """,
+                to: '<mail1>,<mail2>',
+                mimeType: 'text/html',
+                attachLog: true
+            )
+        }
+        always {
+            archiveArtifacts artifacts: 'results_*/**', allowEmptyArchive: true
+        }
+        cleanup {
+            node('docker') {
+                sh 'sudo chown -R jenkins:jenkins .'
+                cleanWs()
+            }
+        }
+    }
+}
