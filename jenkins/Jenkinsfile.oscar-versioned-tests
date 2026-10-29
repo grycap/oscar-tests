@@ -1,30 +1,30 @@
 /*
  * Jenkinsfile.oscar-versioned-tests (minimal)
  *
- * 1. Lee OSCAR_ENDPOINT/BASIC_USER de 'ai4eosc-secret-file' y pide
- *    GET <endpoint>/system/config (fallback a /system/info) para la version.
- * 2. Resuelve el tag de grycap/oscar-tests (vX.Y.Z -> vX.Y -> vX -> main).
- * 3. Descarga el .zip del tag con curl y ejecuta las suites con
+ * 1. Reads OSCAR_ENDPOINT/BASIC_USER from 'ai4eosc-secret-file' and issues
+ *    GET <endpoint>/system/config (fallback to /system/info) to get the version.
+ * 2. Resolves the grycap/oscar-tests tag (vX.Y.Z -> vX.Y -> vX -> main).
+ * 3. Downloads the .zip of the tag with curl and runs the suites with
  *    runOscarTest (docker.inside + run-tests-in-virtual-screen.sh).
- *    Los secret files se traen UNA sola vez en el stage 1 (unico
- *    withCredentials del fichero) y se comparten via stash 'secret-vars':
+ *    The secret files are pulled in ONCE in stage 1 (the only
+ *    withCredentials block in the file) and shared via the 'secret-vars' stash:
  *      env.CLUSTER_VARS_FILE / env.AUTH_VARS_FILE
- *    (comillas dobles a proposito al construir ROBOT_OPTIONS: la shell no
- *    re-expande $VAR dentro de otra variable, asi que el literal
- *    '$CLUSTER_FILE' llegaba tal cual a Robot).
- *    Ademas, el fichero ai4eosc queda como variable de entorno persistente:
+ *    (double quotes on purpose when building ROBOT_OPTIONS: the shell does not
+ *    re-expand $VAR inside another variable, so the literal
+ *    '$CLUSTER_FILE' reached Robot as-is).
+ *    Additionally, the ai4eosc file is kept as a persistent environment variable:
  *      env.CLUSTER_VARS_FILE (= $WORKSPACE/.cluster-vars.yaml).
  *
- * Sin fichero de config, sin fallbacks locales, sin credencial legacy.
+ * No config file, no local fallbacks, no legacy credential.
  */
 def runOscarTest(String testId, String testPath, boolean installCli = false, boolean installPython = false) {
     node('docker') {
         docker.image('ghcr.io/grycap/oscar-tests:min').inside('--shm-size=1g -u root') {
-            // Unstash ANTES del dir: si no, restaura dentro de
-            // oscar-tests-versioned/oscar-tests-versioned (anidado).
+            // Unstash BEFORE the dir: otherwise it restores into
+            // oscar-tests-versioned/oscar-tests-versioned (nested).
             unstash 'versioned-tests'
-            // Secret files traidos una sola vez en el stage 1 (stash
-            // 'secret-vars'): aqui solo se restauran, sin withCredentials.
+            // Secret files pulled once in stage 1 (stash
+            // 'secret-vars'): here they are only restored, without withCredentials.
             unstash 'secret-vars'
             dir('oscar-tests-versioned') {
                 env.BROWSER = 'chromium'
@@ -44,9 +44,9 @@ def runOscarTest(String testId, String testPath, boolean installCli = false, boo
                         sh 'pip install oscar-python==2.1.0'
                     }
                 }
-                // Sin withCredentials aqui (solo existe uno en todo el fichero,
-                // en el stage 1): se usan las copias del stash 'secret-vars'
-                // con rutas absolutas de workspace, visibles en el contenedor.
+                // No withCredentials here (only one exists in the whole file,
+                // in stage 1): the copies from the 'secret-vars' stash
+                // are used, with absolute workspace paths, visible in the container.
                 env.ROBOT_OPTIONS = "--pythonpath . --variablefile ${WORKSPACE}/.cluster-vars.yaml --variablefile ${WORKSPACE}/.auth-vars.yaml"
                 retry(2) {
                     if (installPython) {
@@ -66,15 +66,15 @@ def runOscarTest(String testId, String testPath, boolean installCli = false, boo
 
 
 pipeline {
-    // Etiqueta 'docker': los stages usan docker.image().inside() y necesitan
-    // el socket de Docker (igual que Jenkinsfile.general/.cluster). Con
-    // 'agent any' el stage 4 podia caer en un nodo sin acceso y fallaba con
+    // 'docker' label: the stages use docker.image().inside() and need the
+    // Docker socket (same as Jenkinsfile.general/.cluster). With
+    // 'agent any' stage 4 could land on a node without access and fail with
     // 'permission denied ... docker.sock'.
     agent { label 'docker' }
 
     environment {
         TESTS_REPO       = 'https://github.com/grycap/oscar-tests.git'
-        ROBOT_SUITE      = 'tests/api/service-lifecycle.robot' // o 'all'
+        ROBOT_SUITE      = 'tests/api/service-lifecycle.robot' // or 'all'
         ROBOT_OUTPUT_DIR = 'robot_results'
         TESTS_IMAGE      = 'ghcr.io/grycap/oscar-tests:min'
         OSCAR_API_PATH   = '/system/config'
@@ -91,9 +91,9 @@ pipeline {
         stage('1. Get OSCAR version') {
             steps {
                 script {
-                    // UNICO withCredentials de todo el fichero: trae ambos secret
-                    // files una sola vez; los demas stages/funciones usan el
-                    // stash 'secret-vars' (sin withCredentials).
+                    // ONLY withCredentials in the whole file: brings both secret
+                    // files in once; the other stages/functions use the
+                    // 'secret-vars' stash (without withCredentials).
                     withCredentials([file(credentialsId: '<cluster-secret-file>', variable: 'CLUSTER_FILE'),
                                      file(credentialsId: '<auth-secret-file>', variable: 'AUTH_FILE')]) {
                         sh """#!/bin/bash
@@ -105,18 +105,19 @@ pipeline {
                             cp "\$AUTH_FILE" .auth-vars.yaml
                             chmod 600 .cluster-vars.yaml .auth-vars.yaml || true
                         """
-                        // Ficheros como variables de entorno persistentes (el binding
-                        // CLUSTER_FILE/AUTH_FILE solo vive dentro del
-                        // withCredentials y apunta a @tmp, no visible en Docker
-                        // ni en otros stages).
+                        // Files as persistent environment variables (the
+                        // CLUSTER_FILE/AUTH_FILE binding only lives inside the
+                        // withCredentials block and points to @tmp, not visible
+                        // in Docker nor in other stages).
                         env.CLUSTER_VARS_FILE = "${env.WORKSPACE}/.cluster-vars.yaml"
                         env.AUTH_VARS_FILE = "${env.WORKSPACE}/.auth-vars.yaml"
                         stash name: 'secret-vars', includes: '.cluster-vars.yaml, .auth-vars.yaml', allowEmpty: false
 
-                        // CPS/sandbox-safe: python imprime 3 lineas en orden fijo
-                        // (endpoint, SSL_VERIFY, flag de BASIC presente) y se leen
-                        // por indice. Sin eachLine, sin regex, sin Map, y sin pasar
-                        // el secreto por Groovy (curl lo lee del fichero en shell).
+                        // CPS/sandbox-safe: python prints 3 lines in a fixed order
+                        // (endpoint, SSL_VERIFY, whether BASIC is present) and they
+                        // are read by index. No eachLine, no regex, no Map, and no
+                        // passing the secret through Groovy (curl reads it from the
+                        // file in shell).
                         def vals = sh(
                             script: """python3 - .cluster-vars.yaml <<'PYEOF'
 import sys
@@ -139,10 +140,10 @@ PYEOF""",
                         def sslFlag = parts.length > 1 ? parts[1].trim() : 'True'
                         def hasBasic = parts.length > 2 ? parts[2].trim() : '0'
                         if (!env.OSCAR_ENDPOINT || env.OSCAR_ENDPOINT.contains('<')) {
-                            error("ai4eosc-secret-file sin OSCAR_ENDPOINT valido.")
+                            error("ai4eosc-secret-file has no valid OSCAR_ENDPOINT.")
                         }
                         if (hasBasic != '1') {
-                            error("ai4eosc-secret-file sin BASIC_USER valido.")
+                            error("ai4eosc-secret-file has no valid BASIC_USER.")
                         }
                         def curlInsecure = (sslFlag == 'False') ? '-k' : ''
 
@@ -161,7 +162,7 @@ PYEOF
                                 "\$ENDPOINT${env.OSCAR_API_PATH}" || true
                             head -c 2000 oscar_config.json; echo ""
                             if ! grep -q '"version"' oscar_config.json 2>/dev/null; then
-                              echo "Fallback a /system/info"
+                              echo "Falling back to /system/info"
                               curl -s ${curlInsecure} -o oscar_info.json -w "HTTP %{http_code}\\n" \\
                                   -H "Authorization: Basic \$BASIC" \\
                                   --connect-timeout 15 --max-time 60 \\
@@ -195,7 +196,7 @@ PYEOF""",
                         ).trim()
 
                         if (!rawVersion || rawVersion == 'UNKNOWN') {
-                            error("Sin version en ${env.OSCAR_ENDPOINT}${env.OSCAR_API_PATH}. Revisa el cluster.")
+                            error("No version found at ${env.OSCAR_ENDPOINT}${env.OSCAR_API_PATH}. Check the cluster.")
                         }
                         def clean = rawVersion.replaceAll('^[vV]', '').trim()
                         env.OSCAR_VERSION = clean
@@ -243,7 +244,7 @@ PYEOF""",
                       ZIP_URL="https://github.com/grycap/oscar-tests/archive/refs/tags/\$REF.zip"
                       TOP_DIR="oscar-tests-\${REF#v}"
                     fi
-                    echo "Descargando \$ZIP_URL ..."
+                    echo "Downloading \$ZIP_URL ..."
                     curl -sSL --retry 2 --connect-timeout 15 --max-time 300 -o tests.zip "\$ZIP_URL"
                     python3 -m zipfile -e tests.zip .
                     rm -f tests.zip
@@ -254,7 +255,7 @@ PYEOF""",
             }
         }
 
-        
+
         stage('Run OSCAR service lifecycle tests') {
             steps {
                 catchError(stageResult: 'FAILURE') {
@@ -383,7 +384,6 @@ PYEOF""",
         }
 
 
-        
     }
 
     post {
@@ -392,7 +392,7 @@ PYEOF""",
                 subject: "OSCAR ${JOB_NAME} pipeline is unstable",
                 body: """
                     <p>Pipeline <b>${JOB_NAME} #${BUILD_NUMBER}</b> is unstable.</p>
-                    <p>Check the console output for more details: 
+                    <p>Check the console output for more details:
                     <a href="${BUILD_URL}console">${BUILD_URL}console</a></p>
                 """,
                 to: '<mail1>,<mail2>',
