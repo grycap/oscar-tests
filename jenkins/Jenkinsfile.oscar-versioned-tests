@@ -88,7 +88,7 @@ pipeline {
 
     stages {
 
-        stage('1. Get OSCAR version') {
+        stage('1. Obtener version de OSCAR') {
             steps {
                 script {
                     // UNICO withCredentials de todo el fichero: trae ambos secret
@@ -206,7 +206,7 @@ PYEOF""",
             }
         }
 
-        stage('2. Resolve tests tag') {
+        stage('2. Resolver tag de tests') {
             steps {
                 script {
                     def resolved = sh(
@@ -225,12 +225,12 @@ PYEOF""",
                         returnStdout: true
                     ).trim()
                     env.TESTS_REF = resolved ?: 'main'
-                    echo "Tests ref: ${env.TESTS_REF} (OSCAR ${env.OSCAR_VERSION})"
+                    echo "Ref de tests: ${env.TESTS_REF} (OSCAR ${env.OSCAR_VERSION})"
                 }
             }
         }
 
-        stage('3. Download versioned tests (.zip)') {
+        stage('3. Descargar tests versionados (.zip)') {
             steps {
                 sh """#!/bin/bash
                     set -e
@@ -255,7 +255,7 @@ PYEOF""",
         }
 
         
-        stage('Run OSCAR service lifecycle tests') {
+        stage('Ejecutar tests de ciclo de vida de servicios OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -264,7 +264,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR Visibility tests') {
+        stage('Ejecutar tests de visibilidad OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -273,7 +273,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR Isolation tests') {
+        stage('Ejecutar tests de aislamiento OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -282,7 +282,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR Buckets tests') {
+        stage('Ejecutar tests de buckets OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -291,7 +291,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR quotas tests') {
+        stage('Ejecutar tests de quotas OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -300,7 +300,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR Mount Cycle tests') {
+        stage('Ejecutar tests de ciclo de mount OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -309,7 +309,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR Metrics tests') {
+        stage('Ejecutar tests de metricas OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -318,7 +318,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR cli tests') {
+        stage('Ejecutar tests de oscar-cli OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -327,7 +327,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR cli admin tests') {
+        stage('Ejecutar tests de oscar-cli admin OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -336,7 +336,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR Mount tests') {
+        stage('Ejecutar tests de oscar-mount OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -345,7 +345,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR expose service tests') {
+        stage('Ejecutar tests de expose services OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -354,7 +354,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR service with secret tests') {
+        stage('Ejecutar tests de servicios con secret OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -363,7 +363,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR Flows tests') {
+        stage('Ejecutar tests de Flows OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -372,7 +372,7 @@ PYEOF""",
                 }
             }
         }
-        stage('Run OSCAR JUNO tests') {
+        stage('Ejecutar tests de JUNO OSCAR') {
             steps {
                 catchError(stageResult: 'FAILURE') {
                     script {
@@ -389,10 +389,10 @@ PYEOF""",
     post {
         unsuccessful {
             emailext(
-                subject: "OSCAR ${JOB_NAME} pipeline is unstable",
+                subject: "El pipeline OSCAR ${JOB_NAME} es inestable",
                 body: """
-                    <p>Pipeline <b>${JOB_NAME} #${BUILD_NUMBER}</b> is unstable.</p>
-                    <p>Check the console output for more details: 
+                    <p>El pipeline <b>${JOB_NAME} #${BUILD_NUMBER}</b> es inestable.</p>
+                    <p>Consulta la salida de consola para mas detalles:
                     <a href="${BUILD_URL}console">${BUILD_URL}console</a></p>
                 """,
                 to: '<mail1>,<mail2>',
