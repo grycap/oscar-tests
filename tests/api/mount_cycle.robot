@@ -3,15 +3,18 @@ Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluste
 
 Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS}
 Resource            ${CURDIR}/../../resources/files.resource
+Resource            ${CURDIR}/../../resources/service.resource
 
-Suite Setup         Check Valid OIDC Token
-Suite Teardown      Run Keywords    Cleanup Mount Cycle Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
+Suite Setup         Run Keywords    Check Valid OIDC Token
+...                 AND    Assign Random Service Name
+...                 AND    Assign Random String
+...                 AND    Assign Mount Bucket Names
+Suite Teardown      Run Keywords    Cleanup Mount Cycle Resources    AND    Clean Test Artifacts    ${ARTIFACTS_DIR}/service_file.json
 
 
 *** Variables ***
-${SERVICE_NAME}                 robot-test-cowsay
-${MOUNT_BUCKET_NAME}            robot-test/mount
-${MOUNT_BUCKET_NAME_OTHER}      robot-test-mount
+${SERVICE_BASE}                 robot-test-cowsay
+${MOUNT_BUCKET_PREFIX}          robot-test-mount
 
 *** Test Cases ***
 OSCAR API Health
@@ -24,7 +27,7 @@ OSCAR Create Service ${SERVICE_NAME} Mount not Exist
     [Documentation]    Create a new service
     [Tags]    create
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
@@ -35,7 +38,7 @@ OSCAR Verify Bucket ${bucket_name} and Service ${SERVICE_NAME} exist
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
     ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
-    Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"robot-test/mount"}
+    Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"${MOUNT_BUCKET_NAME}"}
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
@@ -86,7 +89,7 @@ Create private Bucket ${MOUNT_BUCKET_NAME_OTHER}
     
 OSCAR Create Service Mount - where the bucket ${MOUNT_BUCKET_NAME_OTHER} exist and its mine and private
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${body}=  yaml.Safe Load  ${body}
     ${mount} = 	Create Dictionary 	storage_provider=minio.default      path=${MOUNT_BUCKET_NAME_OTHER}
     Set To Dictionary    ${body}    mount=${mount}
@@ -143,7 +146,7 @@ Delete Bucket ${MOUNT_BUCKET_NAME_OTHER} to reset the state
 
 OSCAR Create Service Mount - where the bucket ${MOUNT_BUCKET_NAME_OTHER} not exist
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${body}=  yaml.Safe Load  ${body}
     ${mount} = 	Create Dictionary 	storage_provider=minio.default      path=${MOUNT_BUCKET_NAME_OTHER}
     Set To Dictionary    ${body}    mount=${mount}
@@ -216,7 +219,7 @@ Create public Bucket ${MOUNT_BUCKET_NAME_OTHER}
 
 OSCAR Create Service with public Bucket ${MOUNT_BUCKET_NAME_OTHER}. Must answers with error 
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${body}=  yaml.Safe Load  ${body}
     ${mount} = 	Create Dictionary 	storage_provider=minio.default      path=${MOUNT_BUCKET_NAME_OTHER}
     Set To Dictionary    ${body}    mount=${mount}
@@ -241,6 +244,12 @@ Delete Bucket ${MOUNT_BUCKET_NAME_OTHER}. To reset state
 
 
 *** Keywords ***
+Assign Mount Bucket Names
+    [Documentation]    Unique service and bucket names per run so concurrent suites cannot collide.
+    Set Suite Variable    ${BUCKET_NAME}    ${MOUNT_BUCKET_PREFIX}-${RANDOM_STRING}
+    Set Suite Variable    ${MOUNT_BUCKET_NAME}    ${BUCKET_NAME}/mount
+    Set Suite Variable    ${MOUNT_BUCKET_NAME_OTHER}    ${MOUNT_BUCKET_PREFIX}-other-${RANDOM_STRING}
+
 Cleanup Mount Cycle Resources
     [Documentation]    Best-effort cleanup of services and buckets created by this suite.
     Run Keyword And Ignore Error    DELETE    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=ANY    headers=${HEADERS}    verify=${SSL_VERIFY}
@@ -267,5 +276,5 @@ Prepare Service File
 
     Set To Dictionary    ${modified_content}    script=${script_value}
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 

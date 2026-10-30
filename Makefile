@@ -1,6 +1,10 @@
 # Targets that should not be treated as positional arguments.
-RESERVED_GOALS := test py-test docker-test help list clean-results clean-scalability-results
+RESERVED_GOALS := test test-parallel py-test docker-test help list clean-results clean-scalability-results
 .DEFAULT_GOAL := help
+
+# Recipes use bash-only features (e.g. ${var//search/replace}); /bin/sh may be
+# dash on some systems, which fails with "Bad substitution".
+SHELL := /bin/bash
 
 OTHER_GOALS := $(filter-out $(RESERVED_GOALS),$(MAKECMDGOALS))
 $(foreach goal,$(OTHER_GOALS),$(eval .PHONY: $(goal)))
@@ -49,7 +53,7 @@ AUTH_EXAMPLE := $(firstword $(AUTH_OPTIONS))
 CLUSTER_EXAMPLE := $(firstword $(CLUSTER_OPTIONS))
 CLUSTER_EXAMPLE_DISPLAY := $(if $(CLUSTER_EXAMPLE),$(if $(filter cluster-%,$(CLUSTER_EXAMPLE)),$(patsubst cluster-%,%,$(CLUSTER_EXAMPLE)),$(CLUSTER_EXAMPLE)))
 
-ifeq ($(filter test,$(MAKECMDGOALS)),test)
+ifneq ($(filter test test-parallel,$(MAKECMDGOALS)),)
   ifeq ($(AUTH_GOAL),)
     $(error Missing auth configuration. Usage: make test auth-<auth> <cluster>)
   endif
@@ -64,7 +68,7 @@ ifeq ($(filter test,$(MAKECMDGOALS)),test)
   endif
 endif
 
-.PHONY: test py-test docker-test help list clean-results clean-scalability-results
+.PHONY: test test-parallel py-test docker-test help list clean-results clean-scalability-results
 
 test:
 	@echo "Auth config: $(AUTH_FILE)"
@@ -108,6 +112,92 @@ else
 endif
 
 PYTEST_SUITE ?= tests/python_tests/
+
+# API suites safe to run concurrently: they use random service/bucket names
+# (or disjoint fixed names) and per-suite artifact directories, so they do not
+# collide with each other.
+PARALLEL_API_SUITES := \
+  tests/api/deployment.robot \
+  tests/api/volumes.robot \
+  tests/api/bucket-presign.robot \
+  tests/api/orchestration.robot \
+  tests/api/system-metrics.robot \
+  tests/api/service-lifecycle-exposed.robot \
+  tests/api/reserved-environment.robot \
+  tests/api/system-logs.robot \
+  tests/api/delete-not-own.robot \
+  tests/api/isolation.robot \
+  tests/api/visibility.robot \
+  tests/api/service-lifecycle.robot \
+  tests/api/delete-not-own-service.robot \
+  tests/api/buckets.robot \
+  tests/api/mount_cycle.robot \
+  tests/api/service-update.robot \
+  tests/api/federation.robot
+
+# API suites that must run serially: they temporarily reduce global (MinIO) or
+# user memory quotas, so anything else deploying services or creating buckets
+# at the same time would fail spuriously.
+SERIAL_API_SUITES := \
+  tests/api/quotas-user.robot \
+  tests/api/minio-quotas.robot
+
+# Runs the API suites in two waves: wave 1 launches all PARALLEL_API_SUITES at
+# once (one worker per suite); wave 2 runs SERIAL_API_SUITES one by one. Each
+# suite writes its own output under $(ROBOT_OUTPUT_DIR)/tests-api-<suite>.
+# Does not stop on the first failure: the exit status is 1 with full logs in ROBOT_OUTPUT_DIR.
+test-parallel:
+	@echo "Auth config: $(AUTH_FILE)"
+	@echo "Cluster config: $(CLUSTER_FILE)"
+	@echo "Wave 1 (parallel, $(words $(PARALLEL_API_SUITES)) suites): $(PARALLEL_API_SUITES)"
+	@echo "Wave 2 (serial, $(words $(SERIAL_API_SUITES)) suites): $(SERIAL_API_SUITES)"
+	@echo "Robot args: $(ROBOT_ARGS)"
+	@set -e; \
+	pids=""; failed=0; \
+	for suite in $(PARALLEL_API_SUITES); do \
+	  rel="$${suite#tests/}"; \
+	  dir_suffix="$${rel%.robot}"; \
+	  safe_dir="$${dir_suffix//\//-}"; \
+	  out_dir="$(ROBOT_OUTPUT_DIR)/$${safe_dir}"; \
+	  mkdir -p "$$out_dir"; \
+	  echo "-> [wave 1, parallel] $$suite (output: $$out_dir)"; \
+	  OSCAR_TEST_AUTH_GOAL="$(AUTH_GOAL)" \
+	  OSCAR_TEST_CLUSTER_GOAL="$(CLUSTER_GOAL)" \
+	  OSCAR_TEST_AUTH_FILE="$(AUTH_FILE)" \
+	  OSCAR_TEST_CLUSTER_FILE="$(CLUSTER_FILE)" \
+	  OSCAR_TEST_ROBOT="$(ROBOT)" \
+	  OSCAR_TEST_ROBOT_SUITE="$$suite" \
+	  OSCAR_TEST_ROBOT_ARGS="$(ROBOT_ARGS)" \
+	  OSCAR_TEST_ROBOT_OUTPUT_DIR="$$out_dir" \
+	  $(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) -v ARTIFACTS_DIR:"$$out_dir/artifacts" $(ROBOT_ARGS) -d "$$out_dir" "$$suite" & \
+	  pids="$$pids $$!"; \
+	done; \
+	for pid in $$pids; do \
+	  if ! wait "$$pid"; then \
+	    failed=1; \
+	  fi; \
+	done; \
+	for suite in $(SERIAL_API_SUITES); do \
+	  rel="$${suite#tests/}"; \
+	  dir_suffix="$${rel%.robot}"; \
+	  safe_dir="$${dir_suffix//\//-}"; \
+	  out_dir="$(ROBOT_OUTPUT_DIR)/$${safe_dir}"; \
+	  mkdir -p "$$out_dir"; \
+	  echo "-> [wave 2, serial] $$suite (output: $$out_dir)"; \
+	  OSCAR_TEST_AUTH_GOAL="$(AUTH_GOAL)" \
+	  OSCAR_TEST_CLUSTER_GOAL="$(CLUSTER_GOAL)" \
+	  OSCAR_TEST_AUTH_FILE="$(AUTH_FILE)" \
+	  OSCAR_TEST_CLUSTER_FILE="$(CLUSTER_FILE)" \
+	  OSCAR_TEST_ROBOT="$(ROBOT)" \
+	  OSCAR_TEST_ROBOT_SUITE="$$suite" \
+	  OSCAR_TEST_ROBOT_ARGS="$(ROBOT_ARGS)" \
+	  OSCAR_TEST_ROBOT_OUTPUT_DIR="$$out_dir" \
+	  $(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) -v ARTIFACTS_DIR:"$$out_dir/artifacts" $(ROBOT_ARGS) -d "$$out_dir" "$$suite" || failed=1; \
+	done; \
+	if [ "$$failed" -ne 0 ]; then \
+	  echo "test-parallel: some suites failed. Logs in $(ROBOT_OUTPUT_DIR)"; \
+	fi; \
+	exit $$failed
 
 py-test:
 	@echo "Auth config: $(AUTH_FILE)"
@@ -171,6 +261,7 @@ clean-scalability-results:
 help:
 	@echo "Usage:"
 	@echo "  make test auth-<auth config> <cluster config>"
+	@echo "  make test-parallel auth-<auth config> <cluster config>"
 	@echo "  make clean-results"
 	@echo "  make clean-scalability-results"
 	@echo ""
@@ -197,6 +288,7 @@ endif
 	@echo "  ROBOT_SUITE=<suite path> (default: $(ROBOT_SUITE), use 'all' for all suites)"
 	@echo "  ROBOT_ARGS=<extra Robot args, e.g. -v NAME:value>"
 	@echo "  ROBOT_OUTPUT_DIR=<dir> (default: $(ROBOT_OUTPUT_DIR))"
+	@echo "  PARALLEL_API_SUITES / SERIAL_API_SUITES=<suites> (test-parallel waves)"
 	@echo "  PYTEST_SUITE=<path or pattern> (default: $(PYTEST_SUITE))"
 	@echo ""
 	@echo "Cleanup:"
