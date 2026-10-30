@@ -3,9 +3,9 @@ Documentation       Validate MinIO bucket quotas through the OSCAR API.
 
 Library             Collections
 Library             OperatingSystem
-Library             Process
 Library             RequestsLibrary
 Library             String
+Library             ${CURDIR}/../../robot_libs/minio_s3.py
 
 Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS}
 Resource            ${CURDIR}/../../resources/api_call.resource
@@ -19,7 +19,6 @@ Suite Teardown      Run Keywords    Cleanup MinIO Storage Enforcement Resources 
 ${MINIO_STORAGE_PER_BUCKET}     50Mi
 ${BUCKET_A}                     ${EMPTY}
 ${BUCKET_B}                     ${EMPTY}
-${CLI_CLUSTER}                  ${EMPTY}
 ${ORIGINAL_MINIO_BUCKETS_MAX}   ${EMPTY}
 ${ORIGINAL_MINIO_STORAGE_MAX}   ${EMPTY}
 ${QUOTA_SERVICE_NAME}           ${EMPTY}
@@ -68,8 +67,7 @@ OSCAR Applies MinIO Storage Quota To New Buckets
 
 OSCAR Enforces MinIO Storage Per Bucket Quota
     [Documentation]    MinIO rejects further object uploads after its scanner observes that a bucket exceeded the configured quota.
-    [Tags]    storage-enforcement    oscar-cli
-    Ensure OSCAR CLI Cluster Configured
+    [Tags]    storage-enforcement    boto3
     ${payload}=    Fetch User Quotas Payload
     ${limit}=    Evaluate    int($payload["minio"]["buckets"]["used"]) + 1
     Update MinIO Quota    ${limit}    1Mi
@@ -77,16 +75,10 @@ OSCAR Enforces MinIO Storage Per Bucket Quota
     Create MinIO Quota Service
     Wait Until Keyword Succeeds    180s    5s    Service Should Exist    ${QUOTA_SERVICE_NAME}
     Wait Until Keyword Succeeds    60s    5s    Service Bucket Should Have Storage Quota    1Mi
-    ${small_result}=    Run Process    oscar-cli    service     put-file        ${QUOTA_SERVICE_NAME}       minio.default
-    ...    ${SMALL_OBJECT_FILE}    ${QUOTA_SERVICE_BUCKET}/input/small.bin    stdout=True    stderr=True
-    Log    ${small_result.stdout}
-    Log    ${small_result.stderr}
-    Should Be Equal As Integers    ${small_result.rc}    0
-    ${large_result}=    Run Process    oscar-cli    service    put-file    ${QUOTA_SERVICE_NAME}    minio.default
-    ...    ${LARGE_OBJECT_FILE}    ${QUOTA_SERVICE_BUCKET}/input/large.bin    stdout=True    stderr=True
-    Log    ${large_result.stdout}
-    Log    ${large_result.stderr}
-    Should Be Equal As Integers    ${large_result.rc}    0
+    ${small_result}=    Upload Object To MinIO    input/small.bin    ${SMALL_OBJECT_FILE}
+    Should Be True    ${small_result}[ok]    Upload of small object failed: ${small_result}[message]
+    ${large_result}=    Upload Object To MinIO    input/large.bin    ${LARGE_OBJECT_FILE}
+    Should Be True    ${large_result}[ok]    Upload of large object failed: ${large_result}[message]
     Wait Until Keyword Succeeds    180s    10s    Service Bucket Usage Should Exceed Quota
     Wait Until Keyword Succeeds    240s    15s    MinIO Should Reject Additional Upload
 
@@ -97,7 +89,6 @@ Initialize MinIO Quota Test
     ${suffix}=    Generate Random String    8    [LOWER][NUMBERS]
     Set Suite Variable    ${BUCKET_A}    robot-minio-quota-${suffix}-a
     Set Suite Variable    ${BUCKET_B}    robot-minio-quota-${suffix}-b
-    Set Suite Variable    ${CLI_CLUSTER}    robot-minio-quota-${suffix}
     Set Suite Variable    ${QUOTA_SERVICE_NAME}    robot-minio-quota-svc-${suffix}
     Set Suite Variable    ${QUOTA_SERVICE_BUCKET}    robot-minio-quota-svc-${suffix}
     Cleanup MinIO Quota Buckets
@@ -131,39 +122,22 @@ Create MinIO Bucket
     Log    ${response.content}
     RETURN    ${response}
 
-Ensure OSCAR CLI Cluster Configured
-    [Documentation]    Configure oscar-cli for the target OSCAR endpoint.
-    ${cli_check}=    Run Process    oscar-cli    stdout=True    stderr=True
-    Log    ${cli_check.stdout}
-    Log    ${cli_check.stderr}
-    Should Be Equal As Integers    ${cli_check.rc}    0
-    ${has_basic}=    Run Keyword And Return Status    Variable Should Exist    ${BASIC_USER}
-    IF    ${has_basic} and '${BASIC_USER}' != ''
-        Set CLI Basic Credentials
-        ${add_result}=    Run Process    oscar-cli    cluster    add    ${CLI_CLUSTER}    ${OSCAR_ENDPOINT}
-        ...    ${OSCAR_USER}    ${OSCAR_PASSWORD}    stdout=True    stderr=True
-    ELSE
-        ${has_refresh}=    Run Keyword And Return Status    Variable Should Exist    ${REFRESH_TOKEN}
-        IF    not ${has_refresh}
-            Set Refresh Token
-        END
-        ${add_result}=    Run Process    oscar-cli    cluster    add    ${CLI_CLUSTER}    ${OSCAR_ENDPOINT}
-        ...    --oidc-refresh-token    ${REFRESH_TOKEN}    stdout=True    stderr=True
-    END
-    Log    ${add_result.stdout}
-    Log    ${add_result.stderr}
-    Should Be Equal As Integers    ${add_result.rc}    0
-    ${default_result}=    Run Process    oscar-cli    cluster    default    --set    ${CLI_CLUSTER}    stdout=True    stderr=True
-    Log    ${default_result.stdout}
-    Log    ${default_result.stderr}
-    Should Be Equal As Integers    ${default_result.rc}    0
+Upload Object To MinIO
+    [Documentation]    Upload a local file to the service bucket with the S3 API (boto3).
+    [Arguments]    ${object_key}    ${local_file}
+    ${creds}=    Get MinIO Credentials
+    ${verify}=    Convert To Boolean    ${SSL_VERIFY}
+    ${result}=    Upload Object To MinIO Bucket    ${QUOTA_SERVICE_BUCKET}    ${object_key}    ${local_file}
+    ...    ${creds}[endpoint]    ${creds}[access_key]    ${creds}[secret_key]    ${creds}[region]    ${verify}
+    Log    ${result}
+    RETURN    ${result}
 
-Set CLI Basic Credentials
-    [Documentation]    Decode BASIC_USER and store username/password for oscar-cli.
-    ${decoded}=    Evaluate    base64.b64decode('${BASIC_USER}').decode('utf-8')    modules=base64
-    @{credentials}=    Split String    ${decoded}    :
-    Set Suite Variable    ${OSCAR_USER}    ${credentials}[0]
-    Set Suite Variable    ${OSCAR_PASSWORD}    ${credentials}[1]
+Get MinIO Credentials
+    [Documentation]    Get default MinIO (S3 API) credentials from OSCAR config.
+    ${resp}=    GET With Defaults    url=${OSCAR_ENDPOINT}/system/config    expected_status=200
+    Log    ${resp.content}
+    ${creds}=    Evaluate    json.loads($resp.content)["minio_provider"]    json
+    RETURN    ${creds}
 
 Create Quota Test Files
     [Documentation]    Create files below and above the configured 1Mi bucket quota.
@@ -214,13 +188,10 @@ Service Bucket Usage Should Exceed Quota
 MinIO Should Reject Additional Upload
     [Documentation]    Try another upload after quota overuse is visible; MinIO scanner enforcement is best-effort and delayed.
     ${suffix}=    Generate Random String    6    [LOWER][NUMBERS]
-    ${result}=    Run Process    oscar-cli    service    put-file    ${QUOTA_SERVICE_NAME}    minio.default
-    ...    ${RETRY_OBJECT_FILE}    ${QUOTA_SERVICE_BUCKET}/input/retry-${suffix}.bin    stdout=True    stderr=True
-    Log    ${result.stdout}
-    Log    ${result.stderr}
-    Should Not Be Equal As Integers    ${result.rc}    0    msg=Quota is configured and exceeded, but MinIO still accepted an additional upload within the timeout.
-    ${combined_output}=    Catenate    SEPARATOR=\n    ${result.stdout}    ${result.stderr}
-    Should Contain Any    ${combined_output}    quota    exceed    limit    storage
+    ${result}=    Upload Object To MinIO    input/retry-${suffix}.bin    ${RETRY_OBJECT_FILE}
+    Log    ${result}[message]
+    Should Be Equal As Strings    ${result}[ok]    ${False}    msg=Quota is configured and exceeded, but MinIO still accepted an additional upload within the timeout.
+    Should Contain Any    ${result}[message]    quota    exceed    limit    storage
 
 Cleanup MinIO Quota Buckets
     [Documentation]    Remove buckets created by this suite if they exist.
@@ -228,10 +199,9 @@ Cleanup MinIO Quota Buckets
     Run Keyword If    '${BUCKET_B}' != ''    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/buckets/${BUCKET_B}    expected_status=ANY
 
 Cleanup MinIO Storage Enforcement Resources
-    [Documentation]    Remove service, bucket, CLI cluster, and temporary files used by storage enforcement.
+    [Documentation]    Remove service, bucket, and temporary files used by storage enforcement.
     Run Keyword If    '${QUOTA_SERVICE_NAME}' != ''    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/services/${QUOTA_SERVICE_NAME}    expected_status=ANY
     Run Keyword If    '${QUOTA_SERVICE_BUCKET}' != ''    DELETE With Defaults    url=${OSCAR_ENDPOINT}/system/buckets/${QUOTA_SERVICE_BUCKET}    expected_status=ANY
-    Run Keyword If    '${CLI_CLUSTER}' != ''    Run Process    oscar-cli    cluster    remove    ${CLI_CLUSTER}    stdout=True    stderr=True
     Remove File    ${SMALL_OBJECT_FILE}
     Remove File    ${LARGE_OBJECT_FILE}
     Remove File    ${RETRY_OBJECT_FILE}

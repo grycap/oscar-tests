@@ -3,6 +3,7 @@ robotframework-jsonlibrary
 robotframework-browser
 robotframework-requests
 pyyaml
+boto3
 PyJWT
 oscar-python==2.1.0
 pytest

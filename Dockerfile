@@ -15,4 +15,5 @@ ENV PATH=$PATH:/usr/local/go/bin
 RUN pip install --no-cache-dir \
     robotframework-jsonlibrary \
     PyJWT \
-    locust
+    locust \
+    boto3==1.43.92
