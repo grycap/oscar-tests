@@ -8,7 +8,7 @@ Resource          ${CURDIR}/../../resources/api_call.resource
 Resource          ${CURDIR}/../../resources/service.resource
 
 Suite Setup       Run Keywords    Checks Valids OIDC Token    AND    Assign Random Service Name
-Suite Teardown    Run Keywords    Cleanup Delete Not Own Service Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
+Suite Teardown    Run Keywords    Cleanup Delete Not Own Service Resources    AND    Clean Test Artifacts    ${ARTIFACTS_DIR}/service_file.json
 
 
 *** Variables ***
@@ -25,7 +25,7 @@ OSCAR API Health
 OSCAR Create Service For Delete Not Own Test
     [Documentation]    Create a service owned by the current user with restricted visibility
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     Append To List      ${users}    ${OTHER_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
@@ -58,7 +58,7 @@ Verify Service Still Exists After Failed Deletion
 OSCAR Create Private Service For Delete Not Own Test
     [Documentation]    Create a private service owned by the current user
     Prepare Service File With Name    ${SERVICE_BASE}-private
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      visibility     private
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}
@@ -119,7 +119,7 @@ Prepare Service File
     ${first_output}=    Get From List    ${output_entries}    0
     Set To Dictionary    ${first_output}    path=${SERVICE_NAME}/output
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 
 Prepare Service File With Name
     [Documentation]    Prepare the service file with a specific name
@@ -143,7 +143,7 @@ Prepare Service File With Name
     ${first_output}=    Get From List    ${output_entries}    0
     Set To Dictionary    ${first_output}    path=${service_name}/output
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 
 Modify Service File
     [Documentation]    Modify the service file with the VO

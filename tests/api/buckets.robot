@@ -6,7 +6,7 @@ Resource          ${CURDIR}/../../${AUTHENTICATION_PROCESS}
 Resource          ${CURDIR}/../../resources/files.resource
 
 Suite Setup       Check Valid OIDC Token
-Suite Teardown    Run Keywords    Cleanup Bucket Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
+Suite Teardown    Run Keywords    Cleanup Bucket Resources    AND    Clean Test Artifacts    ${ARTIFACTS_DIR}/service_file.json
 
 
 *** Variables ***
@@ -256,4 +256,4 @@ Prepare Service File
     ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\nfi\n\
     Set To Dictionary    ${modified_content}    script=${script_value}
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
