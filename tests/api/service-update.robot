@@ -22,7 +22,7 @@ Rejected VO Transition Must Not Mutate Service
     ${body}=    Evaluate    json.dumps($initial)    modules=json
     ${created}=    POST    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     ...    headers=${HEADERS}    expected_status=ANY    verify=${SSL_VERIFY}
-    ${reason}=    Evaluate    $created.text[:180] if $created.status_code == 400 and 'token' not in $created.text.lower() and 'password' not in $created.text.lower() else 'redacted'
+    ${reason}=    Classify Error Response    ${created}
     Log To Console    Create response classification: ${reason}
     Should Be Equal As Integers    ${created.status_code}    201    OIDC owner service creation failed
     Set Suite Variable    ${CREATED}    ${TRUE}
