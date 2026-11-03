@@ -117,22 +117,17 @@ PYTEST_SUITE ?= tests/python_tests/
 # (or disjoint fixed names) and per-suite artifact directories, so they do not
 # collide with each other.
 PARALLEL_API_SUITES := \
+  tests/api/service-update.robot \
   tests/api/deployment.robot \
-  tests/api/volumes.robot \
   tests/api/bucket-presign.robot \
   tests/api/orchestration.robot \
-  tests/api/system-metrics.robot \
   tests/api/service-lifecycle-exposed.robot \
   tests/api/reserved-environment.robot \
   tests/api/system-logs.robot \
   tests/api/delete-not-own.robot \
-  tests/api/isolation.robot \
   tests/api/visibility.robot \
   tests/api/service-lifecycle.robot \
   tests/api/delete-not-own-service.robot \
-  tests/api/buckets.robot \
-  tests/api/mount_cycle.robot \
-  tests/api/service-update.robot \
   tests/api/federation.robot
 
 # API suites that must run serially: they temporarily reduce global (MinIO) or
@@ -140,12 +135,24 @@ PARALLEL_API_SUITES := \
 # at the same time would fail spuriously.
 SERIAL_API_SUITES := \
   tests/api/quotas-user.robot \
-  tests/api/minio-quotas.robot
+  tests/api/buckets.robot \
+  tests/api/volumes.robot \
+  tests/api/isolation.robot \
+  tests/api/minio-quotas.robot \
+  tests/api/mount_cycle.robot \
+  tests/api/system-metrics.robot 
 
-# Runs the API suites in two waves: wave 1 launches all PARALLEL_API_SUITES at
-# once (one worker per suite); wave 2 runs SERIAL_API_SUITES one by one. Each
-# suite writes its own output under $(ROBOT_OUTPUT_DIR)/tests-api-<suite>.
-# Does not stop on the first failure: the exit status is 1 with full logs in ROBOT_OUTPUT_DIR.
+# Max concurrent wave-1 workers. 0 (default) = launch all PARALLEL_API_SUITES
+# at once. >0 runs wave 1 in batches of PAR_JOBS concurrent suites, waiting for
+# the batch to finish before starting the next one (e.g. PAR_JOBS=3 -> "3 in,
+# 3 out"; PAR_JOBS=4 -> "4 in, 4 out").
+PAR_JOBS ?= 3
+
+# Runs the API suites in two waves: wave 1 launches up to PAR_JOBS concurrent
+# suites from PARALLEL_API_SUITES (all at once when PAR_JOBS=0); wave 2 runs
+# SERIAL_API_SUITES one by one. Each suite writes its own output under
+# $(ROBOT_OUTPUT_DIR)/<suite>. Does not stop on the first failure: the exit
+# status is 1 with full logs in ROBOT_OUTPUT_DIR.
 test-parallel:
 	@echo "Auth config: $(AUTH_FILE)"
 	@echo "Cluster config: $(CLUSTER_FILE)"
@@ -154,6 +161,7 @@ test-parallel:
 	@echo "Robot args: $(ROBOT_ARGS)"
 	@set -e; \
 	pids=""; failed=0; \
+	running=0; \
 	for suite in $(PARALLEL_API_SUITES); do \
 	  rel="$${suite#tests/}"; \
 	  dir_suffix="$${rel%.robot}"; \
@@ -171,6 +179,16 @@ test-parallel:
 	  OSCAR_TEST_ROBOT_OUTPUT_DIR="$$out_dir" \
 	  $(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) -v ARTIFACTS_DIR:"$$out_dir/artifacts" $(ROBOT_ARGS) -d "$$out_dir" "$$suite" & \
 	  pids="$$pids $$!"; \
+	  running=$$((running + 1)); \
+	  if [ "$(PAR_JOBS)" -gt 0 ] && [ "$$running" -ge "$(PAR_JOBS)" ]; then \
+	    for pid in $$pids; do \
+	      if ! wait "$$pid"; then \
+	        failed=1; \
+	      fi; \
+	    done; \
+	    pids=""; \
+	    running=0; \
+	  fi; \
 	done; \
 	for pid in $$pids; do \
 	  if ! wait "$$pid"; then \
@@ -289,6 +307,7 @@ endif
 	@echo "  ROBOT_ARGS=<extra Robot args, e.g. -v NAME:value>"
 	@echo "  ROBOT_OUTPUT_DIR=<dir> (default: $(ROBOT_OUTPUT_DIR))"
 	@echo "  PARALLEL_API_SUITES / SERIAL_API_SUITES=<suites> (test-parallel waves)"
+	@echo "  PAR_JOBS=<wave-1 concurrency; 0 = all suites at once> (test-parallel)"
 	@echo "  PYTEST_SUITE=<path or pattern> (default: $(PYTEST_SUITE))"
 	@echo ""
 	@echo "Cleanup:"

@@ -271,6 +271,7 @@ Prepare Service File
     ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\n
     ...    cat \"/mnt/${MOUNT_BUCKET_NAME}/${INVOKE_FILE_NAME}\"\nfi\n\
     Set To Dictionary    ${modified_content}    script=${script_value}
+    Set To Dictionary    ${modified_content}    name=${SERVICE_NAME}
     ${mount} = 	Create Dictionary 	storage_provider=minio.default      path=${MOUNT_BUCKET_NAME}
     Set To Dictionary    ${modified_content}    mount=${mount}
 
