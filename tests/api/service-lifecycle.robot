@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation       Tests for the OSCAR Manager's API of a deployed OSCAR cluster. Basic endpoint coverage
 
-Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS} 
+Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS}
 Resource            ${CURDIR}/../../resources/files.resource
 Resource            ${CURDIR}/../../resources/api_call.resource
 Resource            ${CURDIR}/../../resources/service.resource
@@ -11,7 +11,7 @@ Resource            ${CURDIR}/../../resources/service.resource
 Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Assign Random Service Name
 
 
-Suite Teardown      Run Keywords    Cleanup Service Lifecycle Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
+Suite Teardown      Run Keywords    Cleanup Service Lifecycle Resources    AND    Clean Test Artifacts    ${ARTIFACTS_DIR}/service_file.json
 
 
 *** Variables ***
@@ -27,13 +27,13 @@ OSCAR API Health
     Should Be Equal As Strings    ${response.content}    Ok
 
 OSCAR System Config
-    [Documentation]    Get system config    
+    [Documentation]    Get system config
     ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/config
     Log    ${response.content}
     Should Contain    ${response.content}    "name":"oscar"
 
 OSCAR System Info
-    [Documentation]    Get system info    
+    [Documentation]    Get system info
     ${response}=    GET With Defaults   url=${OSCAR_ENDPOINT}/system/info
     Log    ${response.content}
     Should Contain    ${response.content}    "version":
@@ -64,7 +64,7 @@ OSCAR Create Service
     [Documentation]    Create a new service
     [Tags]    create    ready
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json    
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${response}=    POST With Defaults  url=${OSCAR_ENDPOINT}/system/services   data=${body}
     Log    ${response.content}
     Wait For Service Ready
@@ -166,7 +166,7 @@ OSCAR Delete Job
 
 OSCAR Update Service
     [Documentation]    Update a service
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${response}=    PUT With Defaults   url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
@@ -185,7 +185,7 @@ OSCAR Invoke Asynchronous Service with service token
     ${response}=    POST   url=${OSCAR_ENDPOINT}/job/${SERVICE_NAME}      data=${body}
     ...                     headers=${new_headers}    verify=${verify}
     Should Be Equal As Strings    ${response.status_code}    201
-    
+
 
 OSCAR Delete All Jobs
     Skip If    '${LOCAL_TESTING}'=='True'    #Skipping for local testing for the time being
@@ -236,7 +236,7 @@ Prepare Service File
     ${first_output}=    Get From List    ${output_entries}    0
     Set To Dictionary    ${first_output}    path=${SERVICE_NAME}/output
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 
 Wait For Service Ready
     [Documentation]    Polls the service endpoint until the service reports a ready state or the timeout expires.

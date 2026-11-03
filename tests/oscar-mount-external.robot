@@ -5,7 +5,7 @@ Resource            ${CURDIR}/../${AUTHENTICATION_PROCESS}
 Resource            ${CURDIR}/../resources/files.resource
 
 Suite Setup         Check Valid OIDC Token
-Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
+Suite Teardown      Clean Test Artifacts    True    ${ARTIFACTS_DIR}/service_file.json
 
 
 *** Variables ***
@@ -78,7 +78,7 @@ Verify Bucket Private creation
 
 OSCAR Create Service Mount - where the bucket ${BUCKET_EXTERNAL} exist and its mine and private
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${body}=  yaml.Safe Load  ${body}
     ${mount} = 	Create Dictionary 	storage_provider=minio.external      path=${BUCKET_EXTERNAL}
     ${external} = 	Create Dictionary 	endpoint=${MINIO_EXTERNAL}            access_key=${USER}
@@ -193,7 +193,7 @@ Prepare Service File
 
     Set To Dictionary    ${modified_content}    script=${script_value}
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 
 
 External Verify Bucket

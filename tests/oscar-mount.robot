@@ -7,7 +7,7 @@ Resource            ${CURDIR}/../resources/files.resource
 Resource            ${CURDIR}/../resources/api_call.resource
 
 Suite Setup         Run Keywords    Check Valid OIDC Token    AND    Initialize Test Names
-Suite Teardown      Clean Test Artifacts    True    ${DATA_DIR}/service_file.json
+Suite Teardown      Clean Test Artifacts    True    ${ARTIFACTS_DIR}/service_file.json
 
 
 *** Variables ***
@@ -64,7 +64,7 @@ OSCAR Create Service
     [Documentation]    Create a new service
     [Tags]    create
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
@@ -170,5 +170,5 @@ Prepare Service File
 
     Set To Dictionary    ${modified_content}    script=${script_value}
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 
