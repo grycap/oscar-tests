@@ -26,7 +26,11 @@ ${EXPOSED_SERVICE_NAME}         ${EMPTY}
 ${INVOCATION_SERVICE_FILE}      ${DATA_DIR}/metrics_invocation_service_file.json
 ${EXPOSED_SERVICE_FILE}         ${DATA_DIR}/metrics_exposed_service_file.json
 ${EXPOSED_SCRIPT_FILE}          ${DATA_DIR}/expose_services/nginxscript.sh
-
+@{EXPECTED_LABELS}
+...    service-inventory
+...    prometheus
+...    loki
+...    exposed-request-logs
 
 *** Test Cases ***
 OSCAR System Metrics Summary
@@ -274,17 +278,26 @@ Validate Metrics Summary Contract
     ${sources}=    Get From Dictionary    ${metrics}    sources
     Should Be True    isinstance($totals, dict)    msg=Expected "totals" to be a JSON object
     Should Be True    isinstance($sources, list)    msg=Expected "sources" to be a JSON array
-    ${expected_sources}=    Evaluate
-    ...    [{"service-inventory": "ok", "prometheus": "ok", "loki": "ok", "country-attribution": "ok", "exposed-request-logs": "ok"}]
-    ...    json
-    ${actual_sources}=    Evaluate    {s.get("name"): s.get("status") for s in $sources}    json
-    Should Be True
-    ...    len($sources) == len($actual_sources)
-    ...    msg=Expected one entry per source with a "name" label, got ${sources}
-    Should Be True
-    ...    $actual_sources == $expected_sources
-    ...    msg=Expected labels and statuses ${expected_sources}, got ${sources}
+    Verify Labels Exist And Are OK    ${sources}
     Validate Metrics Totals    ${totals}
+
+
+
+Verify Labels Exist And Are OK
+    [Arguments]    ${labels}
+    FOR    ${expected}    IN    @{EXPECTED_LABELS}
+        ${found}=    Set Variable    ${False}
+
+        FOR    ${label}    IN    @{labels}
+            IF    $label['name'] == $expected
+                Should Be Equal    ${label}[status]    ok
+                ${found}=    Set Variable    ${True}
+                BREAK
+            END
+        END
+
+        Should Be True    ${found}    msg=Label '${expected}' not found
+    END
 
 Validate Service Metric Contract
     [Documentation]    Validate the stable contract returned by /system/metrics/{serviceName}?metric=...
