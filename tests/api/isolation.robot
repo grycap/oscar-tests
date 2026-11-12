@@ -8,7 +8,7 @@ Resource          ${CURDIR}/../../resources/files.resource
 Resource          ${CURDIR}/../../resources/service.resource
 
 Suite Setup       Run Keywords    Checks Valids OIDC Token    AND    Assign Random Service Name
-Suite Teardown    Run Keywords    Cleanup Isolation Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
+Suite Teardown    Run Keywords    Cleanup Isolation Resources    AND    Clean Test Artifacts    ${ARTIFACTS_DIR}/service_file.json
 
 
 *** Variables ***
@@ -25,7 +25,7 @@ OSCAR API Health
 OSCAR Service isolation_level SERVICE Create
     [Documentation]  Create a new service
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
 
     ${response}=    POST    url=${OSCAR_ENDPOINT}/system/services    expected_status=201    data=${body}
     ...                     headers=${HEADERS}    verify=${SSL_VERIFY}
@@ -44,7 +44,7 @@ Verify Service isolation_level SERVICE Creation
     Should Not Match Regexp    ${output}    "bucket_name":"${bucket_name}-${OTHER_USER_SHORT_ID}","visibility":"private"
 
 OSCAR Service isolation_level SERVICE -> USER Update
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${content}=     Update File     ${body}     isolation_level     USER
     ${users}=       Create List     ${USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
@@ -64,7 +64,7 @@ Verify isolation_level SERVICE -> USER Update
 
 OSCAR Service isolation_level USER -> USER Update with more users
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${content}=     Update File     ${body}     isolation_level     USER
     ${users}=       Create List     ${USER}
     Append To List      ${users}    ${OTHER_USER}
@@ -107,7 +107,7 @@ Verify isolation_level USER execution and output
 
 OSCAR Service isolation_level USER -> USER Update with less users
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${content}=     Update File     ${body}     isolation_level     USER
     ${users}=       Create List     ${USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
@@ -128,7 +128,7 @@ Verify isolation_level USER -> USER Update with less users
 
 OSCAR Update Service isolation_level user -> service
     [Documentation]  Update a service private -> restricted
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${response}=    PUT    url=${OSCAR_ENDPOINT}/system/services    data=${body}    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
     Should Be True    '${response.status_code}' == '200' or '${response.status_code}' == '204'
@@ -167,7 +167,7 @@ Verify Delete isolation_level SERVICE
 
 OSCAR Service isolation_level USER Create
     [Documentation]  Create a new service
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${content}=     Update File     ${body}     isolation_level     USER
     ${users}=       Create List     ${USER}
     ${content2}=    Update File     ${content}      allowed_users     ${users}
@@ -244,7 +244,7 @@ Prepare Service File
     ${first_output}=    Get From List    ${output_entries}    0
     Set To Dictionary    ${first_output}    path=${SERVICE_NAME}/output
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 
 
 Update File

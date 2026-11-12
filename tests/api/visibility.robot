@@ -8,7 +8,7 @@ Resource             ${CURDIR}/../../resources/api_call.resource
 Resource             ${CURDIR}/../../resources/service.resource
 
 Suite Setup       Run Keywords    Checks Valids OIDC Token    AND    Assign Random Service Name
-Suite Teardown    Run Keywords    Cleanup Visibility Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
+Suite Teardown    Run Keywords    Cleanup Visibility Resources    AND    Clean Test Artifacts    ${ARTIFACTS_DIR}/service_file.json
 
 *** Variables ***
 ${SERVICE_BASE}     robot-test-cowsay
@@ -27,7 +27,7 @@ OSCAR API Health
 OSCAR Create Service
     [Documentation]  Create a new service
     Prepare Service File
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${response}=    POST With Defaults   url=${OSCAR_ENDPOINT}/system/services   data=${body}
@@ -50,7 +50,7 @@ Verify Visibility of service and check the Bucket is private
 
 OSCAR Update Service visibility private -> restricted
     [Documentation]  Update a service private -> restricted
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     Append To List      ${users}    ${OTHER_USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
@@ -72,7 +72,7 @@ Verify Visibility of service and check the Bucket is updated to restricted from 
 
 
 OSCAR Update Service visibility restricted -> public
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     public
@@ -92,7 +92,7 @@ Verify Visibility of service and check the Bucket is updated to public from rest
     Verify Asynchronous works       ${HEADERS2}
 
 OSCAR Update Service visibility public -> private
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     private
@@ -112,7 +112,7 @@ Verify Visibility of service and check the Bucket is updated to private from pub
     Verify Asynchronous works       ${HEADERS}
 
 OSCAR Update Service private -> public
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     public
@@ -133,7 +133,7 @@ Verify Visibility of service and check the Bucket is updated to public from priv
 
 OSCAR Update Service visibility public -> restricted
     [Documentation]  Update a service public -> restricted
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     restricted
@@ -154,7 +154,7 @@ Verify Visibility of service and check the Bucket is updated to restricted from 
     Verify Asynchronous works       ${HEADERS}
 
 OSCAR Update Service visibility restricted -> private
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     private
@@ -196,7 +196,7 @@ Verify if private Bucket is deleted
 
 OSCAR Create Service restricted
     [Documentation]  Create a new service
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      allowed_users     ${users}
     ${body}=    Update File     ${body}      visibility     restricted
@@ -239,7 +239,7 @@ Verify if restricted Bucket is deleted
 
 OSCAR Create Service public
     [Documentation]  Create a new service
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${users}=       Create List     ${USER}
     ${body}=    Update File     ${body}      visibility     public
     ${body}=    Update File     ${body}      allowed_users     ${users}
@@ -319,7 +319,7 @@ Prepare Service File
     ${first_output}=    Get From List    ${output_entries}    0
     Set To Dictionary    ${first_output}    path=${SERVICE_NAME}/output
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 
 
 Update File
