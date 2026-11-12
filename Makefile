@@ -16,9 +16,11 @@ ifeq ($(AUTH_GOAL),)
 endif
 CLUSTER_GOALS := $(filter-out $(AUTH_GOAL),$(OTHER_GOALS))
 CLUSTER_GOAL := $(firstword $(CLUSTER_GOALS))
+TARGET_CLUSTER_GOAL := $(word 2,$(CLUSTER_GOALS))
 
 AUTH_INPUT := $(patsubst auth-%,%,$(AUTH_GOAL))
 CLUSTER_INPUT := $(patsubst cluster-%,%,$(CLUSTER_GOAL))
+TARGET_CLUSTER_INPUT := $(patsubst cluster-%,%,$(TARGET_CLUSTER_GOAL))
 
 AUTH_CONFIGS := $(sort $(notdir $(wildcard variables/.env-auth-*.yaml)))
 CLUSTER_CONFIGS := $(sort $(notdir $(wildcard variables/.env-cluster-*.yaml)))
@@ -40,6 +42,11 @@ ifeq ($(CLUSTER_FILE),)
   CLUSTER_FILE := $(if $(CLUSTER_SLUG),$(wildcard variables/.env-cluster-$(CLUSTER_SLUG).yaml))
 endif
 CLUSTER_FILE := $(strip $(CLUSTER_FILE))
+TARGET_CLUSTER_FILE := $(if $(TARGET_CLUSTER_INPUT),$(wildcard variables/.env-$(TARGET_CLUSTER_INPUT).yaml))
+ifeq ($(TARGET_CLUSTER_FILE),)
+  TARGET_CLUSTER_FILE := $(if $(TARGET_CLUSTER_INPUT),$(wildcard variables/.env-cluster-$(TARGET_CLUSTER_INPUT).yaml))
+endif
+TARGET_CLUSTER_FILE := $(strip $(TARGET_CLUSTER_FILE))
 
 SUITE_LIST := $(shell find tests -type f -name '*.robot' | sort)
 
@@ -66,13 +73,24 @@ ifneq ($(filter test test-parallel,$(MAKECMDGOALS)),)
   ifeq ($(CLUSTER_FILE),)
     $(error No configuration file found for cluster '$(CLUSTER_INPUT)'; checked variables/.env-$(CLUSTER_SLUG).yaml and variables/.env-cluster-$(CLUSTER_SLUG).yaml)
   endif
+  ifneq ($(TARGET_CLUSTER_GOAL),)
+    ifeq ($(TARGET_CLUSTER_FILE),)
+      $(error No configuration file found for target cluster '$(TARGET_CLUSTER_INPUT)')
+    endif
+  endif
+  ifneq ($(word 3,$(CLUSTER_GOALS)),)
+    $(error At most two cluster configurations can be provided)
+  endif
 endif
+
+TARGET_CLUSTER_ARGS := $(if $(TARGET_CLUSTER_FILE),-v TARGET_CLUSTER_CONFIG:$(TARGET_CLUSTER_FILE),)
 
 .PHONY: test test-parallel py-test docker-test help list clean-results clean-scalability-results
 
 test:
 	@echo "Auth config: $(AUTH_FILE)"
 	@echo "Cluster config: $(CLUSTER_FILE)"
+	@$(if $(TARGET_CLUSTER_FILE),echo "Target cluster config: $(TARGET_CLUSTER_FILE)",:)
 	@echo "Robot suite: $(ROBOT_SUITE)"
 	@echo "Robot args: $(ROBOT_ARGS)"
 ifneq ($(ROBOT_SUITE),all)
@@ -84,7 +102,7 @@ ifneq ($(ROBOT_SUITE),all)
 	OSCAR_TEST_ROBOT_SUITE="$(ROBOT_SUITE)" \
 	OSCAR_TEST_ROBOT_ARGS="$(ROBOT_ARGS)" \
 	OSCAR_TEST_ROBOT_OUTPUT_DIR="$(ROBOT_OUTPUT_DIR)" \
-	$(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d $(ROBOT_OUTPUT_DIR) $(ROBOT_SUITE)
+	$(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(TARGET_CLUSTER_ARGS) $(ROBOT_ARGS) -d $(ROBOT_OUTPUT_DIR) $(ROBOT_SUITE)
 else
 	@echo "Running all Robot test suites found under tests/."
 	@if [ -z "$(strip $(SUITE_LIST))" ]; then \
@@ -107,7 +125,7 @@ else
 	  OSCAR_TEST_ROBOT_SUITE="$$suite" \
 	  OSCAR_TEST_ROBOT_ARGS="$(ROBOT_ARGS)" \
 	  OSCAR_TEST_ROBOT_OUTPUT_DIR="$$out_dir" \
-	  $(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(ROBOT_ARGS) -d "$$out_dir" "$$suite"; \
+	  $(ROBOT_ENV) $(ROBOT) -V $(AUTH_FILE) -V $(CLUSTER_FILE) $(TARGET_CLUSTER_ARGS) $(ROBOT_ARGS) -d "$$out_dir" "$$suite"; \
 	done
 endif
 
@@ -293,6 +311,7 @@ ifneq ($(and $(AUTH_EXAMPLE),$(CLUSTER_EXAMPLE)),)
 	@echo "Example:"
 	@echo "  make test $(AUTH_EXAMPLE) $(CLUSTER_EXAMPLE_DISPLAY)"
 	@echo "  make test $(AUTH_EXAMPLE) $(CLUSTER_EXAMPLE_DISPLAY) ROBOT_SUITE=all"
+	@echo "  make test auth-<auth> cluster-<origin> cluster-<target> ROBOT_SUITE=<suite>"
 	@echo "  make py-test $(AUTH_EXAMPLE) $(CLUSTER_EXAMPLE_DISPLAY)"
 	@echo "  make docker-test $(AUTH_EXAMPLE) $(CLUSTER_EXAMPLE_DISPLAY)"
 	@echo ""
@@ -300,6 +319,7 @@ endif
 	@echo "Notes:"
 	@echo "  - Auth targets correspond to filenames like variables/.env-auth-*.yaml (keep the auth- prefix)."
 	@echo "  - Cluster targets can be used with or without the cluster- prefix."
+	@echo "  - An optional second cluster is passed to Robot as TARGET_CLUSTER_CONFIG."
 	@echo ""
 	@echo "Optional overrides:"
 	@echo "  ROBOT=<robot command> (default: $(ROBOT))"
