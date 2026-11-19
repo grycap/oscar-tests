@@ -8,7 +8,7 @@ Resource          ${CURDIR}/../../resources/api_call.resource
 Resource          ${CURDIR}/../../resources/service.resource
 
 Suite Setup       Checks Valids OIDC Token
-Suite Teardown    Run Keywords    Cleanup Delete Not Own Resources    AND    Clean Test Artifacts    ${DATA_DIR}/service_file.json
+Suite Teardown    Run Keywords    Cleanup Delete Not Own Resources    AND    Clean Test Artifacts    ${ARTIFACTS_DIR}/service_file.json
 
 
 *** Variables ***

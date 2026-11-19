@@ -10,6 +10,10 @@ Library             yaml
 ${OSCAR_ENDPOINT}       ${OSCAR_ENDPOINT}
 ${VO}                   ${AAI_GROUP}
 ${DATA_DIR}             ${EXECDIR}/data
+# Directory for artifacts created by tests (service bodies, request files...).
+# Defaults to ${DATA_DIR}; `make test-parallel` overrides it per suite with
+# `-v ARTIFACTS_DIR:<out_dir>/artifacts` so concurrent suites do not collide.
+${ARTIFACTS_DIR}        ${DATA_DIR}
 ${INVOKE_FILE_NAME}     00-cowsay-invoke-body.json
 ${INVOKE_FILE}          ${DATA_DIR}/${INVOKE_FILE_NAME}
 ${SERVICE_FILE}         ${DATA_DIR}/00-cowsay.yaml
@@ -208,7 +212,7 @@ Get Service File Update
     ...    cat \"$INPUT_FILE_PATH\" | /usr/games/cowsay\nfi\n\
     Set To Dictionary    ${modified_content}    script=${script_value}
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 
 Set Service File For Update
     [Documentation]    Set the service file with the VO and set value

@@ -70,7 +70,7 @@ Get quotas and plan burst
 #Create sleep-test service
 #    [Documentation]    Deploy the sleep-test service with a random name.
 #    Prepare Sleep Service File
-#    ${body}=    Get File    ${DATA_DIR}/service_file.json
+#    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
 #    ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
 #    Log    ${response.content}
 #    Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
@@ -129,7 +129,7 @@ Execute Synchronous Calls With Correct Resources
     [Tags]    sync    correct-resources
     ${service_name}=    Set Variable    sync-correct-resources-${RANDOM_STRING}
     Prepare Service File With Correct Resources    ${service_name}
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
     Wait For Quotas Service Ready    ${service_name}
@@ -143,7 +143,7 @@ Execute Synchronous Calls With Insufficient Resources
     [Tags]    sync    insufficient-resources
     ${service_name}=    Set Variable    sync-insufficient-${RANDOM_STRING}
     Prepare Service File With Insufficient Resources    ${service_name}
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
     Service Resources Should Exceed Quotas    ${body}
@@ -158,7 +158,7 @@ Execute Asynchronous Calls With Correct Resources
     [Tags]    async    correct-resources
     ${service_name}=    Set Variable    async-correct-resources-${RANDOM_STRING}
     Prepare Service File With Correct Resources    ${service_name}
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
     Wait For Quotas Service Ready    ${service_name}
@@ -174,7 +174,7 @@ Execute Asynchronous Calls With Insufficient Resources
     [Tags]    async    insufficient-resources
     ${service_name}=    Set Variable    async-insufficient-${RANDOM_STRING}
     Prepare Service File With Insufficient Resources    ${service_name}
-    ${body}=    Get File    ${DATA_DIR}/service_file.json
+    ${body}=    Get File    ${ARTIFACTS_DIR}/service_file.json
     ${response}=    POST With Defaults    url=${OSCAR_ENDPOINT}/system/services    data=${body}
     Should Be True    '${response.status_code}' == '201' or '${response.status_code}' == '409'
     ${invoke_body}=    Get File    ${INVOKE_FILE}
@@ -330,7 +330,7 @@ Compute Parallel Limit
 
 Prepare Sleep Service File
     [Documentation]    Load the sleep-test example, adjust VO/name/paths, and save JSON payload for the API.
-    Prepare Sleep Service File With Overrides    ${SERVICE_NAME}    ${EMPTY}    ${DATA_DIR}/service_file.json
+    Prepare Sleep Service File With Overrides    ${SERVICE_NAME}    ${EMPTY}    ${ARTIFACTS_DIR}/service_file.json
 
 Load Sleep Service File
     [Documentation]    Load sleep-test YAML replacing tabs to avoid parsing errors.
@@ -432,7 +432,7 @@ Cleanup Quotas Services
     Run Keyword And Ignore Error    Cleanup Generated Service    async-insufficient-${RANDOM_STRING}
     Run Keyword And Ignore Error    Cleanup Generated Service    exposed-correct-${RANDOM_STRING}
     Run Keyword And Ignore Error    Cleanup Generated Service    exposed-insufficient-${RANDOM_STRING}
-    Run Keyword And Ignore Error    Clean Test Artifacts    ${DATA_DIR}/service_file.json
+    Run Keyword And Ignore Error    Clean Test Artifacts    ${ARTIFACTS_DIR}/service_file.json
     Run Keyword And Ignore Error    Clean Test Artifacts    ${DATA_DIR}/exposed_service_file.json
 
 Cleanup Generated Service
@@ -470,7 +470,7 @@ Prepare Service File With Correct Resources
     Set To Dictionary    ${first_output}    path=${service_name}/output
     
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 
 Prepare Service File With Insufficient Resources
     [Documentation]    Prepare service configuration with inadequate resources
@@ -496,7 +496,7 @@ Prepare Service File With Insufficient Resources
     Set To Dictionary    ${first_output}    path=${service_name}/output
     
     ${service_content_json}=    Evaluate    json.dumps(${modified_content})    json
-    Create File    ${DATA_DIR}/service_file.json    ${service_content_json}
+    Create File    ${ARTIFACTS_DIR}/service_file.json    ${service_content_json}
 
 Prepare Exposed Service With Correct Resources
     [Documentation]    Prepare exposed service configuration with adequate resources
