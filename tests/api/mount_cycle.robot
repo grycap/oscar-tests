@@ -38,7 +38,7 @@ OSCAR Verify Bucket ${bucket_name} and Service ${SERVICE_NAME} exist
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
     ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
-    Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"${MOUNT_BUCKET_NAME}"}
+    Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"${MOUNT_BUCKET_NAME}","lifecycle_policy":"delete"}
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
@@ -107,7 +107,7 @@ OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} and Service ${SERVICE_NAME} exist
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
     ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
-    Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"${MOUNT_BUCKET_NAME_OTHER}"}
+    Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"${MOUNT_BUCKET_NAME_OTHER}","lifecycle_policy":"delete"}
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
@@ -164,7 +164,7 @@ OSCAR Verify Bucket ${MOUNT_BUCKET_NAME_OTHER} and Service Exist
     ${response}=    GET    url=${OSCAR_ENDPOINT}/system/services/${SERVICE_NAME}    expected_status=200
     ...    headers=${HEADERS}    verify=${SSL_VERIFY}
     Log    ${response.content}
-    Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"${MOUNT_BUCKET_NAME_OTHER}"}
+    Should Contain    ${response.content}    "mount":{"storage_provider":"minio.default","path":"${MOUNT_BUCKET_NAME_OTHER}","lifecycle_policy":"delete"}
     ${response}=    Verify Bucket
     Should Be Equal As Strings    ${response.status_code}    200
     Log    ${response.content}
