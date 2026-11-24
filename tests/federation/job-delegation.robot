@@ -105,8 +105,11 @@ Prepare Delegation Fixture
     ${template}=    Replace String    ${template}    __WORKER_NAME__    ${WORKER_NAME}
     ${template}=    Replace String    ${template}    __ORIGIN_ENDPOINT__    ${ORIGIN_FEDERATION_ENDPOINT}
     ${template}=    Replace String    ${template}    __TARGET_ENDPOINT__    ${TARGET_FEDERATION_ENDPOINT}
-    ${template}=    Replace String    ${template}    __ORIGIN_SSL__    ${ORIGIN_VERIFY}
-    ${template}=    Replace String    ${template}    __TARGET_SSL__    ${TARGET_VERIFY}
+    # SSL verify flags are booleans; Replace String needs plain strings, so derive those here.
+    ${origin_ssl}=    Set Variable If    ${ORIGIN_VERIFY}    true    false
+    ${target_ssl}=    Set Variable If    ${TARGET_VERIFY}    true    false
+    ${template}=    Replace String    ${template}    __ORIGIN_SSL__    ${origin_ssl}
+    ${template}=    Replace String    ${template}    __TARGET_SSL__    ${target_ssl}
     ${template}=    Replace String    ${template}    __CPU__    ${DELEGATION_CPU}
     ${template}=    Replace String    ${template}    __MEMORY__    ${DELEGATION_MEMORY}
     ${template}=    Replace String    ${template}    __IMAGE__    ${DELEGATION_IMAGE}
