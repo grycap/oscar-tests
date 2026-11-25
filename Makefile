@@ -149,8 +149,9 @@ PARALLEL_API_SUITES := \
   tests/api/federation.robot
 
 # API suites that must run serially: they temporarily reduce global (MinIO) or
-# user memory quotas, so anything else deploying services or creating buckets
-# at the same time would fail spuriously.
+# user memory quotas, or mutate global cluster configuration (e.g.
+# /system/config allowed_image_repositories), so anything else deploying
+# services or creating buckets at the same time would fail spuriously.
 SERIAL_API_SUITES := \
   tests/api/quotas-user.robot \
   tests/api/buckets.robot \
@@ -158,7 +159,8 @@ SERIAL_API_SUITES := \
   tests/api/isolation.robot \
   tests/api/minio-quotas.robot \
   tests/api/mount_cycle.robot \
-  tests/api/system-metrics.robot 
+  tests/api/system-metrics.robot \
+  tests/api/image-registry-restriction.robot
 
 # Max concurrent wave-1 workers. 0 (default) = launch all PARALLEL_API_SUITES
 # at once. >0 runs wave 1 in batches of PAR_JOBS concurrent suites, waiting for

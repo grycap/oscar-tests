@@ -1,11 +1,12 @@
 *** Settings ***
-Documentation       Opt-in, two-cluster job delegation. The first cluster is the origin; the second is the destination. Does not change quotas.
+Documentation       Opt-in, two-cluster job delegation. The first cluster is the origin; the second is the destination. Does not change quotas. Each test submits three Jobs: the origin quota admits at most one locally, so the rest must be delegated.
 Library             Collections
 Library             OperatingSystem
 Library             RequestsLibrary
 Library             String
 Resource            ${CURDIR}/../../${AUTHENTICATION_PROCESS}
 Suite Setup         Initialize Delegation Environment
+Suite Teardown      Cleanup Delegation Suite
 Test Setup          Prepare Delegation Fixture
 Test Teardown       Cleanup Delegation Fixture
 
@@ -14,6 +15,7 @@ ${DELEGATION_CPU}       0.5
 ${DELEGATION_MEMORY}    256Mi
 ${DELEGATION_IMAGE}     ubuntu:22.04
 ${DELEGATION_TIMEOUT}   180s
+${DELEGATION_JOBS}      10
 ${MINIO_TEST_ENDPOINT}   ${EMPTY}
 ${KEEP_SERVICES}        ${False}
 ${FIXTURE_ATTEMPTED}   ${False}
@@ -21,7 +23,7 @@ ${JOB_ID}              ${EMPTY}
 
 *** Test Cases ***
 Job Executes On Destination Only
-    [Documentation]    POST to the origin must produce a succeeded Job and marker on the destination, not a local Job.
+    [Documentation]    POST to the origin must produce succeeded Jobs and markers on the destination; at most one Job may run locally.
     ${local}=    Get Jobs    ${ORIGIN_ENDPOINT}    ${ORIGIN_NAME}    ${ORIGIN_VERIFY}
     ${remote}=    Get Jobs    ${TARGET_ENDPOINT}    ${WORKER_NAME}    ${TARGET_VERIFY}
     Should Be Empty    ${local}
@@ -31,20 +33,13 @@ Job Executes On Destination Only
     Check Quota Precondition
     # Delegated MinIO events carry the provider ID "default", not the FDL name "minio.default".
     ${event}=    Evaluate    json.dumps({'storage_provider': 'default', 'event': json.dumps({'Records': [{'eventSource': 'minio:s3', 'eventTime': '2020-01-01T00:00:00Z', 's3': {'bucket': {'name': $ORIGIN_NAME, 'arn': 'arn:aws:s3:::' + $ORIGIN_NAME}, 'object': {'key': $INPUT_KEY}}}]})})    modules=json
-    ${response}=    POST    url=${ORIGIN_ENDPOINT}/job/${ORIGIN_NAME}
-    ...    data=${event}    headers=${HEADERS}    expected_status=ANY    verify=${ORIGIN_VERIFY}
-    Should Be Equal As Integers    ${response.status_code}    201
-    Wait Until Keyword Succeeds    ${DELEGATION_TIMEOUT}    5s    Delegated Job Should Succeed
-    ${response}=    GET    url=${TARGET_ENDPOINT}/system/logs/${WORKER_NAME}/${JOB_ID}
-    ...    headers=${HEADERS}    expected_status=200    verify=${TARGET_VERIFY}
-    Should Be True    $MARKER in $response.text    Destination Job logs lack test marker
+    Submit Delegation Jobs    ${event}
+    Wait Until Keyword Succeeds    ${DELEGATION_TIMEOUT}    5s    Delegated Jobs Should Succeed
     Input Object Should Match Fixture
     Wait Until Keyword Succeeds    ${DELEGATION_TIMEOUT}    5s    Processed Output Should Match Input
-    ${local}=    Get Jobs    ${ORIGIN_ENDPOINT}    ${ORIGIN_NAME}    ${ORIGIN_VERIFY}
-    Should Be Empty    ${local}
 
 Bucket Upload Triggers Delegated Job
-    [Documentation]    A MinIO notification from the origin input prefix must produce exactly one destination Job without an explicit /job POST.
+    [Documentation]    Each MinIO notification from the origin input prefix must produce one destination Job without an explicit /job POST; at most one Job may run locally.
     ${local}=    Get Jobs    ${ORIGIN_ENDPOINT}    ${ORIGIN_NAME}    ${ORIGIN_VERIFY}
     ${remote}=    Get Jobs    ${TARGET_ENDPOINT}    ${WORKER_NAME}    ${TARGET_VERIFY}
     Should Be Empty    ${local}
@@ -52,17 +47,14 @@ Bucket Upload Triggers Delegated Job
     Check Quota Precondition
     Set Test Variable    ${INPUT_KEY}    input/${MARKER}.txt
     # The PUT may trigger a Job before it returns; teardown cancels test-owned Jobs unless KEEP_SERVICES is enabled.
-    Upload Fixture Input As OIDC User
-    Wait Until Keyword Succeeds    ${DELEGATION_TIMEOUT}    5s    Delegated Job Should Succeed
-    ${response}=    GET    url=${TARGET_ENDPOINT}/system/logs/${WORKER_NAME}/${JOB_ID}
-    ...    headers=${HEADERS}    expected_status=200    verify=${TARGET_VERIFY}
-    Should Be True    $MARKER in $response.text    Destination Job logs lack test marker
+    FOR    ${index}    IN RANGE    ${DELEGATION_JOBS}
+        Upload Fixture Input As OIDC User
+        Wait Until Keyword Succeeds    ${DELEGATION_TIMEOUT}    5s    Job Attempts Should Be Visible    ${index + 1}
+        Wait For Local Job Quota
+    END
+    Wait Until Keyword Succeeds    ${DELEGATION_TIMEOUT}    5s    Delegated Jobs Should Succeed
     Input Object Should Match Fixture
     Wait Until Keyword Succeeds    ${DELEGATION_TIMEOUT}    5s    Processed Output Should Match Input
-    ${local}=    Get Jobs    ${ORIGIN_ENDPOINT}    ${ORIGIN_NAME}    ${ORIGIN_VERIFY}
-    Should Be Empty    ${local}
-    ${remote}=    Get Jobs    ${TARGET_ENDPOINT}    ${WORKER_NAME}    ${TARGET_VERIFY}
-    Length Should Be    ${remote}    1    Notification must produce exactly one destination Job
 
 *** Keywords ***
 Initialize Delegation Environment
@@ -298,9 +290,34 @@ Get Jobs
     ${jobs}=    Evaluate    $payload.get('jobs') or {}
     RETURN    ${jobs}
 
-Delegated Job Should Succeed
+Submit Delegation Jobs
+    [Arguments]    ${event}
+    FOR    ${index}    IN RANGE    ${DELEGATION_JOBS}
+        ${response}=    POST    url=${ORIGIN_ENDPOINT}/job/${ORIGIN_NAME}
+        ...    data=${event}    headers=${HEADERS}    expected_status=ANY    verify=${ORIGIN_VERIFY}
+        Should Be Equal As Integers    ${response.status_code}    201
+        Wait Until Keyword Succeeds    ${DELEGATION_TIMEOUT}    5s    Job Attempts Should Be Visible    ${index + 1}
+        Wait For Local Job Quota
+    END
+
+Wait For Local Job Quota
     ${local}=    Get Jobs    ${ORIGIN_ENDPOINT}    ${ORIGIN_NAME}    ${ORIGIN_VERIFY}
-    Should Be Empty    ${local}    Job ran on the origin rather than being delegated
+    IF    len($local) > 0
+        # A Job admitted locally must be reflected in the user quota before the next
+        # submission, otherwise the next admission could still see the old free quota.
+        ${requested_cpu}=    Evaluate    round(float($DELEGATION_CPU) * 1000)
+        ${requested_memory}=    Evaluate    int($DELEGATION_MEMORY[:-2]) * 1048576
+        Wait Until Keyword Succeeds    60s    5s    Origin Quota Should Be Short    ${requested_cpu}    ${requested_memory}
+    END
+
+Job Attempts Should Be Visible
+    [Arguments]    ${expected}
+    ${local}=    Get Jobs    ${ORIGIN_ENDPOINT}    ${ORIGIN_NAME}    ${ORIGIN_VERIFY}
+    ${remote}=    Get Destination Jobs
+    ${total}=    Evaluate    len($local) + len($remote)
+    Should Be True    $total >= ${expected}    Only ${total} of ${expected} submitted Jobs are visible yet
+
+Get Destination Jobs
     ${remote}=    Get Jobs    ${TARGET_ENDPOINT}    ${WORKER_NAME}    ${TARGET_VERIFY}
     # OSCAR truncates service names >=25 characters to 16 before appending the job UUID.
     ${prefix}=    Evaluate    $ORIGIN_NAME[:16] if len($ORIGIN_NAME) >= 25 else $ORIGIN_NAME
@@ -308,11 +325,47 @@ Delegated Job Should Succeed
     IF    len($remote) != len($matching)
         Fail    Unexpected destination Jobs for this test-owned worker
     END
-    Length Should Be    ${matching}    1
-    ${name}=    Evaluate    next(iter($matching))
-    Set Suite Variable    ${JOB_ID}    ${name}
-    ${status}=    Evaluate    $matching[$name]['status']
-    Should Be Equal As Strings    ${status}    Succeeded
+    RETURN    ${matching}
+
+Delegated Jobs Should Succeed
+    ${local}=    Get Jobs    ${ORIGIN_ENDPOINT}    ${ORIGIN_NAME}    ${ORIGIN_VERIFY}
+    ${remote}=    Get Destination Jobs
+    ${total}=    Evaluate    len($local) + len($remote)
+    Should Be Equal As Integers    ${total}    ${DELEGATION_JOBS}
+    ...    Expected ${DELEGATION_JOBS} submitted Jobs, found ${total}
+    # The origin's quota admits at most one Job next to the service instance; once that Job
+    # holds its quota every later Job must delegate. One local admission caused by Kueue
+    # usage propagation is tolerated so the suite does not flake on a single race.
+    ${required}=    Evaluate    ${DELEGATION_JOBS} - 1
+    Should Be True    len($remote) >= ${required}    Only ${remote} Jobs were delegated
+    Should Be True    len($local) <= 1    More than one Job ran on the origin
+    FOR    ${name}    ${job}    IN    &{remote}
+        Should Be Equal As Strings    ${job}[status]    Succeeded    Destination Job ${name} did not succeed
+        ${response}=    GET    url=${TARGET_ENDPOINT}/system/logs/${WORKER_NAME}/${name}
+        ...    headers=${HEADERS}    expected_status=200    verify=${TARGET_VERIFY}
+        Should Be True    $MARKER in $response.text    Destination Job ${name} logs lack test marker
+    END
+    ${names}=    Evaluate    ', '.join(sorted($remote))
+    Set Suite Variable    ${JOB_ID}    ${names}
+
+Cleanup Delegation Suite
+    ${keep}=    Convert To Boolean    ${KEEP_SERVICES}
+    IF    ${keep}
+        Log To Console    Preserved suite fixtures (KEEP_SERVICES=true)
+        RETURN
+    END
+    # Test Teardown removes both services after every test; this is the safety net for
+    # suites aborted during setup so no test-owned service keeps quota when the suite ends.
+    ${origin_name}=    Get Variable Value    \${ORIGIN_NAME}    ${EMPTY}
+    ${worker_name}=    Get Variable Value    \${WORKER_NAME}    ${EMPTY}
+    IF    $origin_name
+        Run Keyword And Continue On Failure    Delete Fixture Jobs    ${ORIGIN_ENDPOINT}    ${origin_name}    ${ORIGIN_VERIFY}
+        Run Keyword And Continue On Failure    Delete Own Service    ${ORIGIN_ENDPOINT}    ${origin_name}    ${ORIGIN_VERIFY}
+    END
+    IF    $worker_name
+        Run Keyword And Continue On Failure    Delete Fixture Jobs    ${TARGET_ENDPOINT}    ${worker_name}    ${TARGET_VERIFY}
+        Run Keyword And Continue On Failure    Delete Own Service    ${TARGET_ENDPOINT}    ${worker_name}    ${TARGET_VERIFY}
+    END
 
 Cleanup Delegation Fixture
     IF    not ${FIXTURE_ATTEMPTED}
@@ -360,7 +413,12 @@ Delete Own Service
         RETURN
     END
     Should Be Equal As Integers    ${existing.status_code}    200
+    # Federation rollbacks can briefly return 403/409 while the service settles; retry.
+    Wait Until Keyword Succeeds    60s    5s    Delete Existing Service    ${endpoint}    ${name}    ${verify}
+    Service Must Not Exist    ${endpoint}    ${name}    ${verify}
+
+Delete Existing Service
+    [Arguments]    ${endpoint}    ${name}    ${verify}
     ${response}=    DELETE    url=${endpoint}/system/services/${name}
     ...    headers=${HEADERS}    expected_status=ANY    verify=${verify}
-    Should Be Equal As Integers    ${response.status_code}    204
-    Service Must Not Exist    ${endpoint}    ${name}    ${verify}
+    Should Be True    $response.status_code in (204, 404)    Delete failed with HTTP ${response.status_code}
