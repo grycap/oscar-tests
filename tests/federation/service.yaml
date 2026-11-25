@@ -1,0 +1,37 @@
+# Based on OSCAR-Hub crates/simple-test/fdl.yml; rendered in memory by Robot.
+# The refresh token is injected only into the API request, never saved here.
+functions:
+  oscar:
+    - origin:
+        name: __ORIGIN_NAME__
+        cpu: '__CPU__'
+        memory: __MEMORY__
+        image: __IMAGE__
+        script: script.sh
+        log_level: CRITICAL
+        visibility: private
+        allowed_users: []
+        input:
+          - storage_provider: minio.default
+            path: __ORIGIN_NAME__/input
+        output:
+          - storage_provider: minio.default
+            path: __ORIGIN_NAME__/output
+        environment:
+          secrets:
+            refresh_token: ''
+        federation:
+          topology: star
+          delegation: static
+          members:
+            - type: oscar
+              cluster_id: target
+              service_name: __WORKER_NAME__
+              priority: 0
+clusters:
+  origin:
+    endpoint: __ORIGIN_ENDPOINT__
+    ssl_verify: __ORIGIN_SSL__
+  target:
+    endpoint: __TARGET_ENDPOINT__
+    ssl_verify: __TARGET_SSL__
