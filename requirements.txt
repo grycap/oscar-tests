@@ -8,3 +8,4 @@ PyJWT
 oscar-python==2.1.0
 pytest
 locust
+cryptography

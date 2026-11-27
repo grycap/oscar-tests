@@ -16,4 +16,5 @@ RUN pip install --no-cache-dir \
     robotframework-jsonlibrary \
     PyJWT \
     locust \
+    cryptography \
     boto3==1.43.92
