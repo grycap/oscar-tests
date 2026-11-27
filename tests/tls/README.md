@@ -36,13 +36,13 @@ REVOKED > INDETERMINATE > EXPIRED > EXPIRING_SOON > VALID).
 
 * **Robot (live)**:
   ```
-  make test auth-egi-ai4eosc cluster-ai4eosc \
+  make test auth-<cluster-file> cluster-<definition-file> \
        ROBOT_SUITE=tests/tls/tls-certificates.robot
   ```
   or directly:
   ```
-  python3 -m robot -V variables/.env-auth-egi-ai4eosc.yaml \
-       -V variables/.env-cluster-ai4eosc.yaml tests/tls/tls-certificates.robot
+  python3 -m robot -V variables/.env-auth-<cluster-file>.yaml \
+       -V variables/.env-cluster-<definition-file>.yaml tests/tls/tls-certificates.robot
   ```
 
 Library keywords (`robot_libs/tls_certificate.py`):
@@ -51,17 +51,3 @@ Library keywords (`robot_libs/tls_certificate.py`):
 * `Endpoint Certs Are Valid` — the one used by the Robot suite; fails
   unless `VALID`, and *skips* if the URL is undefined, is not HTTPS, or
   `SSL_VERIFY` is false (local `kind` clusters).
-
-## Note on the live AI4EOSC certificate
-
-The endpoint `https://inference.cloud.ai4eosc.eu` used to present a
-**revoked** certificate (entry dated 2026-10-26, reason *Superseded*,
-visible in the GEANT CRL
-`http://crl.harica.gr/HARICA-GEANT-TLS-R1.crl`). The operator has since
-rotated the certificate; the current one expires on **2027-02-06** and is
-not listed in the CRL, so the live result is `VALID`.
-
-The `REVOKED` case with cause *Superseded* via CRL (and all the
-revocation/indeterminacy cases) is covered by the **offline** suite in
-`test_tls_certificate.py`, which injects exactly that chain and those test
-CRLs.
